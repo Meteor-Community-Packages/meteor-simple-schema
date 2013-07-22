@@ -111,9 +111,7 @@ var validateOne = function(def, fieldName, fieldLabel, fieldValue, isSetting) {
         } else if (def.min && def.min > fieldValue.length) {
             invalidFields.push({name: fieldName, message: fieldLabel + " must be at least " + def.min + " characters"});
         }
-    }
-
-    if (def.type === Number) {
+    } else if (def.type === Number) {
         if (typeof fieldValue !== "number") {
             invalidFields.push({name: fieldName, message: fieldLabel + " must be a number"});
         } else if (def.max && def.max < fieldValue) {
@@ -123,15 +121,11 @@ var validateOne = function(def, fieldName, fieldLabel, fieldValue, isSetting) {
         } else if (!def.decimal && fieldValue.toString().indexOf(".") > -1) {
             invalidFields.push({name: fieldName, message: fieldLabel + " must be an integer"});
         }
-    }
-
-    if (def.type === Boolean) {
+    } else if (def.type === Boolean) {
         if (typeof fieldValue !== "boolean") {
             invalidFields.push({name: fieldName, message: fieldLabel + " must be a boolean"});
         }
-    }
-
-    if (def.type instanceof Function) {
+    } else if (def.type instanceof Function) {
         if (!(fieldValue instanceof def.type)) {
             invalidFields.push({name: fieldName, message: fieldLabel + " must be a " + def.type.name});
         }
