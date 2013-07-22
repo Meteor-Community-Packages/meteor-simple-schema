@@ -99,7 +99,6 @@ var validateOne = function(def, fieldName, fieldLabel, fieldValue, isSetting) {
         } else if (def.min && def.min > fieldValue.length) {
             invalidFields.push({name: fieldName, message: fieldLabel + " must be at least " + def.min + " characters"});
         }
-        return invalidFields;
     }
 
     if (def.type === Number) {
@@ -112,14 +111,12 @@ var validateOne = function(def, fieldName, fieldLabel, fieldValue, isSetting) {
         } else if (!def.decimal && fieldValue.toString().indexOf(".") > -1) {
             invalidFields.push({name: fieldName, message: fieldLabel + " must be an integer"});
         }
-        return invalidFields;
     }
 
     if (def.type === Boolean) {
         if (typeof fieldValue !== "boolean") {
             invalidFields.push({name: fieldName, message: fieldLabel + " must be a boolean"});
         }
-        return invalidFields;
     }
 
     if (def.type instanceof Function) {
@@ -132,18 +129,6 @@ var validateOne = function(def, fieldName, fieldLabel, fieldValue, isSetting) {
             } else if (_.isDate(def.max) && def.max.getTime() < fieldValue.getTime()) {
                 invalidFields.push({name: fieldName, message: fieldLabel + " must be on or before " + dateToFieldDateString(def.max)});
             }
-        }
-        return invalidFields;
-    }
-
-    //check to make sure the value is allowed
-    if (def.allowedValues) {
-        if (!_.contains(def.allowedValues, fieldValue)) {
-            invalidFields.push({name: fieldName, message: loopVal + " is not an allowed value"});
-        }
-    } else if (def.valueIsAllowed && def.valueIsAllowed instanceof Function) {
-        if (!def.valueIsAllowed(fieldValue)) {
-            invalidFields.push({name: fieldName, message: loopVal + " is not an allowed value"});
         }
     }
 
@@ -175,8 +160,21 @@ var validateOne = function(def, fieldName, fieldLabel, fieldValue, isSetting) {
                 }
             }
         }
-        return invalidFields;
+    } else {
+        //check to make sure the value is allowed
+        //this is the last thing we want to do for all data types, except for arrays
+        if (def.allowedValues) {
+            if (!_.contains(def.allowedValues, fieldValue)) {
+                invalidFields.push({name: fieldName, message: fieldValue + " is not an allowed value"});
+            }
+        } else if (def.valueIsAllowed && def.valueIsAllowed instanceof Function) {
+            if (!def.valueIsAllowed(fieldValue)) {
+                invalidFields.push({name: fieldName, message: fieldValue + " is not an allowed value"});
+            }
+        }
     }
+    
+    return invalidFields;
 };
 
 var dateToFieldDateString = function(date) {
