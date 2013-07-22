@@ -65,9 +65,21 @@ SimpleSchema.prototype.autoTypeConvert = function(doc) {
     var self = this;
     _.each(self._schema, function(def, fieldName) {
         if (fieldName in doc) {
-            doc[fieldName] = typeconvert(doc[fieldName], def.type); //typeconvert
+            if (_.isArray(doc[fieldName])) {
+                for (var i = 0, ln = doc[fieldName].length; i < ln; i++) {
+                    doc[fieldName][i] = typeconvert(doc[fieldName][i], def.type); //typeconvert
+                }
+            } else {
+                doc[fieldName] = typeconvert(doc[fieldName], def.type); //typeconvert
+            }
         } else if ("$set" in doc && fieldName in doc.$set) {
-            doc.$set[fieldName] = typeconvert(doc.$set[fieldName], def.type); //typeconvert
+            if (_.isArray(doc[fieldName])) {
+                for (var i = 0, ln = doc[fieldName].length; i < ln; i++) {
+                    doc.$set[fieldName][i] = typeconvert(doc.$set[fieldName][i], def.type); //typeconvert
+                }
+            } else {
+                doc.$set[fieldName] = typeconvert(doc.$set[fieldName], def.type); //typeconvert
+            }
         }
     });
     return doc;
