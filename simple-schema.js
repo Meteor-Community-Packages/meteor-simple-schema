@@ -136,6 +136,17 @@ var validateOne = function(def, fieldName, fieldLabel, fieldValue, isSetting) {
         return invalidFields;
     }
 
+    //check to make sure the value is allowed
+    if (def.allowedValues) {
+        if (!_.contains(def.allowedValues, fieldValue)) {
+            invalidFields.push({name: fieldName, message: loopVal + " is not an allowed value"});
+        }
+    } else if (def.valueIsAllowed && def.valueIsAllowed instanceof Function) {
+        if (!def.valueIsAllowed(fieldValue)) {
+            invalidFields.push({name: fieldName, message: loopVal + " is not an allowed value"});
+        }
+    }
+
     //if it's an array, loop through it and call validateOne recursively
     if (_.isArray(def.type)) {
         if (!_.isArray(fieldValue)) {
@@ -147,7 +158,7 @@ var validateOne = function(def, fieldName, fieldLabel, fieldValue, isSetting) {
         } else {
             //if it's an array with the right number of values, etc., then we need to go through them all and
             //validate each value in the array
-            var childDef = def, loopVal;
+            var childDef = _.clone(def), loopVal;
             childDef.type = def.type[0]; //strip array off of type
             //min and max only apply to the array
             if ("min" in childDef) {
@@ -159,19 +170,6 @@ var validateOne = function(def, fieldName, fieldLabel, fieldValue, isSetting) {
             for (var i = 0, ln = fieldValue.length; i < ln; i++) {
                 loopVal = fieldValue[i];
                 invalidFields = _.union(invalidFields, validateOne(childDef, fieldName, fieldLabel, loopVal, isSetting));
-                if (invalidFields.length) {
-                    break;
-                }
-                //while we're looping through, also check to make sure this value is allowed
-                if (def.allowedValues) {
-                    if (!_.contains(def.allowedValues, loopVal)) {
-                        invalidFields.push({name: fieldName, message: loopVal + " is not an allowed value"});
-                    }
-                } else if (def.valueIsAllowed && def.valueIsAllowed instanceof Function) {
-                    if (!def.valueIsAllowed(loopVal)) {
-                        invalidFields.push({name: fieldName, message: loopVal + " is not an allowed value"});
-                    }
-                }
                 if (invalidFields.length) {
                     break;
                 }
