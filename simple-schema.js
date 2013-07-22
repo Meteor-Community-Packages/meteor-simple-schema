@@ -67,7 +67,7 @@ SimpleSchema.prototype.autoTypeConvert = function(doc) {
         if (fieldName in doc) {
             if (_.isArray(doc[fieldName])) {
                 for (var i = 0, ln = doc[fieldName].length; i < ln; i++) {
-                    doc[fieldName][i] = typeconvert(doc[fieldName][i], def.type); //typeconvert
+                    doc[fieldName][i] = typeconvert(doc[fieldName][i], def.type[0]); //typeconvert
                 }
             } else {
                 doc[fieldName] = typeconvert(doc[fieldName], def.type); //typeconvert
@@ -75,7 +75,7 @@ SimpleSchema.prototype.autoTypeConvert = function(doc) {
         } else if ("$set" in doc && fieldName in doc.$set) {
             if (_.isArray(doc[fieldName])) {
                 for (var i = 0, ln = doc[fieldName].length; i < ln; i++) {
-                    doc.$set[fieldName][i] = typeconvert(doc.$set[fieldName][i], def.type); //typeconvert
+                    doc.$set[fieldName][i] = typeconvert(doc.$set[fieldName][i], def.type[0]); //typeconvert
                 }
             } else {
                 doc.$set[fieldName] = typeconvert(doc.$set[fieldName], def.type); //typeconvert
