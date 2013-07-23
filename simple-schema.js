@@ -18,7 +18,7 @@ check = function(/*arguments*/) {
     var args = _.toArray(arguments), invalidFields;
     if (args && _.isObject(args[0]) && args[1] instanceof SimpleSchema) {
         invalidFields = args[1].validate(args[0]);
-        if (!!invalidFields.length && Match) {
+        if (invalidFields.length && Match) {
             throw new Match.Error("One or more properties do not match the schema.");
         }
         return;
