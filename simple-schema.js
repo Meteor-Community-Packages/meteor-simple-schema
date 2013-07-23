@@ -13,6 +13,7 @@ SimpleSchema = function(schema) {
     self._schema = schema || {};
 };
 
+var builtInCheck = check;
 //@export check
 check = function(/*arguments*/) {
     var args = _.toArray(arguments), invalidFields;
@@ -23,7 +24,7 @@ check = function(/*arguments*/) {
         }
         return;
     }
-    check.apply(null, arguments);
+    builtInCheck.apply(this, arguments);
 };
 
 //validates doc against self._schema and returns an array of error objects
