@@ -112,10 +112,10 @@ var ss = new SimpleSchema({
 });
 
 Tinytest.add("SimpleSchema - Insert Required", function(test) {
-    var errors = ssr.validate({});
-    test.isTrue(errors.length === 8);
+    ssr.validate({});
+    test.isTrue(ssr.invalidKeys().length === 8);
 
-    errors = ssr.validate({
+    ssr.validate({
         requiredString: null,
         requiredBoolean: null,
         requiredNumber: null,
@@ -127,9 +127,9 @@ Tinytest.add("SimpleSchema - Insert Required", function(test) {
             requiredString: null
         }
     });
-    test.isTrue(errors.length === 8);
+    test.isTrue(ssr.invalidKeys().length === 8);
 
-    errors = ssr.validate({
+    ssr.validate({
         requiredString: void 0,
         requiredBoolean: void 0,
         requiredNumber: void 0,
@@ -141,9 +141,9 @@ Tinytest.add("SimpleSchema - Insert Required", function(test) {
             requiredString: void 0
         }
     });
-    test.isTrue(errors.length === 8);
+    test.isTrue(ssr.invalidKeys().length === 8);
 
-    errors = ssr.validate({
+    ssr.validate({
         requiredString: "",
         requiredBoolean: null,
         requiredNumber: null,
@@ -155,9 +155,9 @@ Tinytest.add("SimpleSchema - Insert Required", function(test) {
             requiredString: ""
         }
     });
-    test.isTrue(errors.length === 8);
+    test.isTrue(ssr.invalidKeys().length === 8);
 
-    errors = ssr.validate({
+    ssr.validate({
         requiredString: "   ",
         requiredBoolean: null,
         requiredNumber: null,
@@ -169,10 +169,10 @@ Tinytest.add("SimpleSchema - Insert Required", function(test) {
             requiredString: "   "
         }
     });
-    test.isTrue(errors.length === 8);
+    test.isTrue(ssr.invalidKeys().length === 8);
 
     //test opposite case
-    errors = ssr.validate({
+    ssr.validate({
         requiredString: "test",
         requiredBoolean: true,
         requiredNumber: 1,
@@ -184,15 +184,14 @@ Tinytest.add("SimpleSchema - Insert Required", function(test) {
             requiredString: "test"
         }
     });
-    test.isTrue(errors.length === 0);
-    console.log(errors);
+    test.isTrue(ssr.invalidKeys().length === 0);
 });
 
 Tinytest.add("SimpleSchema - Set Required", function(test) {
-    var errors = ssr.validate({$set: {}});
-    test.isTrue(errors.length === 0); //would not cause DB changes, so should not be an error
+    ssr.validate({$set: {}});
+    test.isTrue(ssr.invalidKeys().length === 0); //would not cause DB changes, so should not be an error
 
-    errors = ssr.validate({$set: {
+    ssr.validate({$set: {
             requiredString: null,
             requiredBoolean: null,
             requiredNumber: null,
@@ -202,9 +201,9 @@ Tinytest.add("SimpleSchema - Set Required", function(test) {
             requiredObject: null,
             'subdoc.requiredString': null
         }});
-    test.isTrue(errors.length === 8);
+    test.isTrue(ssr.invalidKeys().length === 8);
 
-    errors = ssr.validate({$set: {
+    ssr.validate({$set: {
             requiredString: void 0,
             requiredBoolean: void 0,
             requiredNumber: void 0,
@@ -214,9 +213,9 @@ Tinytest.add("SimpleSchema - Set Required", function(test) {
             requiredObject: void 0,
             'subdoc.requiredString': void 0
         }});
-    test.isTrue(errors.length === 0); //would not cause DB changes, so should not be an error
+    test.isTrue(ssr.invalidKeys().length === 0); //would not cause DB changes, so should not be an error
 
-    errors = ssr.validate({$set: {
+    ssr.validate({$set: {
             requiredString: "",
             requiredBoolean: null,
             requiredNumber: null,
@@ -226,9 +225,9 @@ Tinytest.add("SimpleSchema - Set Required", function(test) {
             requiredObject: null,
             'subdoc.requiredString': ""
         }});
-    test.isTrue(errors.length === 8);
+    test.isTrue(ssr.invalidKeys().length === 8);
 
-    errors = ssr.validate({$set: {
+    ssr.validate({$set: {
             requiredString: "   ",
             requiredBoolean: null,
             requiredNumber: null,
@@ -238,10 +237,10 @@ Tinytest.add("SimpleSchema - Set Required", function(test) {
             requiredObject: null,
             'subdoc.requiredString': "   "
         }});
-    test.isTrue(errors.length === 8);
+    test.isTrue(ssr.invalidKeys().length === 8);
 
     //test opposite case
-    errors = ssr.validate({$set: {
+    ssr.validate({$set: {
             requiredString: "test",
             requiredBoolean: true,
             requiredNumber: 1,
@@ -251,14 +250,14 @@ Tinytest.add("SimpleSchema - Set Required", function(test) {
             requiredObject: {},
             'subdoc.requiredString': "test"
         }});
-    test.isTrue(errors.length === 0);
+    test.isTrue(ssr.invalidKeys().length === 0);
 });
 
 Tinytest.add("SimpleSchema - Unset Required", function(test) {
-    var errors = ssr.validate({$unset: {}});
-    test.isTrue(errors.length === 0); //would not cause DB changes, so should not be an error
+    ssr.validate({$unset: {}});
+    test.isTrue(ssr.invalidKeys().length === 0); //would not cause DB changes, so should not be an error
 
-    errors = ssr.validate({$unset: {
+    ssr.validate({$unset: {
             requiredString: 1,
             requiredBoolean: 1,
             requiredNumber: 1,
@@ -266,11 +265,11 @@ Tinytest.add("SimpleSchema - Unset Required", function(test) {
             requiredEmail: 1,
             requiredUrl: 1
         }});
-    test.isTrue(errors.length === 6);
+    test.isTrue(ssr.invalidKeys().length === 6);
 });
 
 Tinytest.add("SimpleSchema - Insert Type Check", function(test) {
-    var errors = ss.validate({
+    ss.validate({
         string: "test",
         boolean: true,
         number: 1,
@@ -278,152 +277,152 @@ Tinytest.add("SimpleSchema - Insert Type Check", function(test) {
         url: "http://google.com",
         email: "test123@sub.example.edu"
     });
-    test.isTrue(errors.length === 0);
+    test.isTrue(ss.invalidKeys().length === 0);
 
     /* STRING FAILURES */
 
     //boolean string failure
-    errors = ss.validate({
+    ss.validate({
         string: true
     });
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //number string failure
-    errors = ss.validate({
+    ss.validate({
         string: 1
     });
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //object string failure
-    errors = ss.validate({
+    ss.validate({
         string: {test: "test"}
     });
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //array string failure
-    errors = ss.validate({
+    ss.validate({
         string: ["test"]
     });
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //instance string failure
-    errors = ss.validate({
+    ss.validate({
         string: (new Date())
     });
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     /* BOOLEAN FAILURES */
 
     //string bool failure
-    errors = ss.validate({
+    ss.validate({
         boolean: "test"
     });
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //number bool failure
-    errors = ss.validate({
+    ss.validate({
         boolean: 1
     });
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //object bool failure
-    errors = ss.validate({
+    ss.validate({
         boolean: {test: "test"}
     });
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //array bool failure
-    errors = ss.validate({
+    ss.validate({
         boolean: ["test"]
     });
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //instance bool failure
-    errors = ss.validate({
+    ss.validate({
         boolean: (new Date())
     });
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     /* NUMBER FAILURES */
 
     //string number failure
-    errors = ss.validate({
+    ss.validate({
         number: "test"
     });
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //boolean number failure
-    errors = ss.validate({
+    ss.validate({
         number: true
     });
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //object number failure
-    errors = ss.validate({
+    ss.validate({
         number: {test: "test"}
     });
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //array number failure
-    errors = ss.validate({
+    ss.validate({
         number: ["test"]
     });
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //instance number failure
-    errors = ss.validate({
+    ss.validate({
         number: (new Date())
     });
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     /* INSTANCE FAILURES */
 
     //string date failure
-    errors = ss.validate({
+    ss.validate({
         date: "test"
     });
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //boolean date failure
-    errors = ss.validate({
+    ss.validate({
         date: true
     });
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //object date failure
-    errors = ss.validate({
+    ss.validate({
         date: {test: "test"}
     });
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //array date failure
-    errors = ss.validate({
+    ss.validate({
         date: ["test"]
     });
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //number date failure
-    errors = ss.validate({
+    ss.validate({
         date: 1
     });
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     /* REGEX FAILURES */
 
-    errors = ss.validate({
+    ss.validate({
         url: "blah"
     });
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
-    errors = ss.validate({
+    ss.validate({
         email: "blah"
     });
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
 });
 
 Tinytest.add("SimpleSchema - Update Type Check", function(test) {
-    var errors = ss.validate({$set: {
+    ss.validate({$set: {
             string: "test",
             boolean: true,
             number: 1,
@@ -431,146 +430,146 @@ Tinytest.add("SimpleSchema - Update Type Check", function(test) {
             url: "http://google.com",
             email: "test123@sub.example.edu"
         }});
-    test.isTrue(errors.length === 0);
+    test.isTrue(ss.invalidKeys().length === 0);
 
     /* STRING FAILURES */
 
     //boolean string failure
-    errors = ss.validate({$set: {
+    ss.validate({$set: {
             string: true
         }});
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //number string failure
-    errors = ss.validate({$set: {
+    ss.validate({$set: {
             string: 1
         }});
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //object string failure
-    errors = ss.validate({$set: {
+    ss.validate({$set: {
             string: {test: "test"}
         }});
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //array string failure
-    errors = ss.validate({$set: {
+    ss.validate({$set: {
             string: ["test"]
         }});
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //instance string failure
-    errors = ss.validate({$set: {
+    ss.validate({$set: {
             string: (new Date())
         }});
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     /* BOOLEAN FAILURES */
 
     //string bool failure
-    errors = ss.validate({$set: {
+    ss.validate({$set: {
             boolean: "test"
         }});
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //number bool failure
-    errors = ss.validate({$set: {
+    ss.validate({$set: {
             boolean: 1
         }});
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //object bool failure
-    errors = ss.validate({$set: {
+    ss.validate({$set: {
             boolean: {test: "test"}
         }});
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //array bool failure
-    errors = ss.validate({$set: {
+    ss.validate({$set: {
             boolean: ["test"]
         }});
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //instance bool failure
-    errors = ss.validate({$set: {
+    ss.validate({$set: {
             boolean: (new Date())
         }});
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     /* NUMBER FAILURES */
 
     //string number failure
-    errors = ss.validate({$set: {
+    ss.validate({$set: {
             number: "test"
         }});
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //boolean number failure
-    errors = ss.validate({$set: {
+    ss.validate({$set: {
             number: true
         }});
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //object number failure
-    errors = ss.validate({$set: {
+    ss.validate({$set: {
             number: {test: "test"}
         }});
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //array number failure
-    errors = ss.validate({$set: {
+    ss.validate({$set: {
             number: ["test"]
         }});
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //instance number failure
-    errors = ss.validate({$set: {
+    ss.validate({$set: {
             number: (new Date())
         }});
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     /* INSTANCE FAILURES */
 
     //string date failure
-    errors = ss.validate({$set: {
+    ss.validate({$set: {
             date: "test"
         }});
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //boolean date failure
-    errors = ss.validate({$set: {
+    ss.validate({$set: {
             date: true
         }});
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //object date failure
-    errors = ss.validate({$set: {
+    ss.validate({$set: {
             date: {test: "test"}
         }});
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //array date failure
-    errors = ss.validate({$set: {
+    ss.validate({$set: {
             date: ["test"]
         }});
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     //number date failure
-    errors = ss.validate({$set: {
+    ss.validate({$set: {
             date: 1
         }});
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
     /* REGEX FAILURES */
 
-    errors = ss.validate({$set: {
+    ss.validate({$set: {
             url: "blah"
         }});
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
-    errors = ss.validate({$set: {
+    ss.validate({$set: {
             email: "blah"
         }});
-    test.isTrue(errors.length === 1);
+    test.isTrue(ss.invalidKeys().length === 1);
 
 });

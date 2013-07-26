@@ -17,7 +17,7 @@ SimpleSchema = function(schema) {
     self._depsAny = new Deps.Dependency;
     var keyNames = _.keys(schema);
     _.each(keyNames, function(name) {
-        self.deps[name] = new Deps.Dependency;
+        self._deps[name] = new Deps.Dependency;
     });
 };
 
@@ -141,31 +141,36 @@ SimpleSchema.prototype.resetValidation = function() {
 };
 
 SimpleSchema.prototype.valid = function() {
+    var self = this;
     self._depsAny.depend();
-    return !this._invalidKeys.length;
+    return !self._invalidKeys.length;
 };
 
 SimpleSchema.prototype.invalidKeys = function() {
+    var self = this;
     self._depsAny.depend();
-    return this._invalidKeys;
+    return self._invalidKeys;
 };
 
 SimpleSchema.prototype.keyIsInvalid = function(name) {
+    var self = this;
     self._deps[name].depend();
-    return !!this._invalidKeys[name];
+    return !!self._invalidKeys[name];
 };
 
 SimpleSchema.prototype.keyErrorMessage = function(name) {
+    var self = this;
     self._deps[name].depend();
-    var errorObj = this._invalidKeys[name];
+    var errorObj = self._invalidKeys[name];
     return errorObj ? errorObj.message : "";
 };
 
 SimpleSchema.prototype.schema = function(key) {
+    var self = this;
     if (key) {
-        return this._schema[key];
+        return self._schema[key];
     } else {
-        return this._schema;
+        return self._schema;
     }
 };
 
