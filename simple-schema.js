@@ -11,12 +11,12 @@ SchemaRegEx = {
 SimpleSchema = function(schema) {
     var self = this;
     self._schema = schema || {};
+    self._schemaKeys = _.keys(schema);
     self._invalidKeys = [];
     //set up validation dependencies
     self._deps = {};
     self._depsAny = new Deps.Dependency;
-    var keyNames = _.keys(schema);
-    _.each(keyNames, function(name) {
+    _.each(self._schemaKeys, function(name) {
         self._deps[name] = new Deps.Dependency;
     });
 };
@@ -43,7 +43,7 @@ SimpleSchema.prototype.validate = function(doc) {
 
     //if inserting, we need to flatten the object to one level, using mongo $set dot notation
     if (!isSetting && !isUnsetting) {
-        doc = collapseObj(doc, _.keys(self._schema));
+        doc = collapseObj(doc, self._schemaKeys);
     }
 
     //all keys must pass validation check
@@ -100,9 +100,9 @@ SimpleSchema.prototype.filter = function(doc) {
     if ("$set" in doc) {
         //for $set, filter only that obj
         newDoc = doc;
-        newDoc.$set = _.pick(doc.$set, _.keys(self._schema));
+        newDoc.$set = _.pick(doc.$set, self._schemaKeys);
     } else {
-        newDoc = _.pick(collapseObj(doc), _.keys(self._schema));
+        newDoc = _.pick(collapseObj(doc, self._schemaKeys), self._schemaKeys);
         newDoc = expandObj(newDoc);
     }
     return newDoc;
