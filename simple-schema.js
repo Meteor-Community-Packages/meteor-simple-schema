@@ -24,10 +24,10 @@ SimpleSchema = function(schema) {
 var builtInCheck = check;
 //@export check
 check = function(/*arguments*/) {
-    var args = _.toArray(arguments), invalidKeys;
+    var args = _.toArray(arguments);
     if (args && _.isObject(args[0]) && args[1] instanceof SimpleSchema) {
-        invalidKeys = args[1].validate(args[0]);
-        if (invalidKeys.length && Match) {
+        args[1].validate(args[0]);
+        if (!args[1].valid() && Match) {
             throw new Match.Error("One or more properties do not match the schema.");
         }
         return;
