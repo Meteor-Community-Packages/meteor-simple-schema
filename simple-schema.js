@@ -86,7 +86,9 @@ SimpleSchema.prototype.validate = function(doc) {
     _.each(changedKeys, function(name) {
         self._deps[name].changed();
     });
-    self._depsAny.changed();
+    if (changedKeys.length) {
+        self._depsAny.changed();
+    }
 
     return;
 };
@@ -100,7 +102,8 @@ SimpleSchema.prototype.filter = function(doc) {
         newDoc = doc;
         newDoc.$set = _.pick(doc.$set, _.keys(self._schema));
     } else {
-        newDoc = _.pick(doc, _.keys(self._schema));
+        newDoc = _.pick(collapseObj(doc), _.keys(self._schema));
+        newDoc = expandObj(newDoc);
     }
     return newDoc;
 };
@@ -341,4 +344,35 @@ var collapseObj = function(doc, skip) {
         }
     })(doc);
     return res;
+};
+
+//opposite of collapseObj
+var expandObj = function(doc) {
+    var newDoc = {}, subkeys, subkey, subkeylen, nextPiece, current;
+    _.each(doc, function(val, key) {
+        subkeys = key.split(".");
+        subkeylen = subkeys.length;
+        current = newDoc;
+        for (var i = 0; i < subkeylen; i++) {
+            subkey = subkeys[i];
+            if (current[subkey] && !_.isObject(current[subkey])) {
+                break; //already set for some reason; leave it alone
+            }
+            if (i === subkeylen - 1) {
+                //last iteration; time to set the value
+                current[subkey] = val;
+            } else {
+                //see if the next piece is a number
+                nextPiece = subkeys[i+1];
+                nextPiece = parseInt(nextPiece, 10);
+                if (isNaN(nextPiece) && !_.isObject(current[subkey])) {
+                    current[subkey] = {};
+                } else if (!_.isArray(current[subkey])) {
+                    current[subkey] = [];
+                }
+            }
+            current = current[subkey];
+        }
+    });
+    return newDoc;
 };
