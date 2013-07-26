@@ -155,13 +155,13 @@ SimpleSchema.prototype.invalidKeys = function() {
 SimpleSchema.prototype.keyIsInvalid = function(name) {
     var self = this;
     self._deps[name].depend();
-    return !!self._invalidKeys[name];
+    return !!_.findWhere(self._invalidKeys, {name: name});
 };
 
 SimpleSchema.prototype.keyErrorMessage = function(name) {
     var self = this;
     self._deps[name].depend();
-    var errorObj = self._invalidKeys[name];
+    var errorObj = _.findWhere(self._invalidKeys, {name: name});
     return errorObj ? errorObj.message : "";
 };
 
