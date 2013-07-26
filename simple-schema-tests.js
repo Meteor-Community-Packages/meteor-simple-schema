@@ -46,11 +46,16 @@ var ss = new SimpleSchema({
         allowedValues: ["tuna", "fish", "salad"]
     },
     valueIsAllowedString: {
-        type: Number,
+        type: String,
         optional: true,
         valueIsAllowed: function(val) {
             return val === "pumpkin";
         }
+    },
+    allowedStringsArray: {
+        type: [String],
+        optional: true,
+        allowedValues: ["tuna", "fish", "salad"]
     },
     boolean: {
         type: Boolean,
@@ -78,6 +83,11 @@ var ss = new SimpleSchema({
             return val === 1;
         }
     },
+    allowedNumbersArray: {
+        type: [Number],
+        optional: true,
+        allowedValues: [1, 2, 3]
+    },
     decimal: {
         type: Number,
         optional: true,
@@ -87,15 +97,11 @@ var ss = new SimpleSchema({
         type: Date,
         optional: true
     },
-    minDate: {
+    minMaxDate: {
         type: Date,
         optional: true,
-        min: (new Date(Date.UTC(2013, 0, 1)))
-    },
-    maxDate: {
-        type: Date,
-        optional: true,
-        max: (new Date(Date.UTC(2012, 11, 31)))
+        min: (new Date(Date.UTC(2013, 0, 1))),
+        max: (new Date(Date.UTC(2013, 11, 31)))
     },
     email: {
         type: String,
@@ -273,6 +279,7 @@ Tinytest.add("SimpleSchema - Insert Type Check", function(test) {
         string: "test",
         boolean: true,
         number: 1,
+        decimal: 1.1,
         date: (new Date()),
         url: "http://google.com",
         email: "test123@sub.example.edu"
@@ -372,6 +379,12 @@ Tinytest.add("SimpleSchema - Insert Type Check", function(test) {
     //instance number failure
     ss.validate({
         number: (new Date())
+    });
+    test.isTrue(ss.invalidKeys().length === 1);
+    
+    //decimal number failure
+    ss.validate({
+        number: 1.1
     });
     test.isTrue(ss.invalidKeys().length === 1);
 
@@ -572,4 +585,274 @@ Tinytest.add("SimpleSchema - Update Type Check", function(test) {
         }});
     test.isTrue(ss.invalidKeys().length === 1);
 
+});
+
+Tinytest.add("SimpleSchema - Insert Min Check", function(test) {
+    /* STRING LENGTH */
+    ss.validate({
+        minMaxString: "longenough"
+    });
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({
+        minMaxString: "short"
+    });
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    /* NUMBER */
+    ss.validate({
+        minMaxNumber: 10
+    });
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({
+        minMaxNumber: 9
+    });
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    /* DATE */
+    ss.validate({
+        minMaxDate: (new Date(Date.UTC(2013, 0, 1)))
+    });
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({
+        minMaxDate: (new Date(Date.UTC(2012, 11, 31)))
+    });
+    test.isTrue(ss.invalidKeys().length === 1);
+
+});
+
+Tinytest.add("SimpleSchema - Update Min Check", function(test) {
+    /* STRING LENGTH */
+    ss.validate({$set: {
+            minMaxString: "longenough"
+        }});
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({$set: {
+            minMaxString: "short"
+        }});
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    /* NUMBER */
+    ss.validate({$set: {
+            minMaxNumber: 10
+        }});
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({$set: {
+            minMaxNumber: 9
+        }});
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    /* DATE */
+    ss.validate({$set: {
+            minMaxDate: (new Date(Date.UTC(2013, 0, 1)))
+        }});
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({$set: {
+            minMaxDate: (new Date(Date.UTC(2012, 11, 31)))
+        }});
+    test.isTrue(ss.invalidKeys().length === 1);
+
+});
+
+Tinytest.add("SimpleSchema - Insert Max Check", function(test) {
+    /* STRING LENGTH */
+    ss.validate({
+        minMaxString: "nottoolongnottoolong"
+    });
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({
+        minMaxString: "toolongtoolongtoolong"
+    });
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    /* NUMBER */
+    ss.validate({
+        minMaxNumber: 20
+    });
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({
+        minMaxNumber: 21
+    });
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    /* DATE */
+    ss.validate({
+        minMaxDate: (new Date(Date.UTC(2013, 11, 31)))
+    });
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({
+        minMaxDate: (new Date(Date.UTC(2014, 0, 1)))
+    });
+    test.isTrue(ss.invalidKeys().length === 1);
+});
+
+Tinytest.add("SimpleSchema - Update Max Check", function(test) {
+    /* STRING LENGTH */
+    ss.validate({$set: {
+            minMaxString: "nottoolongnottoolong"
+        }});
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({$set: {
+            minMaxString: "toolongtoolongtoolong"
+        }});
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    /* NUMBER */
+    ss.validate({$set: {
+            minMaxNumber: 20
+        }});
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({$set: {
+            minMaxNumber: 21
+        }});
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    /* DATE */
+    ss.validate({$set: {
+            minMaxDate: (new Date(Date.UTC(2013, 11, 31)))
+        }});
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({$set: {
+            minMaxDate: (new Date(Date.UTC(2014, 0, 1)))
+        }});
+    test.isTrue(ss.invalidKeys().length === 1);
+});
+
+Tinytest.add("SimpleSchema - Insert Allowed Values Check", function(test) {
+    /* STRING */
+    ss.validate({
+        allowedStrings: "tuna"
+    });
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({
+        allowedStrings: "tunas"
+    });
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    ss.validate({
+        valueIsAllowedString: "pumpkin"
+    });
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({
+        valueIsAllowedString: "pumpkins"
+    });
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    ss.validate({
+        allowedStringsArray: ["tuna", "fish", "salad"]
+    });
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({
+        allowedStringsArray: ["tuna", "fish", "sandwich"]
+    });
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    /* NUMBER */
+    ss.validate({
+        allowedNumbers: 1
+    });
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({
+        allowedNumbers: 4
+    });
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    ss.validate({
+        valueIsAllowedNumber: 1
+    });
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({
+        valueIsAllowedNumber: 2
+    });
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    ss.validate({
+        allowedNumbersArray: [1, 2, 3]
+    });
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({
+        allowedNumbersArray: [1, 2, 3, 4]
+    });
+    test.isTrue(ss.invalidKeys().length === 1);
+});
+
+Tinytest.add("SimpleSchema - Update Allowed Values Check", function(test) {
+    /* STRING */
+    ss.validate({$set: {
+            allowedStrings: "tuna"
+        }});
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({$set: {
+            allowedStrings: "tunas"
+        }});
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    ss.validate({$set: {
+            valueIsAllowedString: "pumpkin"
+        }});
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({$set: {
+            valueIsAllowedString: "pumpkins"
+        }});
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    ss.validate({$set: {
+            allowedStringsArray: ["tuna", "fish", "salad"]
+        }});
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({$set: {
+            allowedStringsArray: ["tuna", "fish", "sandwich"]
+        }});
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    /* NUMBER */
+    ss.validate({$set: {
+            allowedNumbers: 1
+        }});
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({$set: {
+            allowedNumbers: 4
+        }});
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    ss.validate({$set: {
+            valueIsAllowedNumber: 1
+        }});
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({$set: {
+            valueIsAllowedNumber: 2
+        }});
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    ss.validate({$set: {
+            allowedNumbersArray: [1, 2, 3]
+        }});
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({$set: {
+            allowedNumbersArray: [1, 2, 3, 4]
+        }});
+    test.isTrue(ss.invalidKeys().length === 1);
 });
