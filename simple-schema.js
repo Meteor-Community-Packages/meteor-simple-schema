@@ -11,15 +11,23 @@ SchemaRegEx = {
 SimpleSchema = function(schema) {
     var self = this;
     self._schema = schema || {};
+    self._invalidKeys = [];
+    //set up validation dependencies
+    self._deps = {};
+    self._depsAny = new Deps.Dependency;
+    var keyNames = _.keys(schema);
+    _.each(keyNames, function(name) {
+        self.deps[name] = new Deps.Dependency;
+    });
 };
 
 var builtInCheck = check;
 //@export check
 check = function(/*arguments*/) {
-    var args = _.toArray(arguments), invalidFields;
+    var args = _.toArray(arguments), invalidKeys;
     if (args && _.isObject(args[0]) && args[1] instanceof SimpleSchema) {
-        invalidFields = args[1].validate(args[0]);
-        if (invalidFields.length && Match) {
+        invalidKeys = args[1].validate(args[0]);
+        if (invalidKeys.length && Match) {
             throw new Match.Error("One or more properties do not match the schema.");
         }
         return;
@@ -29,36 +37,58 @@ check = function(/*arguments*/) {
 
 //validates doc against self._schema and returns an array of error objects
 SimpleSchema.prototype.validate = function(doc) {
-    var self = this, invalidFields = [];
+    var self = this, invalidKeys = [];
     var isSetting = "$set" in doc;
     var isUnsetting = "$unset" in doc;
 
-    //all fields must pass validation check
-    _.each(self._schema, function(def, fieldName) {
-        var fieldValue;
-        var fieldLabel = def.label || fieldName;
+    //if inserting, we need to flatten the object to one level, using mongo $set dot notation
+    if (!isSetting && !isUnsetting) {
+        doc = collapseObj(doc, _.keys(self._schema));
+    }
+
+    //all keys must pass validation check
+    _.each(self._schema, function(def, keyName) {
+        var keyValue;
+        var keyLabel = def.label || keyName;
 
         //first check unsetting
-        if (isUnsetting && fieldName in doc.$unset) {
-            fieldValue = doc.$unset[fieldName];
-            if (fieldValue === void 0 || fieldValue === null || (typeof fieldValue === "string" && fieldValue.length === 0)) {
-                if (!def.optional) {
-                    invalidFields.push({name: fieldName, message: fieldLabel + " is required"});
-                } //else it's valid, and no need to perform further checks on this field
-            }
+        if (isUnsetting) {
+            if (keyName in doc.$unset && !def.optional) {
+                invalidKeys.push({name: keyName, message: keyLabel + " is required"});
+            } //else it's valid, and no need to perform further checks on this key
+            return;
         }
 
         //next check setting or inserting
         if (isSetting) {
-            fieldValue = doc.$set[fieldName];
+            keyValue = doc.$set[keyName];
         } else {
-            fieldValue = doc[fieldName];
+            keyValue = doc[keyName];
         }
 
-        invalidFields = _.union(invalidFields, validateOne(def, fieldName, fieldLabel, fieldValue, isSetting));
+        invalidKeys = _.union(invalidKeys, validateOne(def, keyName, keyLabel, keyValue, isSetting));
     });
 
-    return invalidFields;
+    //now update self._invalidKeys and dependencies
+
+    //note any currently invalid keys so that we can mark them as changed
+    //due to new validation (they may be valid now, or invalid in a different way)
+    var removedKeys = _.pluck(self._invalidKeys, "name");
+
+    //update
+    self._invalidKeys = invalidKeys;
+
+    //add newly invalid keys to changedKeys
+    var addedKeys = _.pluck(self._invalidKeys, "name");
+
+    //mark all changed keys as changed
+    var changedKeys = _.union(addedKeys, removedKeys);
+    _.each(changedKeys, function(name) {
+        self._deps[name].changed();
+    });
+    self._depsAny.changed();
+
+    return;
 };
 
 //returns doc with all properties that are not in the schema removed
@@ -78,89 +108,132 @@ SimpleSchema.prototype.filter = function(doc) {
 //automatic type conversion to match desired type, if possible
 SimpleSchema.prototype.autoTypeConvert = function(doc) {
     var self = this;
-    _.each(self._schema, function(def, fieldName) {
-        if (fieldName in doc) {
-            if (_.isArray(doc[fieldName])) {
-                for (var i = 0, ln = doc[fieldName].length; i < ln; i++) {
-                    doc[fieldName][i] = typeconvert(doc[fieldName][i], def.type[0]); //typeconvert
+    _.each(self._schema, function(def, keyName) {
+        if (keyName in doc) {
+            if (_.isArray(doc[keyName])) {
+                for (var i = 0, ln = doc[keyName].length; i < ln; i++) {
+                    doc[keyName][i] = typeconvert(doc[keyName][i], def.type[0]); //typeconvert
                 }
             } else {
-                doc[fieldName] = typeconvert(doc[fieldName], def.type); //typeconvert
+                doc[keyName] = typeconvert(doc[keyName], def.type); //typeconvert
             }
-        } else if ("$set" in doc && fieldName in doc.$set) {
-            if (_.isArray(doc[fieldName])) {
-                for (var i = 0, ln = doc[fieldName].length; i < ln; i++) {
-                    doc.$set[fieldName][i] = typeconvert(doc.$set[fieldName][i], def.type[0]); //typeconvert
+        } else if ("$set" in doc && keyName in doc.$set) {
+            if (_.isArray(doc[keyName])) {
+                for (var i = 0, ln = doc[keyName].length; i < ln; i++) {
+                    doc.$set[keyName][i] = typeconvert(doc.$set[keyName][i], def.type[0]); //typeconvert
                 }
             } else {
-                doc.$set[fieldName] = typeconvert(doc.$set[fieldName], def.type); //typeconvert
+                doc.$set[keyName] = typeconvert(doc.$set[keyName], def.type); //typeconvert
             }
         }
     });
     return doc;
 };
 
-var validateOne = function(def, fieldName, fieldLabel, fieldValue, isSetting) {
-    var invalidFields = [];
-    //when inserting required fields, fieldValue must not be undefined, null, or an empty string
-    //when updating ($setting) required fields, fieldValue can be undefined, but may not be null or an empty string
-    if ((!isSetting && fieldValue === void 0) || fieldValue === null || (typeof fieldValue === "string" && fieldValue.length === 0)) {
+//reset the invalidKeys array
+SimpleSchema.prototype.resetValidation = function() {
+    var self = this;
+    var removedKeys = _.pluck(self._invalidKeys, "name");
+    self._invalidKeys = [];
+    _.each(removedKeys, function(name) {
+        self._deps[name].changed();
+    });
+};
+
+SimpleSchema.prototype.valid = function() {
+    self._depsAny.depend();
+    return !this._invalidKeys.length;
+};
+
+SimpleSchema.prototype.invalidKeys = function() {
+    self._depsAny.depend();
+    return this._invalidKeys;
+};
+
+SimpleSchema.prototype.keyIsInvalid = function(name) {
+    self._deps[name].depend();
+    return !!this._invalidKeys[name];
+};
+
+SimpleSchema.prototype.keyErrorMessage = function(name) {
+    self._deps[name].depend();
+    var errorObj = this._invalidKeys[name];
+    return errorObj ? errorObj.message : "";
+};
+
+SimpleSchema.prototype.schema = function(key) {
+    if (key) {
+        return this._schema[key];
+    } else {
+        return this._schema;
+    }
+};
+
+var validateOne = function(def, keyName, keyLabel, keyValue, isSetting) {
+    var invalidKeys = [];
+    //when inserting required keys, keyValue must not be undefined, null, or an empty string
+    //when updating ($setting) required keys, keyValue can be undefined, but may not be null or an empty string
+    if ((!isSetting && keyValue === void 0) || keyValue === null || (typeof keyValue === "string" && isBlank(keyValue))) {
         if (!def.optional) {
-            invalidFields.push({name: fieldName, message: fieldLabel + " is required"});
-        } //else it's valid, and no need to perform further checks on this field
-        return invalidFields;
+            invalidKeys.push({name: keyName, message: keyLabel + " is required"});
+        } //else it's valid, and no need to perform further checks on this key
+        return invalidKeys;
     }
 
-    //if we got to this point and fieldValue is undefined, no more checking is necessary for this field
-    if (fieldValue === void 0) {
-        return invalidFields;
+    //if we got to this point and keyValue is undefined, no more checking is necessary for this key
+    if (keyValue === void 0) {
+        return invalidKeys;
     }
 
     if (def.type === String) {
-        if (typeof fieldValue !== "string") {
-            invalidFields.push({name: fieldName, message: fieldLabel + " must be a string"});
-        } else if (def.regEx && !def.regEx.test(fieldValue)) {
-            invalidFields.push({name: fieldName, message: fieldLabel + " " + def.regExMessage});
-        } else if (def.max && def.max < fieldValue.length) {
-            invalidFields.push({name: fieldName, message: fieldLabel + " cannot exceed " + def.max + " characters"});
-        } else if (def.min && def.min > fieldValue.length) {
-            invalidFields.push({name: fieldName, message: fieldLabel + " must be at least " + def.min + " characters"});
+        if (typeof keyValue !== "string") {
+            invalidKeys.push({name: keyName, message: keyLabel + " must be a string"});
+        } else if (def.regEx && !def.regEx.test(keyValue)) {
+            invalidKeys.push({name: keyName, message: keyLabel + " " + def.regExMessage});
+        } else if (def.max && def.max < keyValue.length) {
+            invalidKeys.push({name: keyName, message: keyLabel + " cannot exceed " + def.max + " characters"});
+        } else if (def.min && def.min > keyValue.length) {
+            invalidKeys.push({name: keyName, message: keyLabel + " must be at least " + def.min + " characters"});
         }
     } else if (def.type === Number) {
-        if (typeof fieldValue !== "number") {
-            invalidFields.push({name: fieldName, message: fieldLabel + " must be a number"});
-        } else if (def.max && def.max < fieldValue) {
-            invalidFields.push({name: fieldName, message: fieldLabel + " cannot exceed " + def.max});
-        } else if (def.min && def.min > fieldValue) {
-            invalidFields.push({name: fieldName, message: fieldLabel + " must be at least " + def.min});
-        } else if (!def.decimal && fieldValue.toString().indexOf(".") > -1) {
-            invalidFields.push({name: fieldName, message: fieldLabel + " must be an integer"});
+        if (typeof keyValue !== "number") {
+            invalidKeys.push({name: keyName, message: keyLabel + " must be a number"});
+        } else if (def.max && def.max < keyValue) {
+            invalidKeys.push({name: keyName, message: keyLabel + " cannot exceed " + def.max});
+        } else if (def.min && def.min > keyValue) {
+            invalidKeys.push({name: keyName, message: keyLabel + " must be at least " + def.min});
+        } else if (!def.decimal && keyValue.toString().indexOf(".") > -1) {
+            invalidKeys.push({name: keyName, message: keyLabel + " must be an integer"});
         }
     } else if (def.type === Boolean) {
-        if (typeof fieldValue !== "boolean") {
-            invalidFields.push({name: fieldName, message: fieldLabel + " must be a boolean"});
+        if (typeof keyValue !== "boolean") {
+            invalidKeys.push({name: keyName, message: keyLabel + " must be a boolean"});
+        }
+    } else if (def.type === Object) {
+        if (typeof keyValue !== "object") {
+            invalidKeys.push({name: keyName, message: keyLabel + " must be an object"});
         }
     } else if (def.type instanceof Function) {
-        if (!(fieldValue instanceof def.type)) {
-            invalidFields.push({name: fieldName, message: fieldLabel + " must be a " + def.type.name});
+        if (!(keyValue instanceof def.type)) {
+            invalidKeys.push({name: keyName, message: keyLabel + " must be a " + def.type.name});
         }
         if (def.type === Date) {
-            if (_.isDate(def.min) && def.min.getTime() > fieldValue.getTime()) {
-                invalidFields.push({name: fieldName, message: fieldLabel + " must be on or after " + dateToFieldDateString(def.min)});
-            } else if (_.isDate(def.max) && def.max.getTime() < fieldValue.getTime()) {
-                invalidFields.push({name: fieldName, message: fieldLabel + " must be on or before " + dateToFieldDateString(def.max)});
+            if (_.isDate(def.min) && def.min.getTime() > keyValue.getTime()) {
+                invalidKeys.push({name: keyName, message: keyLabel + " must be on or after " + dateToDateString(def.min)});
+            } else if (_.isDate(def.max) && def.max.getTime() < keyValue.getTime()) {
+                invalidKeys.push({name: keyName, message: keyLabel + " must be on or before " + dateToDateString(def.max)});
             }
         }
     }
 
     //if it's an array, loop through it and call validateOne recursively
     if (_.isArray(def.type)) {
-        if (!_.isArray(fieldValue)) {
-            invalidFields.push({name: fieldName, message: fieldLabel + " must be an array"});
-        } else if (def.min && fieldValue.length < def.min) {
-            invalidFields.push({name: fieldName, message: "You must specify at least " + def.min + " values"});
-        } else if (def.max && fieldValue.length > def.max) {
-            invalidFields.push({name: fieldName, message: "You cannot specify more than " + def.max + " values"});
+        if (!_.isArray(keyValue)) {
+            invalidKeys.push({name: keyName, message: keyLabel + " must be an array"});
+        } else if (def.min && keyValue.length < def.min) {
+            invalidKeys.push({name: keyName, message: "You must specify at least " + def.min + " values"});
+        } else if (def.max && keyValue.length > def.max) {
+            invalidKeys.push({name: keyName, message: "You cannot specify more than " + def.max + " values"});
         } else {
             //if it's an array with the right number of values, etc., then we need to go through them all and
             //validate each value in the array
@@ -173,10 +246,10 @@ var validateOne = function(def, fieldName, fieldLabel, fieldValue, isSetting) {
             if ("max" in childDef) {
                 delete childDef.max;
             }
-            for (var i = 0, ln = fieldValue.length; i < ln; i++) {
-                loopVal = fieldValue[i];
-                invalidFields = _.union(invalidFields, validateOne(childDef, fieldName, fieldLabel, loopVal, isSetting));
-                if (invalidFields.length) {
+            for (var i = 0, ln = keyValue.length; i < ln; i++) {
+                loopVal = keyValue[i];
+                invalidKeys = _.union(invalidKeys, validateOne(childDef, keyName, keyLabel, loopVal, isSetting));
+                if (invalidKeys.length) {
                     break;
                 }
             }
@@ -185,20 +258,20 @@ var validateOne = function(def, fieldName, fieldLabel, fieldValue, isSetting) {
         //check to make sure the value is allowed
         //this is the last thing we want to do for all data types, except for arrays
         if (def.allowedValues) {
-            if (!_.contains(def.allowedValues, fieldValue)) {
-                invalidFields.push({name: fieldName, message: fieldValue + " is not an allowed value"});
+            if (!_.contains(def.allowedValues, keyValue)) {
+                invalidKeys.push({name: keyName, message: keyValue + " is not an allowed value"});
             }
         } else if (def.valueIsAllowed && def.valueIsAllowed instanceof Function) {
-            if (!def.valueIsAllowed(fieldValue)) {
-                invalidFields.push({name: fieldName, message: fieldValue + " is not an allowed value"});
+            if (!def.valueIsAllowed(keyValue)) {
+                invalidKeys.push({name: keyName, message: keyValue + " is not an allowed value"});
             }
         }
     }
-    
-    return invalidFields;
+
+    return invalidKeys;
 };
 
-var dateToFieldDateString = function(date) {
+var dateToDateString = function(date) {
     var m = (date.getUTCMonth() + 1);
     if (m < 10) {
         m = "0" + m;
@@ -230,4 +303,37 @@ var typeconvert = function(value, type) {
         return value;
     }
     return value;
+};
+
+var isBlank = function(str) {
+    return (/^\s*$/).test(str);
+};
+
+//collapses object into one level, with dot notation following the mongo $set syntax
+var collapseObj = function(doc, skip) {
+    var res = {};
+    (function recurse(obj, current) {
+        if (_.isArray(obj)) {
+            for (var i = 0, ln = obj.length; i < ln; i++) {
+                var value = obj[i];
+                var newKey = (current ? current + "." + i : i);  // joined index with dot
+                if (value && (typeof value === "object" || _.isArray(value)) && !_.contains(skip, newKey)) {
+                    recurse(value, newKey);  // it's a nested object or array, so do it again
+                } else {
+                    res[newKey] = value;  // it's not an object or array, so set the property
+                }
+            }
+        } else {
+            for (var key in obj) {
+                var value = obj[key];
+                var newKey = (current ? current + "." + key : key);  // joined key with dot
+                if (value && (typeof value === "object" || _.isArray(value)) && !_.contains(skip, newKey)) {
+                    recurse(value, newKey);  // it's a nested object or array, so do it again
+                } else {
+                    res[newKey] = value;  // it's not an object or array, so set the property
+                }
+            }
+        }
+    })(doc);
+    return res;
 };
