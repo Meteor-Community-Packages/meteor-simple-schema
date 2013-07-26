@@ -123,7 +123,7 @@ SimpleSchema.prototype.autoTypeConvert = function(doc) {
                 doc[keyName] = typeconvert(doc[keyName], def.type); //typeconvert
             }
         } else if ("$set" in doc && keyName in doc.$set) {
-            if (_.isArray(doc[keyName])) {
+            if (_.isArray(doc.$set[keyName])) {
                 for (var i = 0, ln = doc[keyName].length; i < ln; i++) {
                     doc.$set[keyName][i] = typeconvert(doc.$set[keyName][i], def.type[0]); //typeconvert
                 }
