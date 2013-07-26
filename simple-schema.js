@@ -55,8 +55,10 @@ SimpleSchema.prototype.validate = function(doc) {
         if (isUnsetting) {
             if (keyName in doc.$unset && !def.optional) {
                 invalidKeys.push({name: keyName, message: keyLabel + " is required"});
-            } //else it's valid, and no need to perform further checks on this key
-            return;
+            }
+            if (!isSetting) {
+                return; //it's valid, and no need to perform further checks on this key
+            }
         }
 
         //next check setting or inserting
