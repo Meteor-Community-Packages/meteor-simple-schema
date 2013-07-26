@@ -3,7 +3,7 @@ Package.describe({
 });
 
 Package.on_use(function(api) {
-  api.use(['underscore'], ['client', 'server']);
+  api.use(['deps', 'underscore'], ['client', 'server']);
   api.add_files(['simple-schema.js'], ['client', 'server']);
 });
 
