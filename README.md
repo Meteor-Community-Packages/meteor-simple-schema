@@ -1,11 +1,11 @@
 simple-schema
 =========================
 
-A simple, reactive schema validation smart package for Meteor. Used by collection2 package and autoform package, but you can use it by itself, too.
+A simple, reactive schema validation smart package for Meteor. It's used by the [collection2](https://github.com/aldeed/meteor-collection2) and [autoform](https://github.com/aldeed/meteor-autoform) packages, but you can use it by itself, too.
 
 ## Basic Usage
 
-If you're using the autoform or collection2 package, you define your schema as part of defining those options. Otherwise,
+If you're using the `autoform` or `collection2` package, you define your schema as part of constructing those objects. Otherwise,
 set up a SimpleSchema instance like so:
 
 ```js
@@ -29,20 +29,20 @@ MySchema = new SimpleSchema({
 ### Types
 
 Type can be a standard Javascript object like:
-*`String`
-*`Number`
-*`Boolean`
-*`Object`
+* `String`
+* `Number`
+* `Boolean`
+* `Object`
 
 Or it can be a constructor function like `Date`.
 
 Or it can be any of those wrapped in array brackets, to indicate that you're expecting an array of values
 of that type.
-*`[String]`
-*`[Number]`
-*`[Boolean]`
-*`[Object]`
-*`[Date]`
+* `[String]`
+* `[Number]`
+* `[Boolean]`
+* `[Object]`
+* `[Date]`
 
 ### Keys
 
@@ -133,10 +133,10 @@ in the array has two keys: `name`, which is the key name exactly as specified
 in the schema object, and `message`, which is the error message for that key. This
 is a reactive method.
 
-Call `MySchema.keyIsInvalid(key)` returns true if the specified key is currently
+`MySchema.keyIsInvalid(key)` returns true if the specified key is currently
 invalid, or false if it is valid. This is a reactive method.
 
-Call `MySchema.keyErrorMessage(key)` returns the error message for the specified
+`MySchema.keyErrorMessage(key)` returns the error message for the specified
 key if it is invalid. If it is valid, this method returns an empty string. This
 is a reactive method.
 
@@ -165,7 +165,7 @@ is what the collection2 smart package does for you.
 
 ## Collection2 and AutoForm
 
-This all becomes pretty great when put to use in the collection2 and autoform packages. Take a look at their documentation.
+This all becomes pretty great when put to use in the [collection2](https://github.com/aldeed/meteor-collection2) and [autoform](https://github.com/aldeed/meteor-autoform) packages. Take a look at their documentation.
 
 ## Contributing
 
