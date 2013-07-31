@@ -12,16 +12,25 @@ set up a SimpleSchema instance like so:
 MySchema = new SimpleSchema({
     key: {
         type: type, //allow only this data type
-        label: "Name", //how to refer to this key in the error messages; default is the key name itself
+        label: "Name", //how to refer to this key in the error messages;
+                       //default is the key name itself
         optional: true, //default is false, meaning the key must be present
-        min: min, //minimum numeric value, or minimum string length, or minimum date, inclusive
-        max: max, //maximum numeric value, or maximum string length, or maximum date, inclusive
-        allowedValues: [], //an array of allowed values; the key's value must match one of these
-        valueIsAllowed: function, //a function that accepts the value as its only argument
-                                  //and returns true if the value is allowed
-        decimal: true, //default is false; set to true if type=Number and you want to allow non-integers
-        regEx: /[0-255]/, //any regular expression that must be matched for the key to be valid
-        regExMessage: "is not valid" //when the regEx test fails, what should come after the label in the error message
+        min: min, //minimum numeric value, or minimum string length,
+                  //or minimum date, inclusive
+        max: max, //maximum numeric value, or maximum string length,
+                  //or maximum date, inclusive
+        allowedValues: [], //an array of allowed values; the key's value
+                           //must match one of these
+        valueIsAllowed: function, //a function that accepts the value as
+                                  //its only argument and returns true 
+                                  //if the value is allowed
+        decimal: true, //default is false; set to true if type=Number
+                       //and you want to allow non-integers
+        regEx: /[0-255]/, //any regular expression that must be matched
+                          //for the key to be valid
+        regExMessage: "is not valid" //when the regEx test fails, what
+                                     //should come after the label in
+                                     //the error message
     }
 });
 ```
