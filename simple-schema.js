@@ -295,7 +295,7 @@ var dateToDateString = function(date) {
 
 var typeconvert = function(value, type) {
     if (type === String) {
-        if (typeof value !== "undefined" && typeof value !== "string") {
+        if (typeof value !== "undefined" && value !== null && typeof value !== "string") {
             return value.toString();
         }
         return value;
