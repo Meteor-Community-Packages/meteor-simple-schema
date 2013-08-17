@@ -240,22 +240,15 @@ var validateOne = function(def, keyName, keyLabel, keyValue, isSetting) {
     if (_.isArray(def.type)) {
         if (!_.isArray(keyValue)) {
             invalidKeys.push({name: keyName, message: keyLabel + " must be an array"});
-        } else if (def.min && keyValue.length < def.min) {
-            invalidKeys.push({name: keyName, message: "You must specify at least " + def.min + " values"});
-        } else if (def.max && keyValue.length > def.max) {
-            invalidKeys.push({name: keyName, message: "You cannot specify more than " + def.max + " values"});
+        } else if (def.minCount && keyValue.length < def.minCount) {
+            invalidKeys.push({name: keyName, message: "You must specify at least " + def.minCount + " values"});
+        } else if (def.maxCount && keyValue.length > def.maxCount) {
+            invalidKeys.push({name: keyName, message: "You cannot specify more than " + def.maxCount + " values"});
         } else {
             //if it's an array with the right number of values, etc., then we need to go through them all and
             //validate each value in the array
             var childDef = _.clone(def), loopVal;
             childDef.type = def.type[0]; //strip array off of type
-            //min and max only apply to the array
-            if ("min" in childDef) {
-                delete childDef.min;
-            }
-            if ("max" in childDef) {
-                delete childDef.max;
-            }
             for (var i = 0, ln = keyValue.length; i < ln; i++) {
                 loopVal = keyValue[i];
                 invalidKeys = _.union(invalidKeys, validateOne(childDef, keyName, keyLabel, loopVal, isSetting));

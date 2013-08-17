@@ -19,6 +19,8 @@ MySchema = new SimpleSchema({
                   //or minimum date, inclusive
         max: max, //maximum numeric value, or maximum string length,
                   //or maximum date, inclusive
+        minCount: minCount, //minimum array length, used only if type is an array
+        maxCount: maxCount, //maximum array length, used only if type is an array
         allowedValues: [], //an array of allowed values; the key's value
                            //must match one of these
         valueIsAllowed: function, //a function that accepts the value as
@@ -86,12 +88,14 @@ MySchema = new SimpleSchema({
 ```
 
 In the example above, adding the `addresses` key itself isn't necessary, but
-you could do so if you want to:
+you could do so if you want to, particularly if you want to specify a minimum or maximum array count:
 
 ```js
 MySchema = new SimpleSchema({
     addresses: {
         type: [Object],
+        minCount: 1,
+        maxCount: 4
     },
     "addresses.$.street": {
         type: String,
@@ -104,7 +108,7 @@ MySchema = new SimpleSchema({
 
 ### Provided RegEx Patterns
 
-A global object, `SchemaRegEx`, is provided that defines standard regular expressions you can use
+A global object, `SchemaRegEx`, is exported. It defines standard regular expressions you can use
 as the value for the `regEx` key in the schema. Currently `SchemaRegEx.Email` and
 `SchemaRegEx.Url` are the only values. Feel free to add more with a pull request.
 
@@ -159,7 +163,7 @@ clearing out any invalid field messages.
 
 ### check()
 
-The `simple-schema` package extends the built-in `check()` method so that you
+The `simple-schema` package extends Meteor's `check()` method so that you
 can specify an object as the first parameter and a SimpleSchema instance as the
 second parameter. When you call `check()` in this way, it throws a Match.Error
 if the object specified in the first parameter is not valid according to the

@@ -40,6 +40,14 @@ var ss = new SimpleSchema({
         min: 10,
         max: 20
     },
+    minMaxStringArray: {
+        type: [String],
+        optional: true,
+        min: 10,
+        max: 20,
+        minCount: 1,
+        maxCount: 2
+    },
     allowedStrings: {
         type: String,
         optional: true,
@@ -381,7 +389,7 @@ Tinytest.add("SimpleSchema - Insert Type Check", function(test) {
         number: (new Date())
     });
     test.isTrue(ss.invalidKeys().length === 1);
-    
+
     //decimal number failure
     ss.validate({
         number: 1.1
@@ -621,6 +629,22 @@ Tinytest.add("SimpleSchema - Insert Min Check", function(test) {
     });
     test.isTrue(ss.invalidKeys().length === 1);
 
+    /* ARRAY COUNT PLUS STRING LENGTH */
+    ss.validate({
+        minMaxStringArray: ["longenough", "longenough"]
+    });
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({
+        minMaxStringArray: ["short", "short"]
+    });
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    ss.validate({
+        minMaxStringArray: []
+    });
+    test.isTrue(ss.invalidKeys().length === 1);
+
 });
 
 Tinytest.add("SimpleSchema - Update Min Check", function(test) {
@@ -654,6 +678,22 @@ Tinytest.add("SimpleSchema - Update Min Check", function(test) {
 
     ss.validate({$set: {
             minMaxDate: (new Date(Date.UTC(2012, 11, 31)))
+        }});
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    /* ARRAY COUNT PLUS STRING LENGTH */
+    ss.validate({$set: {
+            minMaxStringArray: ["longenough", "longenough"]
+        }});
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({$set: {
+            minMaxStringArray: ["short", "short"]
+        }});
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    ss.validate({$set: {
+            minMaxStringArray: []
         }});
     test.isTrue(ss.invalidKeys().length === 1);
 
@@ -692,6 +732,22 @@ Tinytest.add("SimpleSchema - Insert Max Check", function(test) {
         minMaxDate: (new Date(Date.UTC(2014, 0, 1)))
     });
     test.isTrue(ss.invalidKeys().length === 1);
+
+    /* ARRAY COUNT PLUS STRING LENGTH */
+    ss.validate({
+        minMaxStringArray: ["nottoolongnottoolong", "nottoolongnottoolong"]
+    });
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({
+        minMaxStringArray: ["toolongtoolongtoolong", "toolongtoolongtoolong"]
+    });
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    ss.validate({
+        minMaxStringArray: ["nottoolongnottoolong", "nottoolongnottoolong", "nottoolongnottoolong"]
+    });
+    test.isTrue(ss.invalidKeys().length === 1);
 });
 
 Tinytest.add("SimpleSchema - Update Max Check", function(test) {
@@ -725,6 +781,22 @@ Tinytest.add("SimpleSchema - Update Max Check", function(test) {
 
     ss.validate({$set: {
             minMaxDate: (new Date(Date.UTC(2014, 0, 1)))
+        }});
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    /* ARRAY COUNT PLUS STRING LENGTH */
+    ss.validate({$set: {
+            minMaxStringArray: ["nottoolongnottoolong", "nottoolongnottoolong"]
+        }});
+    test.isTrue(ss.invalidKeys().length === 0);
+
+    ss.validate({$set: {
+            minMaxStringArray: ["toolongtoolongtoolong", "toolongtoolongtoolong"]
+        }});
+    test.isTrue(ss.invalidKeys().length === 1);
+
+    ss.validate({$set: {
+            minMaxStringArray: ["nottoolongnottoolong", "nottoolongnottoolong", "nottoolongnottoolong"]
         }});
     test.isTrue(ss.invalidKeys().length === 1);
 });
