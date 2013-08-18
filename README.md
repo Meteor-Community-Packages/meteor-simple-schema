@@ -139,6 +139,12 @@ error messages in the SimpleSchema object.
 Now you can call `MySchema.valid()` to see if the object passed into `validate()`
 was found to be valid. This is a reactive method that returns true or false.
 
+### Validating Only One Key
+
+You may have the need to validate just one key. For this, use `MySchema.validateOne(obj, key)`.
+Only the specified schema key will be validated. This may cause all of the
+reactive methods to react.
+
 ### Other Methods
 
 Call `MySchema.invalidKeys()` to get the full array of invalid key data. Each object
@@ -161,13 +167,12 @@ is returned.
 Call `MySchema.resetValidation()` if you need to reset the SimpleSchema object,
 clearing out any invalid field messages.
 
-### check()
+### checkSchema()
 
-The `simple-schema` package extends Meteor's `check()` method so that you
-can specify an object as the first parameter and a SimpleSchema instance as the
-second parameter. When you call `check()` in this way, it throws a Match.Error
-if the object specified in the first parameter is not valid according to the
-schema.
+Similar to Meteor's `check()` method, but you specify an object as the first
+parameter and a SimpleSchema instance as the second parameter. `checkSchema()`
+throws a Match.Error if the object specified in the first parameter is not
+valid according to the schema.
 
 ### The Object
 

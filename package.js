@@ -5,7 +5,7 @@ Package.describe({
 Package.on_use(function(api) {
   api.use(['deps', 'underscore'], ['client', 'server']);
   api.add_files(['simple-schema.js'], ['client', 'server']);
-  api.export(['SimpleSchema', 'SchemaRegEx', 'check'], ['client', 'server']);
+  api.export(['SimpleSchema', 'SchemaRegEx', 'checkSchema'], ['client', 'server']);
 });
 
 Package.on_test(function(api) {

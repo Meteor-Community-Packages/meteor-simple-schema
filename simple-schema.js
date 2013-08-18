@@ -21,21 +21,19 @@ SimpleSchema = function(schema) {
     });
 };
 
-var builtInCheck = check;
 //exported
-check = function(/*arguments*/) {
+checkSchema = function(/*arguments*/) {
     var args = _.toArray(arguments);
-    if (args && _.isObject(args[0]) && args[1] instanceof SimpleSchema) {
-        args[1].validate(args[0]);
-        if (!args[1].valid() && Match) {
-            throw new Match.Error("One or more properties do not match the schema.");
-        }
-        return;
+    if (!args || !_.isObject(args[0]) || !args[1] instanceof SimpleSchema) {
+        throw new Error("Invalid arguments");
     }
-    builtInCheck.apply(this, arguments);
+    args[1].validate(args[0]);
+    if (!args[1].valid() && Match) {
+        throw new Match.Error("One or more properties do not match the schema.");
+    }
 };
 
-//validates doc against self._schema and returns an array of error objects
+//validates doc against self._schema and sets a reactive array of error objects
 SimpleSchema.prototype.validate = function(doc) {
     var self = this, invalidKeys = [];
     var isSetting = "$set" in doc;
@@ -91,6 +89,67 @@ SimpleSchema.prototype.validate = function(doc) {
     if (changedKeys.length) {
         self._depsAny.changed();
     }
+
+    return;
+};
+
+//validates doc against self._schema for one key and sets a reactive array of error objects
+SimpleSchema.prototype.validateOne = function(doc, keyName) {
+    var self = this, invalidKeys = [];
+    var isSetting = "$set" in doc;
+    var isUnsetting = "$unset" in doc;
+
+    //if inserting, we need to flatten the object to one level, using mongo $set dot notation
+    if (!isSetting && !isUnsetting) {
+        doc = collapseObj(doc, self._schemaKeys);
+    }
+
+    //key must pass validation check
+    var def = self._schema[keyName];
+    var keyValue;
+    var keyLabel = def.label || keyName;
+
+    //first check unsetting
+    if (isUnsetting) {
+        if (keyName in doc.$unset && !def.optional) {
+            invalidKeys.push({name: keyName, message: keyLabel + " is required"});
+        }
+        if (!isSetting) {
+            return; //it's valid, and no need to perform further checks on this key
+        }
+    }
+
+    //next check setting or inserting
+    if (isSetting) {
+        keyValue = doc.$set[keyName];
+    } else {
+        keyValue = doc[keyName];
+    }
+
+    invalidKeys = _.union(invalidKeys, validateOne(def, keyName, keyLabel, keyValue, isSetting));
+
+    //now update self._invalidKeys and dependencies
+
+    //remove objects from self._invalidKeys where name = keyName
+    var newInvalidKeys = [];
+    for (var i = 0, ln = self._invalidKeys.length, k; i < ln; i++) {
+        k = self._invalidKeys[i];
+        if (k.name === keyName) {
+            break;
+        }
+        newInvalidKeys.push(k);
+    }
+    self._invalidKeys = newInvalidKeys;
+
+    //merge invalidKeys into self._invalidKeys
+    for (var i = 0, ln = invalidKeys.length, k; i < ln; i++) {
+        k = invalidKeys[i];
+        self._invalidKeys.push(k);
+    }
+
+    //mark key as changed due to new validation (they may be valid now, or invalid in a different way)
+    self._deps[keyName].changed();
+    self._depsAny.changed();
 
     return;
 };
@@ -358,7 +417,7 @@ var expandObj = function(doc) {
                 current[subkey] = val;
             } else {
                 //see if the next piece is a number
-                nextPiece = subkeys[i+1];
+                nextPiece = subkeys[i + 1];
                 nextPiece = parseInt(nextPiece, 10);
                 if (isNaN(nextPiece) && !_.isObject(current[subkey])) {
                     current[subkey] = {};
