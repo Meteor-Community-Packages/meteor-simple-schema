@@ -126,7 +126,7 @@ SimpleSchema.prototype.validateOne = function(doc, keyName) {
         keyValue = doc[keyName];
     }
 
-    invalidKeys = _.union(invalidKeys, validateOne(def, keyName, keyLabel, keyValue, isSetting));
+    invalidKeys = validateOne(def, keyName, keyLabel, keyValue, isSetting);
 
     //now update self._invalidKeys and dependencies
 
@@ -134,10 +134,9 @@ SimpleSchema.prototype.validateOne = function(doc, keyName) {
     var newInvalidKeys = [];
     for (var i = 0, ln = self._invalidKeys.length, k; i < ln; i++) {
         k = self._invalidKeys[i];
-        if (k.name === keyName) {
-            break;
+        if (k.name !== keyName) {
+            newInvalidKeys.push(k);
         }
-        newInvalidKeys.push(k);
     }
     self._invalidKeys = newInvalidKeys;
 
@@ -150,8 +149,6 @@ SimpleSchema.prototype.validateOne = function(doc, keyName) {
     //mark key as changed due to new validation (they may be valid now, or invalid in a different way)
     self._deps[keyName].changed();
     self._depsAny.changed();
-
-    return;
 };
 
 //returns doc with all properties that are not in the schema removed
