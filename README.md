@@ -148,24 +148,24 @@ Call `MySchema.invalidKeys()` to get the full array of invalid key data. Each ob
 in the array has three keys:
 * `name`: The schema key as specified in the schema.
 * `type`: The type of error. One of the following strings:
-** required
-** minString
-** maxString
-** minNumber
-** maxNumber
-** minDate
-** maxDate
-** minCount
-** maxCount
-** noDecimal
-** notAllowed
-** expectedString
-** expectedNumber
-** expectedBoolean
-** expectedArray
-** expectedObject
-** expectedConstructor
-** regEx
+    * required
+    * minString
+    * maxString
+    * minNumber
+    * maxNumber
+    * minDate
+    * maxDate
+    * minCount
+    * maxCount
+    * noDecimal
+    * notAllowed
+    * expectedString
+    * expectedNumber
+    * expectedBoolean
+    * expectedArray
+    * expectedObject
+    * expectedConstructor
+    * regEx
 * `message`: The error message.
 
 This is a reactive method.
