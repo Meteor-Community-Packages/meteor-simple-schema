@@ -7,12 +7,43 @@ SchemaRegEx = {
     Url: /^(?:(?:https?|ftp):\/\/)(?:\S+(?::\S*)?@)?(?:(?!10(?:\.\d{1,3}){3})(?!127(?:\.\d{1,3}){3})(?!169\.254(?:\.\d{1,3}){2})(?!192\.168(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]+-?)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]+-?)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})))(?::\d{2,5})?(?:\/[^\s]*)?$/i
 };
 
+var defaultMessages = {
+    required: "[label] is required",
+    minString: "[label] must be at least [min] characters",
+    maxString: "[label] cannot exceed [max] characters",
+    minNumber: "[label] must be at least [min]",
+    maxNumber: "[label] cannot exceed [max]",
+    minDate: "[label] must be on or before [min]",
+    maxDate: "[label] cannot be after [max]",
+    minCount: "You must specify at least [minCount] values",
+    maxCount: "You cannot specify more than [maxCount] values",
+    noDecimal: "[label] must be an integer",
+    notAllowed: "[value] is not an allowed value",
+    expectedString: "[label] must be a string",
+    expectedNumber: "[label] must be a number",
+    expectedBoolean: "[label] must be a boolean",
+    expectedArray: "[label] must be an array",
+    expectedObject: "[label] must be an object",
+    expectedConstructor: "[label] must be a [type]",
+    regEx: "[label] failed regular expression validation"
+};
+
 //exported
 SimpleSchema = function(schema) {
     var self = this;
     self._schema = schema || {};
     self._schemaKeys = _.keys(schema);
     self._invalidKeys = [];
+    //set up default message for each error type
+    self._messages = defaultMessages;
+    //regEx messages were previously defined in the schema
+    //we'll continue to support that by copying them to _messages at this point
+    _.each(self._schemaKeys, function(key) {
+        if (self._schema[key].regExMessage) {
+            self._messages["regEx " + key] = "[label] " + self._schema[key].regExMessage;
+            delete self._schema[key].regExMessage;
+        }
+    });
     //set up validation dependencies
     self._deps = {};
     self._depsAny = new Deps.Dependency;
@@ -52,7 +83,7 @@ SimpleSchema.prototype.validate = function(doc) {
         //first check unsetting
         if (isUnsetting) {
             if (keyName in doc.$unset && !def.optional) {
-                invalidKeys.push({name: keyName, message: keyLabel + " is required"});
+                invalidKeys.push({name: keyName, type: "required", message: self._messageForError("required", keyName, def)});
             }
             if (!isSetting) {
                 return; //it's valid, and no need to perform further checks on this key
@@ -66,7 +97,7 @@ SimpleSchema.prototype.validate = function(doc) {
             keyValue = doc[keyName];
         }
 
-        invalidKeys = _.union(invalidKeys, validateOne(def, keyName, keyLabel, keyValue, isSetting));
+        invalidKeys = _.union(invalidKeys, validateOne(def, keyName, keyLabel, keyValue, isSetting, self));
     });
 
     //now update self._invalidKeys and dependencies
@@ -112,7 +143,7 @@ SimpleSchema.prototype.validateOne = function(doc, keyName) {
     //first check unsetting
     if (isUnsetting) {
         if (keyName in doc.$unset && !def.optional) {
-            invalidKeys.push({name: keyName, message: keyLabel + " is required"});
+            invalidKeys.push({name: keyName, type: "required", message: self._messageForError("required", keyName, def)});
         }
         if (!isSetting) {
             return; //it's valid, and no need to perform further checks on this key
@@ -126,7 +157,7 @@ SimpleSchema.prototype.validateOne = function(doc, keyName) {
         keyValue = doc[keyName];
     }
 
-    invalidKeys = validateOne(def, keyName, keyLabel, keyValue, isSetting);
+    invalidKeys = validateOne(def, keyName, keyLabel, keyValue, isSetting, self);
 
     //now update self._invalidKeys and dependencies
 
@@ -235,13 +266,59 @@ SimpleSchema.prototype.schema = function(key) {
     }
 };
 
-var validateOne = function(def, keyName, keyLabel, keyValue, isSetting) {
+SimpleSchema.prototype.messages = function(messages) {
+    this._messages = defaultMessages; //make sure we're always extending the defaults, even if called more than once
+    _.extend(this._messages, messages);
+};
+
+SimpleSchema.prototype._messageForError = function(type, key, def, value) {
+    var self = this, typePlusKey = type + " " + key;
+    var message = self._messages[typePlusKey] || self._messages[type];
+    if (!message) {
+        return "Unknown validation error";
+    }
+    if (!def) {
+        def = self._schema[key];
+    }
+    var label = def.label || key;
+    message = message.replace("[label]", label);
+    if (typeof def.minCount !== "undefined") {
+        message = message.replace("[minCount]", def.minCount);
+    }
+    if (typeof def.maxCount !== "undefined") {
+        message = message.replace("[maxCount]", def.maxCount);
+    }
+    if (typeof value !== "undefined") {
+        message = message.replace("[value]", value.toString());
+    }
+    if (def.type === Date || def.type === [Date]) {
+        if (typeof def.min !== "undefined") {
+            message = message.replace("[min]", dateToDateString(def.min));
+        }
+        if (typeof def.max !== "undefined") {
+            message = message.replace("[max]", dateToDateString(def.max));
+        }
+    } else {
+        if (typeof def.min !== "undefined") {
+            message = message.replace("[min]", def.min);
+        }
+        if (typeof def.max !== "undefined") {
+            message = message.replace("[max]", def.max);
+        }
+    }
+    if (def.type instanceof Function) {
+        message = message.replace("[type]", def.type.name);
+    }
+    return message;
+};
+
+var validateOne = function(def, keyName, keyLabel, keyValue, isSetting, ss) {
     var invalidKeys = [];
     //when inserting required keys, keyValue must not be undefined, null, or an empty string
     //when updating ($setting) required keys, keyValue can be undefined, but may not be null or an empty string
     if ((!isSetting && keyValue === void 0) || keyValue === null || (typeof keyValue === "string" && isBlank(keyValue))) {
         if (!def.optional) {
-            invalidKeys.push({name: keyName, message: keyLabel + " is required"});
+            invalidKeys.push({name: keyName, type: "required", message: ss._messageForError("required", keyName, def)});
         } //else it's valid, and no need to perform further checks on this key
         return invalidKeys;
     }
@@ -253,41 +330,41 @@ var validateOne = function(def, keyName, keyLabel, keyValue, isSetting) {
 
     if (def.type === String) {
         if (typeof keyValue !== "string") {
-            invalidKeys.push({name: keyName, message: keyLabel + " must be a string"});
+            invalidKeys.push({name: keyName, type: "expectedString", message: ss._messageForError("expectedString", keyName, def)});
         } else if (def.regEx && !def.regEx.test(keyValue)) {
-            invalidKeys.push({name: keyName, message: keyLabel + " " + def.regExMessage});
+            invalidKeys.push({name: keyName, type: "regEx", message: ss._messageForError("regEx", keyName, def, keyValue)});
         } else if (def.max && def.max < keyValue.length) {
-            invalidKeys.push({name: keyName, message: keyLabel + " cannot exceed " + def.max + " characters"});
+            invalidKeys.push({name: keyName, type: "maxString", message: ss._messageForError("maxString", keyName, def, keyValue)});
         } else if (def.min && def.min > keyValue.length) {
-            invalidKeys.push({name: keyName, message: keyLabel + " must be at least " + def.min + " characters"});
+            invalidKeys.push({name: keyName, type: "minString", message: ss._messageForError("minString", keyName, def, keyValue)});
         }
     } else if (def.type === Number) {
         if (typeof keyValue !== "number") {
-            invalidKeys.push({name: keyName, message: keyLabel + " must be a number"});
+            invalidKeys.push({name: keyName, type: "expectedNumber", message: ss._messageForError("expectedNumber", keyName, def)});
         } else if (def.max && def.max < keyValue) {
-            invalidKeys.push({name: keyName, message: keyLabel + " cannot exceed " + def.max});
+            invalidKeys.push({name: keyName, type: "maxNumber", message: ss._messageForError("maxNumber", keyName, def, keyValue)});
         } else if (def.min && def.min > keyValue) {
-            invalidKeys.push({name: keyName, message: keyLabel + " must be at least " + def.min});
+            invalidKeys.push({name: keyName, type: "minNumber", message: ss._messageForError("minNumber", keyName, def, keyValue)});
         } else if (!def.decimal && keyValue.toString().indexOf(".") > -1) {
-            invalidKeys.push({name: keyName, message: keyLabel + " must be an integer"});
+            invalidKeys.push({name: keyName, type: "noDecimal", message: ss._messageForError("noDecimal", keyName, def, keyValue)});
         }
     } else if (def.type === Boolean) {
         if (typeof keyValue !== "boolean") {
-            invalidKeys.push({name: keyName, message: keyLabel + " must be a boolean"});
+            invalidKeys.push({name: keyName, type: "expectedBoolean", message: ss._messageForError("expectedBoolean", keyName, def)});
         }
     } else if (def.type === Object) {
         if (typeof keyValue !== "object") {
-            invalidKeys.push({name: keyName, message: keyLabel + " must be an object"});
+            invalidKeys.push({name: keyName, type: "expectedObject", message: ss._messageForError("expectedObject", keyName, def)});
         }
     } else if (def.type instanceof Function) {
         if (!(keyValue instanceof def.type)) {
-            invalidKeys.push({name: keyName, message: keyLabel + " must be a " + def.type.name});
+            invalidKeys.push({name: keyName, type: "expectedConstructor", message: ss._messageForError("expectedConstructor", keyName, def)});
         }
         if (def.type === Date) {
             if (_.isDate(def.min) && def.min.getTime() > keyValue.getTime()) {
-                invalidKeys.push({name: keyName, message: keyLabel + " must be on or after " + dateToDateString(def.min)});
+                invalidKeys.push({name: keyName, type: "minDate", message: ss._messageForError("minDate", keyName, def)});
             } else if (_.isDate(def.max) && def.max.getTime() < keyValue.getTime()) {
-                invalidKeys.push({name: keyName, message: keyLabel + " must be on or before " + dateToDateString(def.max)});
+                invalidKeys.push({name: keyName, type: "maxDate", message: ss._messageForError("maxDate", keyName, def)});
             }
         }
     }
@@ -295,11 +372,11 @@ var validateOne = function(def, keyName, keyLabel, keyValue, isSetting) {
     //if it's an array, loop through it and call validateOne recursively
     if (_.isArray(def.type)) {
         if (!_.isArray(keyValue)) {
-            invalidKeys.push({name: keyName, message: keyLabel + " must be an array"});
+            invalidKeys.push({name: keyName, type: "expectedArray", message: ss._messageForError("expectedArray", keyName, def)});
         } else if (def.minCount && keyValue.length < def.minCount) {
-            invalidKeys.push({name: keyName, message: "You must specify at least " + def.minCount + " values"});
+            invalidKeys.push({name: keyName, type: "minCount", message: ss._messageForError("minCount", keyName, def)});
         } else if (def.maxCount && keyValue.length > def.maxCount) {
-            invalidKeys.push({name: keyName, message: "You cannot specify more than " + def.maxCount + " values"});
+            invalidKeys.push({name: keyName, type: "maxCount", message: ss._messageForError("maxCount", keyName, def)});
         } else {
             //if it's an array with the right number of values, etc., then we need to go through them all and
             //validate each value in the array
@@ -307,7 +384,7 @@ var validateOne = function(def, keyName, keyLabel, keyValue, isSetting) {
             childDef.type = def.type[0]; //strip array off of type
             for (var i = 0, ln = keyValue.length; i < ln; i++) {
                 loopVal = keyValue[i];
-                invalidKeys = _.union(invalidKeys, validateOne(childDef, keyName, keyLabel, loopVal, isSetting));
+                invalidKeys = _.union(invalidKeys, validateOne(childDef, keyName, keyLabel, loopVal, isSetting, ss));
                 if (invalidKeys.length) {
                     break;
                 }
@@ -318,11 +395,11 @@ var validateOne = function(def, keyName, keyLabel, keyValue, isSetting) {
         //this is the last thing we want to do for all data types, except for arrays
         if (def.allowedValues) {
             if (!_.contains(def.allowedValues, keyValue)) {
-                invalidKeys.push({name: keyName, message: keyValue + " is not an allowed value"});
+                invalidKeys.push({name: keyName, type: "notAllowed", message: ss._messageForError("notAllowed", keyName, def, keyValue)});
             }
         } else if (def.valueIsAllowed && def.valueIsAllowed instanceof Function) {
             if (!def.valueIsAllowed(keyValue)) {
-                invalidKeys.push({name: keyName, message: keyValue + " is not an allowed value"});
+                invalidKeys.push({name: keyName, type: "notAllowed", message: ss._messageForError("notAllowed", keyName, def, keyValue)});
             }
         }
     }

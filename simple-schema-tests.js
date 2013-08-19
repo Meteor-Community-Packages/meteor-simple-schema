@@ -13,13 +13,11 @@ var ssr = new SimpleSchema({
     },
     requiredEmail: {
         type: String,
-        regEx: SchemaRegEx.Email,
-        regExMessage: "is not a valid e-mail address"
+        regEx: SchemaRegEx.Email
     },
     requiredUrl: {
         type: String,
-        regEx: SchemaRegEx.Url,
-        regExMessage: "is not a valid URL"
+        regEx: SchemaRegEx.Url
     },
     requiredObject: {
         type: Object
@@ -27,6 +25,11 @@ var ssr = new SimpleSchema({
     'subdoc.requiredString': {
         type: String
     }
+});
+
+ssr.messages({
+    "regEx requiredEmail": "[label] is not a valid e-mail address",
+    "regEx requiredUrl": "[label] is not a valid URL"
 });
 
 var ss = new SimpleSchema({
@@ -114,14 +117,34 @@ var ss = new SimpleSchema({
     email: {
         type: String,
         regEx: SchemaRegEx.Email,
-        regExMessage: "is not a valid e-mail address",
         optional: true
     },
     url: {
         type: String,
         regEx: SchemaRegEx.Url,
-        regExMessage: "is not a valid URL",
         optional: true
+    }
+});
+
+ss.messages({
+    minCount: "blah",
+    "regEx email": "[label] is not a valid e-mail address",
+    "regEx url": "[label] is not a valid URL"
+});
+
+Deps.autorun(function () {
+    var errors = ssr.invalidKeys();
+    for (var i = 0, ln = errors.length, error; i < ln; i++) {
+        error = errors[i];
+        console.log(error.name + ": " + error.type + " (" + error.message + ")");
+    }
+});
+
+Deps.autorun(function () {
+    var errors = ss.invalidKeys();
+    for (var i = 0, ln = errors.length, error; i < ln; i++) {
+        error = errors[i];
+        console.log(error.name + ": " + error.type + " (" + error.message + ")");
     }
 });
 

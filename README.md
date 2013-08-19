@@ -30,9 +30,6 @@ MySchema = new SimpleSchema({
                        //and you want to allow non-integers
         regEx: /[0-255]/, //any regular expression that must be matched
                           //for the key to be valid
-        regExMessage: "is not valid" //when the regEx test fails, what
-                                     //should come after the label in
-                                     //the error message
     }
 });
 ```
@@ -148,9 +145,30 @@ reactive methods to react.
 ### Other Methods
 
 Call `MySchema.invalidKeys()` to get the full array of invalid key data. Each object
-in the array has two keys: `name`, which is the key name exactly as specified
-in the schema object, and `message`, which is the error message for that key. This
-is a reactive method.
+in the array has three keys:
+* `name`: The schema key as specified in the schema.
+* `type`: The type of error. One of the following strings:
+** required
+** minString
+** maxString
+** minNumber
+** maxNumber
+** minDate
+** maxDate
+** minCount
+** maxCount
+** noDecimal
+** notAllowed
+** expectedString
+** expectedNumber
+** expectedBoolean
+** expectedArray
+** expectedObject
+** expectedConstructor
+** regEx
+* `message`: The error message.
+
+This is a reactive method.
 
 `MySchema.keyIsInvalid(key)` returns true if the specified key is currently
 invalid, or false if it is valid. This is a reactive method.
@@ -176,10 +194,68 @@ valid according to the schema.
 
 ### The Object
 
-The object you pass in can be a normal object, or it can use the $set or $unset
+The object you pass in when validating can be a normal object, or it can use the $set or $unset
 format of a mongo-style object. In other words, you can pass in the exact object
 that you are going to pass to `Collection.insert()` or `Collection.update()`. This
 is what the collection2 smart package does for you.
+
+## Customizing Validation Messages
+
+To customize validation messages, pass a messages object to `SimpleSchema.messages()`.
+The format of the messages object is:
+
+```js
+{
+  errorType: message
+}
+```
+
+You can also specify override messages for specific fields:
+
+```js
+{
+  "errorType schemaKey": message
+}
+```
+
+The message is a string. It can contain a number of different placeholders indicated by square brackets:
+* `[label]` will be replaced with the field label
+* `[min]` will be replaced with the minimum allowed value (string length, number, or date)
+* `[max]` will be replaced with the maximum allowed value (string length, number, or date)
+* `[minCount]` will be replaced with the minimum array count
+* `[maxCount]` will be replaced with the maximum array count
+* `[value]` will be replaced with the value that was provided to save but was invalid (not available for all error types)
+* `[type]` will be replaced with the expected type; useful for the `expectedConstructor` error type
+
+By way of example, here is what it would look like if you defined the default error messages yourself:
+
+```js
+MySchema.messages({
+    required: "[label] is required",
+    minString: "[label] must be at least [min] characters",
+    maxString: "[label] cannot exceed [max] characters",
+    minNumber: "[label] must be at least [min]",
+    maxNumber: "[label] cannot exceed [max]",
+    minDate: "[label] must be on or before [min]",
+    maxDate: "[label] cannot be after [max]",
+    minCount: "You must specify at least [minCount] values",
+    maxCount: "You cannot specify more than [maxCount] values",
+    noDecimal: "[label] must be an integer",
+    notAllowed: "[value] is not an allowed value",
+    expectedString: "[label] must be a string",
+    expectedNumber: "[label] must be a number",
+    expectedBoolean: "[label] must be a boolean",
+    expectedArray: "[label] must be an array",
+    expectedObject: "[label] must be an object",
+    expectedConstructor: "[label] must be a [type]",
+    regEx: "[label] failed regular expression validation"
+});
+```
+
+You should call this method on both the client and the server to make sure that your messages are consistent.
+If you are interested in supporting multiple languages, you should be able to rerun this method
+to change the messages at any time, for example, in an autorun function based on a language value stored in session
+that loads the message object from static json files.
 
 ## Collection2 and AutoForm
 
