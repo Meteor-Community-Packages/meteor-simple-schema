@@ -52,7 +52,18 @@ SimpleSchema = function(schema) {
     });
 };
 
-//exported
+//return a function that can be use as the second parameter of the build-in check function
+SimpleSchema.prototype.match = function() {
+    self = this
+    return Match.Where(function(doc){
+        self.validate(doc);
+        if (!self.valid()) {
+            throw new Match.Error("One or more properties do not match the schema.");
+        }
+    });
+};
+
+//backwards compatibility checkSchema - exported
 checkSchema = function(/*arguments*/) {
     var args = _.toArray(arguments);
     if (!args || !_.isObject(args[0]) || !args[1] instanceof SimpleSchema) {
