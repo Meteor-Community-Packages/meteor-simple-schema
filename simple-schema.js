@@ -54,7 +54,7 @@ SimpleSchema = function(schema) {
 
 //return a function that can be use as the second parameter of the build-in check function
 SimpleSchema.prototype.match = function() {
-    self = this
+    var self = this;
     return Match.Where(function(doc){
         self.validate(doc);
         if (!self.valid()) {
