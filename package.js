@@ -3,11 +3,13 @@ Package.describe({
 });
 
 Package.on_use(function(api) {
-  api.use(['deps', 'underscore'], ['client', 'server']);
+  api.use(['deps', 'underscore', 'check'], ['client', 'server']);
   api.add_files(['simple-schema.js'], ['client', 'server']);
   if (typeof api.export !== "undefined") {
     //backwards compatibility with pre-0.6.5 meteor
-    api.export(['SimpleSchema', 'SchemaRegEx', 'checkSchema'], ['client', 'server']);
+    api.export(['SimpleSchema', 'SchemaRegEx'], ['client', 'server']);
+    //backwards compatibility checkSchema
+    api.export(['checkSchema'], ['client', 'server']);
   }
 });
 
