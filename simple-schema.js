@@ -65,6 +65,8 @@ SimpleSchema.prototype.match = function() {
 
 //backwards compatibility checkSchema - exported
 checkSchema = function(/*arguments*/) {
+    console.warn('checkSchema is obsolete. Please have a look at the simple-schema documentation.');
+    console.warn('https://github.com/aldeed/meteor-simple-schema#other-methods');
     var args = _.toArray(arguments);
     if (!args || !_.isObject(args[0]) || !args[1] instanceof SimpleSchema) {
         throw new Error("Invalid arguments");
