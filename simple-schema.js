@@ -34,6 +34,7 @@ SimpleSchema = function(schema) {
     self._schema = schema || {};
     self._schemaKeys = _.keys(schema);
     self._invalidKeys = [];
+    self._validators = [];
     //set up default message for each error type
     self._messages = defaultMessages;
     //regEx messages were previously defined in the schema
@@ -75,6 +76,10 @@ checkSchema = function(/*arguments*/) {
     if (!args[1].valid() && Match) {
         throw new Match.Error("One or more properties do not match the schema.");
     }
+};
+
+SimpleSchema.prototype.validator = function (func) {
+    this._validators.push(func);
 };
 
 //validates doc against self._schema and sets a reactive array of error objects
@@ -378,6 +383,17 @@ var validateOne = function(def, keyName, keyLabel, keyValue, isSetting, ss, full
                 invalidKeys.push({name: keyName, type: "minDate", message: ss._messageForError("minDate", keyName, def)});
             } else if (_.isDate(def.max) && def.max.getTime() < keyValue.getTime()) {
                 invalidKeys.push({name: keyName, type: "maxDate", message: ss._messageForError("maxDate", keyName, def)});
+            }
+        }
+    }
+    
+    var validatorCount = ss._validators.length;
+    if (validatorCount) {
+        for (var i = 0, validator, result; i < validatorCount; i++) {
+            validator = ss._validators[i];
+            result = validator(keyName, keyValue, def);
+            if (result !== true && typeof result === "string") {
+                invalidKeys.push({name: keyName, type: result, message: ss._messageForError(result, keyName, def)});
             }
         }
     }
