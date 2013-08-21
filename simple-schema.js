@@ -108,7 +108,7 @@ SimpleSchema.prototype.validate = function(doc) {
             keyValue = doc[keyName];
         }
 
-        invalidKeys = _.union(invalidKeys, validateOne(def, keyName, keyLabel, keyValue, isSetting, self));
+        invalidKeys = _.union(invalidKeys, validateOne(def, keyName, keyLabel, keyValue, isSetting, self, doc));
     });
 
     //now update self._invalidKeys and dependencies
@@ -168,7 +168,7 @@ SimpleSchema.prototype.validateOne = function(doc, keyName) {
         keyValue = doc[keyName];
     }
 
-    invalidKeys = validateOne(def, keyName, keyLabel, keyValue, isSetting, self);
+    invalidKeys = validateOne(def, keyName, keyLabel, keyValue, isSetting, self, doc);
 
     //now update self._invalidKeys and dependencies
 
@@ -323,7 +323,7 @@ SimpleSchema.prototype._messageForError = function(type, key, def, value) {
     return message;
 };
 
-var validateOne = function(def, keyName, keyLabel, keyValue, isSetting, ss) {
+var validateOne = function(def, keyName, keyLabel, keyValue, isSetting, ss, fullDoc) {
     var invalidKeys = [];
     //when inserting required keys, keyValue must not be undefined, null, or an empty string
     //when updating ($setting) required keys, keyValue can be undefined, but may not be null or an empty string
@@ -395,7 +395,7 @@ var validateOne = function(def, keyName, keyLabel, keyValue, isSetting, ss) {
             childDef.type = def.type[0]; //strip array off of type
             for (var i = 0, ln = keyValue.length; i < ln; i++) {
                 loopVal = keyValue[i];
-                invalidKeys = _.union(invalidKeys, validateOne(childDef, keyName, keyLabel, loopVal, isSetting, ss));
+                invalidKeys = _.union(invalidKeys, validateOne(childDef, keyName, keyLabel, loopVal, isSetting, ss, fullDoc));
                 if (invalidKeys.length) {
                     break;
                 }
@@ -409,7 +409,7 @@ var validateOne = function(def, keyName, keyLabel, keyValue, isSetting, ss) {
                 invalidKeys.push({name: keyName, type: "notAllowed", message: ss._messageForError("notAllowed", keyName, def, keyValue)});
             }
         } else if (def.valueIsAllowed && def.valueIsAllowed instanceof Function) {
-            if (!def.valueIsAllowed(keyValue)) {
+            if (!def.valueIsAllowed(keyValue, fullDoc)) {
                 invalidKeys.push({name: keyName, type: "notAllowed", message: ss._messageForError("notAllowed", keyName, def, keyValue)});
             }
         }

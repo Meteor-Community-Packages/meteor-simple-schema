@@ -24,8 +24,9 @@ MySchema = new SimpleSchema({
         allowedValues: [], //an array of allowed values; the key's value
                            //must match one of these
         valueIsAllowed: function, //a function that accepts the value as
-                                  //its only argument and returns true 
-                                  //if the value is allowed
+                                  //its first argument and the full document
+                                  //or modifier object as its second argument
+                                  //and returns true if the value is allowed
         decimal: true, //default is false; set to true if type=Number
                        //and you want to allow non-integers
         regEx: /[0-255]/, //any regular expression that must be matched
@@ -185,12 +186,9 @@ is returned.
 Call `MySchema.resetValidation()` if you need to reset the SimpleSchema object,
 clearing out any invalid field messages.
 
-### checkSchema()
-
-Similar to Meteor's `check()` method, but you specify an object as the first
-parameter and a SimpleSchema instance as the second parameter. `checkSchema()`
-throws a Match.Error if the object specified in the first parameter is not
-valid according to the schema.
+Call `MySchema.match()` to return a match function that can be passed as the 
+second argument of the built-in `check()` function. This will throw a Match.Error
+if the object specified in the first argument is not valid according to the schema.
 
 ### The Object
 
@@ -256,6 +254,35 @@ You should call this method on both the client and the server to make sure that 
 If you are interested in supporting multiple languages, you should be able to rerun this method
 to change the messages at any time, for example, in an autorun function based on a language value stored in session
 that loads the message object from static json files.
+
+## Validating One Key Against Another
+
+The second argument of the `valueIsAllowed` function is the full document or
+mongo modifier object that's being validated. This allows you to declare one value
+valid or invalid based on another value. Here's an example:
+
+```js
+MySchema = new SimpleSchema({
+    password: {
+        type: String,
+        label: "Enter a password",
+        min: 8
+    },
+    confirmPassword: {
+        type: String,
+        label: "Enter the password again",
+        min: 8,
+        valueIsAllowed: function (val, doc) {
+            var pass = ("$set" in doc) ? doc.$set.password : doc.password;
+            return pass === val;
+        }
+    }
+});
+
+MySchema.messages({
+    "notAllowed confirmPassword": "Passwords do not match"
+});
+```
 
 ## Collection2 and AutoForm
 

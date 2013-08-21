@@ -132,6 +132,19 @@ ss.messages({
     "regEx url": "[label] is not a valid URL"
 });
 
+var pss = new SimpleSchema({
+    password: {
+        type: String,
+    },
+    confirmPassword: {
+        type: String,
+        valueIsAllowed: function (val, doc) {
+            var pass = ("$set" in doc) ? doc.$set.password : doc.password;
+            return pass === val;
+        }
+    }
+});
+
 Deps.autorun(function () {
     var errors = ssr.invalidKeys();
     for (var i = 0, ln = errors.length, error; i < ln; i++) {
@@ -950,4 +963,31 @@ Tinytest.add("SimpleSchema - Update Allowed Values Check", function(test) {
             allowedNumbersArray: [1, 2, 3, 4]
         }});
     test.isTrue(ss.invalidKeys().length === 1);
+});
+
+Tinytest.add("SimpleSchema - Validate Against Another Key", function(test) {
+    pss.validate({
+            password: "password",
+            confirmPassword: "password"
+        });
+    test.isTrue(pss.invalidKeys().length === 0);
+    
+    pss.validate({$set: {
+            password: "password",
+            confirmPassword: "password"
+        }});
+    test.isTrue(pss.invalidKeys().length === 0);
+    
+    pss.validate({
+            password: "password",
+            confirmPassword: "password1"
+        });
+    test.isTrue(pss.invalidKeys().length === 1);
+    
+    pss.validate({$set: {
+            password: "password",
+            confirmPassword: "password1"
+        }});
+    test.isTrue(pss.invalidKeys().length === 1);
+
 });
