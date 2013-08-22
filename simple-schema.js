@@ -75,6 +75,11 @@ checkSchema = function(/*arguments*/) {
     }
 };
 
+//return a copy of the schema for (E)JSON stringification
+SimpleSchema.prototype.toJSON = function() {
+    return _.clone(this._schema);
+};
+
 //validates doc against self._schema and sets a reactive array of error objects
 SimpleSchema.prototype.validate = function(doc) {
     var self = this, invalidKeys = [];

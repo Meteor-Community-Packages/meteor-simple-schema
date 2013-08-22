@@ -951,3 +951,21 @@ Tinytest.add("SimpleSchema - Update Allowed Values Check", function(test) {
         }});
     test.isTrue(ss.invalidKeys().length === 1);
 });
+
+Tinytest.add("SimpleSchema - JSON stringify", function(test) {
+    test.equal(JSON.stringify(ss), '{"string":{"optional":true},"minMaxStr' +
+        'ing":{"optional":true,"min":10,"max":20},"minMaxStringArray":{"ty' +
+        'pe":[null],"optional":true,"min":10,"max":20,"minCount":1,"maxCou' +
+        'nt":2},"allowedStrings":{"optional":true,"allowedValues":["tuna",' +
+        '"fish","salad"]},"valueIsAllowedString":{"optional":true},"allowe' +
+        'dStringsArray":{"type":[null],"optional":true,"allowedValues":["t' +
+        'una","fish","salad"]},"boolean":{"optional":true},"number":{"opti' +
+        'onal":true},"minMaxNumber":{"optional":true,"min":10,"max":20},"a' +
+        'llowedNumbers":{"optional":true,"allowedValues":[1,2,3]},"valueIs' +
+        'AllowedNumber":{"optional":true},"allowedNumbersArray":{"type":[n' +
+        'ull],"optional":true,"allowedValues":[1,2,3]},"decimal":{"optiona' +
+        'l":true,"decimal":true},"date":{"optional":true},"minMaxDate":{"o' +
+        'ptional":true,"min":"2013-01-01T00:00:00.000Z","max":"2013-12-31T' +
+        '00:00:00.000Z"},"email":{"regEx":{},"optional":true},"url":{"regE' +
+        'x":{},"optional":true}}');
+});
