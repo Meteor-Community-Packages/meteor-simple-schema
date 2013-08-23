@@ -56,7 +56,7 @@ SimpleSchema = function(schema) {
 //return a function that can be use as the second parameter of the build-in check function
 SimpleSchema.prototype.match = function() {
     var self = this;
-    return Match.Where(function(doc){
+    return Match.Where(function(doc) {
         self.validate(doc);
         if (!self.valid()) {
             throw new Match.Error("One or more properties do not match the schema.");
@@ -78,7 +78,7 @@ checkSchema = function(/*arguments*/) {
     }
 };
 
-SimpleSchema.prototype.validator = function (func) {
+SimpleSchema.prototype.validator = function(func) {
     this._validators.push(func);
 };
 
@@ -204,10 +204,13 @@ SimpleSchema.prototype.validateOne = function(doc, keyName) {
 SimpleSchema.prototype.filter = function(doc) {
     //TODO make sure this works with descendent objects
     var newDoc, self = this;
-    if ("$set" in doc) {
-        //for $set, filter only that obj
+    if (isModifier(doc)) {
         newDoc = doc;
-        newDoc.$set = _.pick(doc.$set, self._schemaKeys);
+        //for $set, filter only that obj
+        if ("$set" in doc) {
+            newDoc.$set = _.pick(doc.$set, self._schemaKeys);
+        }
+        //$unset does not need filtering, and we don't support any others yet
     } else {
         newDoc = _.pick(collapseObj(doc, self._schemaKeys), self._schemaKeys);
         newDoc = expandObj(newDoc);
@@ -386,7 +389,7 @@ var validateOne = function(def, keyName, keyLabel, keyValue, isSetting, ss, full
             }
         }
     }
-    
+
     var validatorCount = ss._validators.length;
     if (validatorCount) {
         for (var i = 0, validator, result; i < validatorCount; i++) {
@@ -532,4 +535,15 @@ var expandObj = function(doc) {
         }
     });
     return newDoc;
+};
+
+var isModifier = function(obj) {
+    var ret = false;
+    for (var key in obj) {
+        if (obj.hasOwnProperty(key) && key.substring(0, 1) === "$") {
+            ret = true;
+            break;
+        }
+    }
+    return ret;
 };
