@@ -61,6 +61,7 @@ SimpleSchema.prototype.match = function() {
         if (!self.valid()) {
             throw new Match.Error("One or more properties do not match the schema.");
         }
+        return true
     });
 };
 
