@@ -5,9 +5,9 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
-### next
+### 0.1.13
 
-* A SimpleSchema object is now a valid second parameter for the build-in `check` and `Match.test` functions
+* A SimpleSchema object is now a valid second parameter for the built-in `check` and `Match.test` functions
 * `.match()` method is deprecated
 
 ### 0.1.12
