@@ -53,8 +53,26 @@ SimpleSchema = function(schema) {
     });
 };
 
-//return a function that can be use as the second parameter of the build-in check function
+// Inherit from Match.Where
+// This allow SimpleSchema instance to be recognized as a Match.Where instance as well
+// as a SimpleSchema instance
+SimpleSchema.prototype = new Match.Where()
+
+// If an object is an instance of Match.Where, Meteor build-in check API will look at
+// the function named `condition` and will pass it the document to validate
+SimpleSchema.prototype.condition = function(doc) {
+    var self = this;
+    self.validate(doc);
+    if (!self.valid())
+        throw new Match.Error("One or more properties do not match the schema.");
+    return true
+}
+
+// [backwards compatibility]
+// return a function that can be use as the second parameter of the build-in check function
 SimpleSchema.prototype.match = function() {
+    console.warn('There is no more need to call the .match() method on a object to check it.');
+    console.warn('see https://github.com/aldeed/meteor-simple-schema#other-methods');
     var self = this;
     return Match.Where(function(doc) {
         self.validate(doc);
@@ -65,10 +83,12 @@ SimpleSchema.prototype.match = function() {
     });
 };
 
-//backwards compatibility checkSchema - exported
+// [backwards compatibility]
+// checkSchema - exported
 checkSchema = function(/*arguments*/) {
     console.warn('checkSchema is obsolete. Please have a look at the simple-schema documentation.');
     console.warn('https://github.com/aldeed/meteor-simple-schema#other-methods');
+    
     var args = _.toArray(arguments);
     if (!args || !_.isObject(args[0]) || !args[1] instanceof SimpleSchema) {
         throw new Error("Invalid arguments");
