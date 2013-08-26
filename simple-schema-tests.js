@@ -1050,3 +1050,14 @@ Tinytest.add("SimpleSchema - Validate Against Another Key", function(test) {
     test.isTrue(pss.invalidKeys().length === 1);
 
 });
+
+Tinytest.add("SimpleSchema - Validate with the Match API", function(test) {
+
+    test.isTrue(pss instanceof SimpleSchema);
+    test.isFalse(Match.test({password: 'pass'}, pss));
+    test.isTrue(Match.test({password: 'pass', confirmPassword: 'pass'}, pss));
+
+    // [backwards compatibility]
+    test.isFalse(Match.test({password: 'pass'}, pss.match()));
+    test.isTrue(Match.test({password: 'pass', confirmPassword: 'pass'}, pss.match()));
+});

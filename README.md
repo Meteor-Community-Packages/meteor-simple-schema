@@ -186,9 +186,16 @@ is returned.
 Call `MySchema.resetValidation()` if you need to reset the SimpleSchema object,
 clearing out any invalid field messages.
 
-Call `MySchema.match()` to return a match function that can be passed as the 
-second argument of the built-in `check()` function. This will throw a Match.Error
-if the object specified in the first argument is not valid according to the schema.
+A schema can be passed as the second argument of the built-in `check()` function. 
+This will throw a Match.Error if the object specified in the first argument is not
+valid according to the schema. It works with `Match.test` as well:
+```js
+var mySchema = new SimpleSchema({name: {type: String}});
+
+Match.test({name: 'Steve'}, mySchema); // Return true
+Match.test({admin: true}, mySchema); // Return false
+check({admin: true}, mySchema); // throw a Match.Error
+```
 
 ### The Object
 
