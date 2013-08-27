@@ -45,11 +45,29 @@ SimpleSchema = function(schema) {
             delete self._schema[key].regExMessage;
         }
     });
+    
     //set up validation dependencies
     self._deps = {};
     self._depsAny = new Deps.Dependency;
     _.each(self._schemaKeys, function(name) {
         self._deps[name] = new Deps.Dependency;
+
+        // Validate the field definition
+        if (!Match.test(self._schema[name], {
+            type: Match.OneOf(Function, [Function]),
+            label: Match.Optional(String),
+            optional: Match.Optional(Boolean),
+            min: Match.Optional(Match.OneOf(Number, Date)),
+            max: Match.Optional(Match.OneOf(Number, Date)),
+            minCount: Match.Optional(Number),
+            maxCount: Match.Optional(Number),
+            allowedValues: Match.Optional([Match.Any]),
+            valueIsAllowed: Match.Optional(Function),
+            decimal: Match.Optional(Boolean),
+            regEx: Match.Optional(RegExp)
+        })) {
+            throw new Error('Invalid definition for ' + name + ' field.');
+        }
     });
 };
 
