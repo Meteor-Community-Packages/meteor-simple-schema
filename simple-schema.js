@@ -64,7 +64,9 @@ SimpleSchema = function(schema) {
             allowedValues: Match.Optional([Match.Any]),
             valueIsAllowed: Match.Optional(Function),
             decimal: Match.Optional(Boolean),
-            regEx: Match.Optional(RegExp)
+            regEx: Match.Optional(RegExp),
+            unique: Match.Optional(Boolean),
+            autoValue: Match.Optional(Function)
         })) {
             throw new Error('Invalid definition for ' + name + ' field.');
         }
