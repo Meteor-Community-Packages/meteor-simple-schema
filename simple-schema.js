@@ -88,7 +88,7 @@ SimpleSchema.prototype.match = function() {
 checkSchema = function(/*arguments*/) {
     console.warn('checkSchema is obsolete. Please have a look at the simple-schema documentation.');
     console.warn('https://github.com/aldeed/meteor-simple-schema#other-methods');
-    
+
     var args = _.toArray(arguments);
     if (!args || !_.isObject(args[0]) || !args[1] instanceof SimpleSchema) {
         throw new Error("Invalid arguments");
@@ -104,40 +104,40 @@ SimpleSchema.prototype.validator = function(func) {
 };
 
 //validates doc against self._schema and sets a reactive array of error objects
-SimpleSchema.prototype.validate = function(doc) {
+SimpleSchema.prototype.validate = function(doc, options) {
     var self = this, invalidKeys = [];
-    var isSetting = "$set" in doc;
-    var isUnsetting = "$unset" in doc;
+    options = _.extend({
+        modifier: false
+    }, options || {});
 
-    //if inserting, we need to flatten the object to one level, using mongo $set dot notation
-    if (!isSetting && !isUnsetting) {
-        doc = collapseObj(doc, self._schemaKeys);
-    }
+    if (typeof doc === "object") {
+        if (options.modifier) {
+            //all keys must pass validation check in all operator objects
+            _.each(self._schema, function(def, keyName) {
+                var keyLabel = def.label || keyName;
 
-    //all keys must pass validation check
-    _.each(self._schema, function(def, keyName) {
-        var keyValue;
-        var keyLabel = def.label || keyName;
-
-        //first check unsetting
-        if (isUnsetting) {
-            if (keyName in doc.$unset && !def.optional) {
-                invalidKeys.push({name: keyName, type: "required", message: self._messageForError("required", keyName, def)});
-            }
-            if (!isSetting) {
-                return; //it's valid, and no need to perform further checks on this key
-            }
-        }
-
-        //next check setting or inserting
-        if (isSetting) {
-            keyValue = doc.$set[keyName];
+                //loop through present modifiers
+                _.each(doc, function(modObj, operator) {
+                    if (operator.substring(0, 1) !== "$") {
+                        throw new Error("When the modifier option is true, all validation object keys must be operators");
+                    }
+                    if (keyName in modObj) {
+                        invalidKeys = _.union(invalidKeys, validateOne(operator, def, keyName, keyLabel, modObj[keyName], self, doc));
+                    }
+                });
+            });
         } else {
-            keyValue = doc[keyName];
-        }
+            //flatten the object to one level, using mongo operator dot notation
+            doc = collapseObj(doc, self._schemaKeys);
 
-        invalidKeys = _.union(invalidKeys, validateOne(def, keyName, keyLabel, keyValue, isSetting, self, doc));
-    });
+            //all keys must pass validation check
+            _.each(self._schema, function(def, keyName) {
+                var keyValue = doc[keyName];
+                var keyLabel = def.label || keyName;
+                invalidKeys = _.union(invalidKeys, validateOne(null, def, keyName, keyLabel, keyValue, self, doc));
+            });
+        }
+    }
 
     //now update self._invalidKeys and dependencies
 
@@ -160,46 +160,44 @@ SimpleSchema.prototype.validate = function(doc) {
         self._depsAny.changed();
     }
 
-    return;
+    return invalidKeys;
 };
 
 //validates doc against self._schema for one key and sets a reactive array of error objects
-SimpleSchema.prototype.validateOne = function(doc, keyName) {
+SimpleSchema.prototype.validateOne = function(doc, keyName, options) {
     var self = this, invalidKeys = [];
-    var isSetting = "$set" in doc;
-    var isUnsetting = "$unset" in doc;
-
-    //if inserting, we need to flatten the object to one level, using mongo $set dot notation
-    if (!isSetting && !isUnsetting) {
-        doc = collapseObj(doc, self._schemaKeys);
-    }
+    options = _.extend({
+        modifier: false
+    }, options || {});
 
     //key must pass validation check
     var def = self._schema[keyName];
     if (!def) {
         throw new Error("The schema contains no key named " + keyName);
     }
-    var keyValue;
-    var keyLabel = def.label || keyName;
 
-    //first check unsetting
-    if (isUnsetting) {
-        if (keyName in doc.$unset && !def.optional) {
-            invalidKeys.push({name: keyName, type: "required", message: self._messageForError("required", keyName, def)});
-        }
-        if (!isSetting) {
-            return; //it's valid, and no need to perform further checks on this key
+    if (typeof doc === "object") {
+        if (options.modifier) {
+            var keyLabel = def.label || keyName;
+
+            //loop through present modifiers
+            _.each(doc, function(modObj, operator) {
+                if (operator.substring(0, 1) !== "$") {
+                    throw new Error("When the modifier option is true, all validation object keys must be operators");
+                }
+                if (keyName in modObj) {
+                    invalidKeys = _.union(invalidKeys, validateOne(operator, def, keyName, keyLabel, modObj[keyName], self, doc));
+                }
+            });
+        } else {
+            //flatten the object to one level, using mongo operator dot notation
+            doc = collapseObj(doc, self._schemaKeys);
+
+            var keyValue = doc[keyName];
+            var keyLabel = def.label || keyName;
+            invalidKeys = validateOne(null, def, keyName, keyLabel, keyValue, self, doc);
         }
     }
-
-    //next check setting or inserting
-    if (isSetting) {
-        keyValue = doc.$set[keyName];
-    } else {
-        keyValue = doc[keyName];
-    }
-
-    invalidKeys = validateOne(def, keyName, keyLabel, keyValue, isSetting, self, doc);
 
     //now update self._invalidKeys and dependencies
 
@@ -222,49 +220,85 @@ SimpleSchema.prototype.validateOne = function(doc, keyName) {
     //mark key as changed due to new validation (they may be valid now, or invalid in a different way)
     self._deps[keyName].changed();
     self._depsAny.changed();
+
+    return invalidKeys;
 };
 
 //returns doc with all properties that are not in the schema removed
 SimpleSchema.prototype.filter = function(doc) {
-    //TODO make sure this works with descendent objects
-    var newDoc, self = this;
-    if (isModifier(doc)) {
-        newDoc = doc;
-        //for $set, filter only that obj
-        if ("$set" in doc) {
-            newDoc.$set = _.pick(doc.$set, self._schemaKeys);
-        }
-        //$unset does not need filtering, and we don't support any others yet
-    } else {
-        newDoc = _.pick(collapseObj(doc, self._schemaKeys), self._schemaKeys);
-        newDoc = expandObj(newDoc);
-    }
-    return newDoc;
+    console.warn("SimpleSchema.filter() is deprecated. Use SimpleSchema.clean().");
+    return this.clean(doc, {autoConvert: false});
 };
 
 //automatic type conversion to match desired type, if possible
 SimpleSchema.prototype.autoTypeConvert = function(doc) {
-    var self = this;
-    _.each(self._schema, function(def, keyName) {
-        if (keyName in doc) {
-            if (_.isArray(doc[keyName])) {
-                for (var i = 0, ln = doc[keyName].length; i < ln; i++) {
-                    doc[keyName][i] = typeconvert(doc[keyName][i], def.type[0]); //typeconvert
+    console.warn("SimpleSchema.autoTypeConvert() is deprecated. Use SimpleSchema.clean().");
+    return this.clean(doc, {filter: false});
+};
+
+//filter and automatically type convert
+SimpleSchema.prototype.clean = function(doc, options) {
+    //TODO make sure this works with descendent objects
+    var newDoc, self = this;
+
+    //by default, doc will be filtered and autoconverted
+    options = _.extend({
+        filter: true,
+        autoConvert: true
+    }, options || {});
+
+    //collapse
+    var cDoc = collapseObj(doc, self._schemaKeys);
+
+    //clean
+    newDoc = {};
+    _.each(cDoc, function(val, key) {
+        var okToAdd = true;
+
+        //filter
+        if (options.filter === true) {
+            okToAdd = self.allowsKey(key);
+        }
+
+        if (okToAdd) {
+            //autoconvert
+            if (options.autoConvert === true) {
+                var def = self._schema[key];
+                if (def) {
+                    var type = def.type;
+                    if (_.isArray(type)) {
+                        type = type[0];
+                    }
+                    if (isModifier(val)) {
+                        //convert modifier values
+                        _.each(val, function(opVal, op) {
+                            if (_.isArray(opVal)) {
+                                for (var i = 0, ln = opVal.length; i < ln; i++) {
+                                    opVal[i] = typeconvert(opVal[i], type); //typeconvert
+                                }
+                            } else {
+                                opVal = typeconvert(opVal, type); //typeconvert
+                            }
+                            val[op] = opVal;
+                        });
+                    } else if (_.isArray(val)) {
+                        for (var i = 0, ln = val.length; i < ln; i++) {
+                            val[i] = typeconvert(val[i], type); //typeconvert
+                        }
+                    } else {
+                        val = typeconvert(val, type); //typeconvert
+                    }
                 }
-            } else {
-                doc[keyName] = typeconvert(doc[keyName], def.type); //typeconvert
             }
-        } else if ("$set" in doc && keyName in doc.$set) {
-            if (_.isArray(doc.$set[keyName])) {
-                for (var i = 0, ln = doc.$set[keyName].length; i < ln; i++) {
-                    doc.$set[keyName][i] = typeconvert(doc.$set[keyName][i], def.type[0]); //typeconvert
-                }
-            } else {
-                doc.$set[keyName] = typeconvert(doc.$set[keyName], def.type); //typeconvert
-            }
+
+            newDoc[key] = val;
         }
     });
-    return doc;
+
+    //expand
+    newDoc = expandObj(newDoc);
+
+    return newDoc;
 };
 
 //reset the invalidKeys array
@@ -357,22 +391,97 @@ SimpleSchema.prototype._messageForError = function(type, key, def, value) {
     return message;
 };
 
-var validateOne = function(def, keyName, keyLabel, keyValue, isSetting, ss, fullDoc) {
+//Returns true if key is allowed by the schema.
+//Supports implied schema keys and handles arrays (.Number. -> .$.)
+//* key should be in format returned by collapseObj
+//* will allow all $ keys
+SimpleSchema.prototype.allowsKey = function(key) {
+    var self = this;
+    var schemaKeys = self._schemaKeys;
+
+    //all all modifier keys
+    if (key.substring(0, 1) === "$") {
+        return true;
+    }
+
+    //replace .Number. with .$. in key
+    var re = /\.[0-9]+\./g;
+    key = key.replace(re, '.$.');
+
+    //check schema
+    var allowed = false;
+    for (var i = 0, ln = schemaKeys.length, schemaKey; i < ln; i++) {
+        schemaKey = schemaKeys[i];
+        if (schemaKey === key) {
+            allowed = true;
+            break;
+        }
+
+        //check whether key is implied by this schema key
+        //(the key in schema starts with key followed by dot)
+        if (schemaKey.substring(0, key.length + 1) === key + ".") {
+            allowed = true;
+            break;
+        }
+    }
+
+    return allowed;
+};
+
+SimpleSchema.prototype.newContext = function() {
+    return new SimpleSchemaValidationContext(this);
+};
+
+validateOne = function(operator, def, keyName, keyLabel, keyValue, ss, fullDoc) {
     var invalidKeys = [];
-    //when inserting required keys, keyValue must not be undefined, null, or an empty string
-    //when updating ($setting) required keys, keyValue can be undefined, but may not be null or an empty string
-    if ((!isSetting && keyValue === void 0) || keyValue === null || (typeof keyValue === "string" && isBlank(keyValue))) {
+
+    if (operator === "$unset") {
+        //unset
+
+        //check if required
         if (!def.optional) {
+            //for unsetting, value is irrelevant
             invalidKeys.push({name: keyName, type: "required", message: ss._messageForError("required", keyName, def)});
-        } //else it's valid, and no need to perform further checks on this key
-        return invalidKeys;
+            return invalidKeys; //never do further checks for the same field after a "required" error
+        }
+        return invalidKeys; //the value of $unset does not matter and therefore needs no more checking beyond required/optional
+    } else if (operator === "$set") {
+        //set
+
+        //check if required (undefined is not invalid for $set like it would be for an insert)
+        if (keyValue === null || (typeof keyValue === "string" && isBlank(keyValue))) {
+            if (!def.optional) {
+                invalidKeys.push({name: keyName, type: "required", message: ss._messageForError("required", keyName, def)});
+                return invalidKeys;
+            }
+            //whether required or not, the value is null so no further checks are necessary
+            if (keyValue === null) {
+                return invalidKeys;
+            }
+            //if it's an empty string, continue so that other checks like min length can be performed
+        }
+
+        if (keyValue === void 0) {
+            return invalidKeys;
+        }
+    } else if (!operator) {
+        //insert
+
+        //check if required
+        if (keyValue === void 0 || keyValue === null || (typeof keyValue === "string" && isBlank(keyValue))) {
+            if (!def.optional) {
+                invalidKeys.push({name: keyName, type: "required", message: ss._messageForError("required", keyName, def)});
+                return invalidKeys;
+            }
+            //whether required or not, the value is null so no further checks are necessary
+            if (keyValue === void 0 || keyValue === null) {
+                return invalidKeys;
+            }
+            //if it's an empty string, continue so that other checks like min length can be performed
+        }
     }
 
-    //if we got to this point and keyValue is undefined, no more checking is necessary for this key
-    if (keyValue === void 0) {
-        return invalidKeys;
-    }
-
+    //Type Checking
     if (def.type === String) {
         if (typeof keyValue !== "string") {
             invalidKeys.push({name: keyName, type: "expectedString", message: ss._messageForError("expectedString", keyName, def)});
@@ -414,6 +523,7 @@ var validateOne = function(def, keyName, keyLabel, keyValue, isSetting, ss, full
         }
     }
 
+    //Custom Validation
     var validatorCount = ss._validators.length;
     if (validatorCount) {
         for (var i = 0, validator, result; i < validatorCount; i++) {
@@ -440,7 +550,7 @@ var validateOne = function(def, keyName, keyLabel, keyValue, isSetting, ss, full
             childDef.type = def.type[0]; //strip array off of type
             for (var i = 0, ln = keyValue.length; i < ln; i++) {
                 loopVal = keyValue[i];
-                invalidKeys = _.union(invalidKeys, validateOne(childDef, keyName, keyLabel, loopVal, isSetting, ss, fullDoc));
+                invalidKeys = _.union(invalidKeys, validateOne(operator, childDef, keyName, keyLabel, loopVal, ss, fullDoc));
                 if (invalidKeys.length) {
                     break;
                 }
@@ -501,16 +611,24 @@ var isBlank = function(str) {
     return (/^\s*$/).test(str);
 };
 
+SimpleSchema.prototype.collapseObj = function(doc) {
+    return collapseObj(doc, this._schemaKeys);
+};
+
+SimpleSchema.prototype.expandObj = function(doc) {
+    return expandObj(doc);
+};
+
 //collapses object into one level, with dot notation following the mongo $set syntax
 var collapseObj = function(doc, skip) {
     var res = {};
-    (function recurse(obj, current) {
+    (function recurse(obj, current, currentOperator) {
         if (_.isArray(obj)) {
             for (var i = 0, ln = obj.length; i < ln; i++) {
                 var value = obj[i];
                 var newKey = (current ? current + "." + i : i);  // joined index with dot
                 if (value && (typeof value === "object" || _.isArray(value)) && !_.contains(skip, newKey)) {
-                    recurse(value, newKey);  // it's a nested object or array, so do it again
+                    recurse(value, newKey, currentOperator);  // it's a nested object or array, so do it again
                 } else {
                     res[newKey] = value;  // it's not an object or array, so set the property
                 }
@@ -518,11 +636,31 @@ var collapseObj = function(doc, skip) {
         } else {
             for (var key in obj) {
                 var value = obj[key];
+
                 var newKey = (current ? current + "." + key : key);  // joined key with dot
-                if (value && (typeof value === "object" || _.isArray(value)) && !_.contains(skip, newKey)) {
-                    recurse(value, newKey);  // it's a nested object or array, so do it again
+                if (typeof value === "object" && !_.isEmpty(value) && !_.contains(skip, newKey)) {
+                    //nested non-empty object so recurse into it
+                    if (key.substring(0, 1) === "$") {
+                        //handle mongo operator keys a bit differently
+                        recurse(value, current, key);
+                    } else {
+                        //not a mongo operator key
+                        recurse(value, newKey, currentOperator);
+                    }
+                } else if (value && _.isArray(value) && value.length && !_.contains(skip, newKey)) {
+                    //nested non-empty array, so recurse into it
+                    recurse(value, newKey, currentOperator);
                 } else {
-                    res[newKey] = value;  // it's not an object or array, so set the property
+                    // it's not an object or array, or we've said we
+                    // want to keep it as an object or array (skip),
+                    // or it's an empty object or array,
+                    // so set the property now and stop recursing
+                    if (currentOperator) {
+                        res[newKey] = res[newKey] || {};
+                        res[newKey][currentOperator] = value;
+                    } else {
+                        res[newKey] = value;
+                    }
                 }
             }
         }
@@ -532,36 +670,51 @@ var collapseObj = function(doc, skip) {
 
 //opposite of collapseObj
 var expandObj = function(doc) {
-    var newDoc = {}, subkeys, subkey, subkeylen, nextPiece, current;
-    _.each(doc, function(val, key) {
-        subkeys = key.split(".");
-        subkeylen = subkeys.length;
-        current = newDoc;
-        for (var i = 0; i < subkeylen; i++) {
-            subkey = subkeys[i];
-            if (current[subkey] && !_.isObject(current[subkey])) {
-                break; //already set for some reason; leave it alone
-            }
-            if (i === subkeylen - 1) {
-                //last iteration; time to set the value
-                current[subkey] = val;
-            } else {
-                //see if the next piece is a number
-                nextPiece = subkeys[i + 1];
-                nextPiece = parseInt(nextPiece, 10);
-                if (isNaN(nextPiece) && !_.isObject(current[subkey])) {
-                    current[subkey] = {};
-                } else if (!_.isArray(current[subkey])) {
-                    current[subkey] = [];
+    var newDoc = doc;
+    _.each(newDoc, function(val, key) {
+        delete newDoc[key];
+        if (typeof val === "object" && isModifier(val)) {
+            for (var operator in val) {
+                if (val.hasOwnProperty(operator)) {
+                    newDoc[operator] = newDoc[operator] || {};
+                    newDoc[operator][key] = val[operator];
                 }
             }
-            current = current[subkey];
+        } else {
+            expandKey(val, key, newDoc);
         }
     });
     return newDoc;
 };
 
-var isModifier = function(obj) {
+var expandKey = function(val, key, obj) {
+    var nextPiece;
+    var subkeys = key.split(".");
+    var subkeylen = subkeys.length;
+    var current = obj;
+    for (var i = 0, subkey; i < subkeylen; i++) {
+        subkey = subkeys[i];
+        if (current[subkey] && !_.isObject(current[subkey])) {
+            break; //already set for some reason; leave it alone
+        }
+        if (i === subkeylen - 1) {
+            //last iteration; time to set the value
+            current[subkey] = val;
+        } else {
+            //see if the next piece is a number
+            nextPiece = subkeys[i + 1];
+            nextPiece = parseInt(nextPiece, 10);
+            if (isNaN(nextPiece) && !_.isObject(current[subkey])) {
+                current[subkey] = {};
+            } else if (!_.isArray(current[subkey])) {
+                current[subkey] = [];
+            }
+        }
+        current = current[subkey];
+    }
+};
+
+isModifier = function(obj) {
     var ret = false;
     for (var key in obj) {
         if (obj.hasOwnProperty(key) && key.substring(0, 1) === "$") {

@@ -4,7 +4,7 @@ Package.describe({
 
 Package.on_use(function(api) {
   api.use(['deps', 'underscore', 'check'], ['client', 'server']);
-  api.add_files(['simple-schema.js'], ['client', 'server']);
+  api.add_files(['simple-schema-context.js', 'simple-schema.js'], ['client', 'server']);
   if (typeof api.export !== "undefined") {
     //backwards compatibility with pre-0.6.5 meteor
     api.export(['SimpleSchema', 'SchemaRegEx'], ['client', 'server']);
