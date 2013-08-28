@@ -23,10 +23,7 @@ MySchema = new SimpleSchema({
         maxCount: maxCount, //maximum array length, used only if type is an array
         allowedValues: [], //an array of allowed values; the key's value
                            //must match one of these
-        valueIsAllowed: function, //a function that accepts the value as
-                                  //its first argument and the full document
-                                  //or modifier object as its second argument
-                                  //and returns true if the value is allowed
+        valueIsAllowed: function, //see the Defining Allowed Values section
         decimal: true, //default is false; set to true if type=Number
                        //and you want to allow non-integers
         regEx: /[0-255]/, //any regular expression that must be matched
@@ -112,40 +109,59 @@ as the value for the `regEx` key in the schema. Currently `SchemaRegEx.Email` an
 
 ## Cleaning Data
 
-Your SimpleSchema object has two methods you can use to clean data in an object.
-
-### SimpleSchema.filter(obj)
-
-Removes keys from obj if they are not listed in the schema. Returns the filtered object. It's a
-good idea to call this method before validating if you're dealing with user-entered data.
-
-### SimpleSchema.autoTypeConvert(obj)
-
-Returns an object that has values automatically type-converted to match the schema,
-if possible. For example, non-string values can be converted to a String if the
+Use the `clean()` method on an instance of SimpleSchema to clean an object prior to validating it. This
+is highly recommended if security is a concern because it will ensure that any keys
+not explicitly or implicitly allowed by the schema are removed. It will also automatically
+typeconvert some values when possible to avoid needless validation errors.
+For example, non-string values can be converted to a String if the
 schema expects a String, and strings that are numbers can be converted to Numbers
-if the schema expects a Number. It's a good idea to call this method before
-validating if you're dealing with user-entered data, so as to avoid unnecessary
-validation errors.
+if the schema expects a Number.
+
+If you want to skip either filtering or type conversion, set the corresponding
+option to false:
+
+```js
+MySchema.clean(obj, {
+  filter: false,
+  autoConvert: false
+});
+```
 
 ## Validating Data
 
-To validate an object against the schema, use `MySchema.validate(obj)`. This
-method returns undefined, but it also stores a list of invalid fields and corresponding
-error messages in the SimpleSchema object.
+Before you can validate an object against your schema, you need to get a new
+validation context from the SimpleSchema. A validation context provides
+reactive methods for validating and checking the validation status of a particular
+object.
 
-Now you can call `MySchema.valid()` to see if the object passed into `validate()`
+To obtain a validation context, call `newContext()`:
+
+```js
+var ss = new SimpleSchema({
+    requiredString: {
+        type: String
+    }
+});
+var ssContext1 = ss.newContext();
+```
+
+To validate an object against the schema in a validation context, call
+`myContext.validate(obj, options)`. This method returns undefined, but it also
+stores a list of invalid fields and corresponding error messages in the
+context object and causes the reactive methods to react.
+
+Now you can call `myContext.isValid()` to see if the object passed into `validate()`
 was found to be valid. This is a reactive method that returns true or false.
 
 ### Validating Only One Key
 
-You may have the need to validate just one key. For this, use `MySchema.validateOne(obj, key)`.
+You may have the need to validate just one key. For this, use `myContext.validateOne(obj, key, options)`.
 Only the specified schema key will be validated. This may cause all of the
 reactive methods to react.
 
-### Other Methods
+### Other Validation Context Methods
 
-Call `MySchema.invalidKeys()` to get the full array of invalid key data. Each object
+Call `myContext.invalidKeys()` to get the full array of invalid key data. Each object
 in the array has three keys:
 * `name`: The schema key as specified in the schema.
 * `type`: The type of error. One of the following strings:
@@ -171,20 +187,24 @@ in the array has three keys:
 
 This is a reactive method.
 
-`MySchema.keyIsInvalid(key)` returns true if the specified key is currently
+`myContext.keyIsInvalid(key)` returns true if the specified key is currently
 invalid, or false if it is valid. This is a reactive method.
 
-`MySchema.keyErrorMessage(key)` returns the error message for the specified
+`myContext.keyErrorMessage(key)` returns the error message for the specified
 key if it is invalid. If it is valid, this method returns an empty string. This
 is a reactive method.
 
+Call `myContext.resetValidation()` if you need to reset the validation context,
+clearing out any invalid field messages and making it valid.
+
+### Other SimpleSchema Methods
+
 Call `MySchema.schema(key)` to get the original schema object that you passed in
-as the only argument to the SimpleSchema constructor function. If you specify a
+as the first argument to the SimpleSchema constructor function. If you specify a
 key, then only that schema key's value (the schema definition for that key) 
 is returned.
 
-Call `MySchema.resetValidation()` if you need to reset the SimpleSchema object,
-clearing out any invalid field messages.
+### check()
 
 A schema can be passed as the second argument of the built-in `check()` function. 
 This will throw a Match.Error if the object specified in the first argument is not
@@ -199,10 +219,16 @@ check({admin: true}, mySchema); // throw a Match.Error
 
 ### The Object
 
-The object you pass in when validating can be a normal object, or it can use the $set or $unset
-format of a mongo-style object. In other words, you can pass in the exact object
-that you are going to pass to `Collection.insert()` or `Collection.update()`. This
-is what the collection2 smart package does for you.
+The object you pass in when validating can be a normal object, or it can be
+a mongo modifier object (with `$set`, etc. keys). In other words, you can pass
+in the exact object that you are going to pass to `Collection.insert()` or
+`Collection.update()`. This is what the collection2 smart package does for you.
+
+When you are passing in a mongo modifier object, set the `modifier` option to true:
+
+```js
+myContext.validate({$set: { age: 29 }}, { modifier: true });
+```
 
 ## Customizing Validation Messages
 
@@ -262,7 +288,26 @@ If you are interested in supporting multiple languages, you should be able to re
 to change the messages at any time, for example, in an autorun function based on a language value stored in session
 that loads the message object from static json files.
 
-## Validating One Key Against Another
+## Defining Allowed Values
+
+To define which values are allowed for a schema key, use the `allowedValues` option
+or the `valueIsAllowed` option.
+
+`allowedValues` is simply an array of values that are allowed. A key will be
+invalid if it's value is not one of these.
+
+`valueIsAllowed` can be set to a function that must return true to allow the value.
+The function is passed three arguments:
+
+* `value`: The value to be validated
+* `obj`: The entire object being validated (could be a mongo modifier)
+* `operator`: A string identifying which operator is currently being validated if `obj` is a modifier. For normal objects, this will be null.
+
+The valueIsAllowed function may be called multiple times with different `operator` arguments
+for a single validation run. If you are unsure what operators might be used, your
+code must handle all possible operators or return false for operators you don't want to allow.
+
+### Validating One Key Against Another
 
 The second argument of the `valueIsAllowed` function is the full document or
 mongo modifier object that's being validated. This allows you to declare one value
@@ -279,9 +324,14 @@ MySchema = new SimpleSchema({
         type: String,
         label: "Enter the password again",
         min: 8,
-        valueIsAllowed: function (val, doc) {
-            var pass = ("$set" in doc) ? doc.$set.password : doc.password;
-            return pass === val;
+        valueIsAllowed: function (val, doc, op) {
+            if (!op) { //insert
+              return doc.password === val;
+            }
+            if (op === "$set") { //update
+              return doc.$set.password === val;
+            }
+            return false; //allow only inserts and $set
         }
     }
 });

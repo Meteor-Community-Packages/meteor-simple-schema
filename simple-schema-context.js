@@ -262,7 +262,7 @@ validateOne = function(operator, def, keyName, keyLabel, keyValue, ss, fullDoc) 
                 invalidKeys.push({name: keyName, type: "notAllowed", message: ss.messageForError("notAllowed", keyName, def, keyValue)});
             }
         } else if (def.valueIsAllowed && def.valueIsAllowed instanceof Function) {
-            if (!def.valueIsAllowed(keyValue, fullDoc)) {
+            if (!def.valueIsAllowed(keyValue, fullDoc, operator)) {
                 invalidKeys.push({name: keyName, type: "notAllowed", message: ss.messageForError("notAllowed", keyName, def, keyValue)});
             }
         }
