@@ -47,20 +47,20 @@ SimpleSchema.prototype = new Match.Where();
 // the function named `condition` and will pass it the document to validate
 SimpleSchema.prototype.condition = function(obj) {
     var self = this;
-    
+
     //determine whether obj is a modifier
     var isModifier, isNotModifier;
-    _.each(obj, function (val, key) {
+    _.each(obj, function(val, key) {
         if (key.substring(0, 1) === "$") {
             isModifier = true;
         } else {
             isNotModifier = true;
         }
     });
-    
+
     if (isModifier && isNotModifier)
         throw new Match.Error("Object cannot contain modifier operators alongside other keys");
-    
+
     var context = self.newContext();
     context.validate(obj, {modifier: isModifier});
     if (!context.isValid())
@@ -82,6 +82,14 @@ SimpleSchema.prototype.clean = function(doc, options) {
         filter: true,
         autoConvert: true
     }, options || {});
+
+    //delete deprecated operators
+    if ("$pushAll" in doc) {
+        delete doc.$pushAll;
+    }
+    if ("$pullAll" in doc) {
+        delete doc.$pullAll;
+    }
 
     //collapse
     var cDoc = collapseObj(doc, self._schemaKeys);
@@ -111,6 +119,10 @@ SimpleSchema.prototype.clean = function(doc, options) {
                             if (_.isArray(opVal)) {
                                 for (var i = 0, ln = opVal.length; i < ln; i++) {
                                     opVal[i] = typeconvert(opVal[i], type); //typeconvert
+                                }
+                            } else if (_.isObject(opVal) && ("$each" in opVal)) {
+                                for (var i = 0, ln = opVal.$each.length; i < ln; i++) {
+                                    opVal.$each[i] = typeconvert(opVal.$each[i], type); //typeconvert
                                 }
                             } else {
                                 opVal = typeconvert(opVal, type); //typeconvert
