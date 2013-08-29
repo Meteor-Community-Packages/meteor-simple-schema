@@ -25,12 +25,14 @@ var defaultMessages = {
     expectedArray: "[label] must be an array",
     expectedObject: "[label] must be an object",
     expectedConstructor: "[label] must be a [type]",
-    regEx: "[label] failed regular expression validation"
+    regEx: "[label] failed regular expression validation",
+    keyNotInSchema: "[label] is not allowed by the schema"
 };
 
 //exported
 SimpleSchema = function(schema) {
     var self = this;
+    schema = addImplicitKeys(schema);
     self._schema = schema || {};
     self._schemaKeys = _.keys(schema);
     self._validators = [];
@@ -193,7 +195,7 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
         return "Unknown validation error";
     }
     if (!def) {
-        def = self._schema[key];
+        def = self._schema[key] || {};
     }
     var label = def.label || key;
     message = message.replace("[label]", label);
@@ -269,7 +271,7 @@ SimpleSchema.prototype.newContext = function() {
 };
 
 SimpleSchema.prototype.collapseObj = function(doc) {
-    return collapseObj(doc, this._schemaKeys);
+    return collapseObj(doc);
 };
 
 SimpleSchema.prototype.expandObj = function(doc) {
@@ -281,14 +283,14 @@ var collapseObj = function(doc, skip) {
     var res = {};
     (function recurse(obj, current, currentOperator) {
         if (_.isArray(obj)) {
-            for (var i = 0, ln = obj.length; i < ln; i++) {
-                var value = obj[i];
-                var newKey = (current ? current + "." + i : i);  // joined index with dot
-                if (value && (typeof value === "object" || _.isArray(value)) && !_.contains(skip, newKey)) {
-                    recurse(value, newKey, currentOperator);  // it's a nested object or array, so do it again
-                } else {
-                    res[newKey] = value;  // it's not an object or array, so set the property
+            if (obj.length && typeof obj[0] === "object" && !_.contains(skip, newKey)) {
+                for (var i = 0, ln = obj.length; i < ln; i++) {
+                    var value = obj[i];
+                    var newKey = (current ? current + "." + i : i);  // joined index with dot
+                    recurse(value, newKey, currentOperator);  // it's a nested object or array of objects, so do it again
                 }
+            } else {
+                res[current] = obj;  // it's not an object or array of objects, so set the property
             }
         } else {
             for (var key in obj) {
@@ -393,4 +395,42 @@ var dateToDateString = function(date) {
         d = "0" + d;
     }
     return date.getUTCFullYear() + '-' + m + '-' + d;
+};
+
+var addImplicitKeys = function(schema) {
+    //if schema contains key like "foo.$.bar" but not "foo", add "foo"
+    var arrayKeysToAdd = [], objectKeysToAdd = [], newKey, key, nextThree;
+
+    _.each(schema, function(def, existingKey) {
+        var pos = existingKey.indexOf(".");
+
+        while (pos !== -1) {
+            newKey = existingKey.substring(0, pos);
+            nextThree = existingKey.substring(pos, pos + 3);
+            if (newKey.substring(newKey.length - 2) !== ".$") {
+                if (nextThree === ".$.") {
+                    arrayKeysToAdd.push(newKey);
+                } else {
+                    objectKeysToAdd.push(newKey);
+                }
+            }
+            pos = existingKey.indexOf(".", pos + 3);
+        }
+    });
+
+    for (var i = 0, ln = arrayKeysToAdd.length; i < ln; i++) {
+        key = arrayKeysToAdd[i];
+        if (!(key in schema)) {
+            schema[key] = {type: [Object], optional: true};
+        }
+    }
+
+    for (var i = 0, ln = objectKeysToAdd.length; i < ln; i++) {
+        key = objectKeysToAdd[i];
+        if (!(key in schema)) {
+            schema[key] = {type: Object, optional: true};
+        }
+    }
+
+    return schema;
 };

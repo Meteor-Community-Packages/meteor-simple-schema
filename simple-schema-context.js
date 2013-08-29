@@ -14,39 +14,12 @@ SimpleSchemaValidationContext = function(ss) {
 
 //validates the object against the simple schema and sets a reactive array of error objects
 SimpleSchemaValidationContext.prototype.validate = function(doc, options) {
-    var self = this, invalidKeys = [];
+    var self = this;
     options = _.extend({
         modifier: false
     }, options || {});
 
-    if (typeof doc === "object") {
-        if (options.modifier) {
-            //all keys must pass validation check in all operator objects
-            _.each(self._schema, function(def, keyName) {
-                var keyLabel = def.label || keyName;
-
-                //loop through present modifiers
-                _.each(doc, function(modObj, operator) {
-                    if (operator.substring(0, 1) !== "$") {
-                        throw new Error("When the modifier option is true, all validation object keys must be operators");
-                    }
-                    if (keyName in modObj) {
-                        invalidKeys = _.union(invalidKeys, validateOne(operator, def, keyName, keyLabel, modObj[keyName], self._simpleSchema, doc));
-                    }
-                });
-            });
-        } else {
-            //flatten the object to one level, using mongo operator dot notation
-            doc = self._simpleSchema.collapseObj(doc);
-
-            //all keys must pass validation check
-            _.each(self._schema, function(def, keyName) {
-                var keyValue = doc[keyName];
-                var keyLabel = def.label || keyName;
-                invalidKeys = _.union(invalidKeys, validateOne(null, def, keyName, keyLabel, keyValue, self._simpleSchema, doc));
-            });
-        }
-    }
+    var invalidKeys = doValidation(doc, options.modifier, null, self._simpleSchema, self._schema);
 
     //now update self._invalidKeys and dependencies
 
@@ -62,8 +35,11 @@ SimpleSchemaValidationContext.prototype.validate = function(doc, options) {
 
     //mark all changed keys as changed
     var changedKeys = _.union(addedKeys, removedKeys);
+    var d = self._deps;
     _.each(changedKeys, function(name) {
-        self._deps[name].changed();
+        if (name in d) {
+            d[name].changed();
+        }
     });
     if (changedKeys.length) {
         self._depsAny.changed();
@@ -72,39 +48,12 @@ SimpleSchemaValidationContext.prototype.validate = function(doc, options) {
 
 //validates doc against self._schema for one key and sets a reactive array of error objects
 SimpleSchemaValidationContext.prototype.validateOne = function(doc, keyName, options) {
-    var self = this, invalidKeys = [];
+    var self = this;
     options = _.extend({
         modifier: false
     }, options || {});
 
-    //key must pass validation check
-    var def = self._schema[keyName];
-    if (!def) {
-        throw new Error("The schema contains no key named " + keyName);
-    }
-
-    if (typeof doc === "object") {
-        if (options.modifier) {
-            var keyLabel = def.label || keyName;
-
-            //loop through present modifiers
-            _.each(doc, function(modObj, operator) {
-                if (operator.substring(0, 1) !== "$") {
-                    throw new Error("When the modifier option is true, all validation object keys must be operators");
-                }
-                if (keyName in modObj) {
-                    invalidKeys = _.union(invalidKeys, validateOne(operator, def, keyName, keyLabel, modObj[keyName], self._simpleSchema, doc));
-                }
-            });
-        } else {
-            //flatten the object to one level, using mongo operator dot notation
-            doc = self._simpleSchema.collapseObj(doc);
-
-            var keyValue = doc[keyName];
-            var keyLabel = def.label || keyName;
-            invalidKeys = validateOne(null, def, keyName, keyLabel, keyValue, self._simpleSchema, doc);
-        }
-    }
+    var invalidKeys = doValidation(doc, options.modifier, keyName, self._simpleSchema, self._schema);
 
     //now update self._invalidKeys and dependencies
 
@@ -130,53 +79,41 @@ SimpleSchemaValidationContext.prototype.validateOne = function(doc, keyName, opt
 };
 
 //this is where all the validation happens for a particular key for a single operator
-validateOne = function(operator, def, keyName, keyLabel, keyValue, ss, fullDoc) {
-    var invalidKeys = [];
+var validateOne = function(operator, def, keyName, keyValue, ss, fullDoc) {
+    var invalidKeys = [], requiredError;
 
-    if (operator === "$unset") {
-        //unset
+    if (!def) {
+        invalidKeys.push({name: keyName, type: "keyNotInSchema", message: ss.messageForError("keyNotInSchema", keyName, def, keyValue)});
+        return invalidKeys;
+    }
 
-        //check if required
-        if (!def.optional) {
-            //for unsetting, value is irrelevant
-            invalidKeys.push({name: keyName, type: "required", message: ss.messageForError("required", keyName, def)});
-            return invalidKeys; //never do further checks for the same field after a "required" error
-        }
-        return invalidKeys; //the value of $unset does not matter and therefore needs no more checking beyond required/optional
-    } else if (operator === "$set") {
-        //set
-
-        //check if required (undefined is not invalid for $set like it would be for an insert)
-        if (keyValue === null || (typeof keyValue === "string" && isBlank(keyValue))) {
-            if (!def.optional) {
-                invalidKeys.push({name: keyName, type: "required", message: ss.messageForError("required", keyName, def)});
-                return invalidKeys;
+    //we did most "required" validation previously, but it is easier to do
+    //required keys in objects that are in arrays now
+    if (keyName.indexOf(".$.") !== -1) {
+        if (!operator) {
+            requiredError = validateRequired(keyName, keyValue, def, ss);
+        } else if (operator === "$set") {
+            if (keyValue !== void 0) {
+                requiredError = validateRequired(keyName, keyValue, def, ss);
             }
-            //whether required or not, the value is null so no further checks are necessary
-            if (keyValue === null) {
-                return invalidKeys;
+        } else if (operator === "$setOnInsert") {
+            if (keyValue !== void 0) {
+                requiredError = validateRequired(keyName, keyValue, def, ss);
             }
-            //if it's an empty string, continue so that other checks like min length can be performed
+        } else if (!def.optional && (operator === "$unset" || operator === "$rename")) {
+            requiredError = {name: keyName, type: "required", message: ss.messageForError("required", keyName, def)};
         }
 
-        if (keyValue === void 0) {
-            return invalidKeys;
+        if (requiredError) {
+            invalidKeys.push(requiredError);
+            return invalidKeys; //once we've logged a required error for the key, no further checking is necessary
         }
-    } else if (!operator) {
-        //insert
+    }
 
-        //check if required
-        if (keyValue === void 0 || keyValue === null || (typeof keyValue === "string" && isBlank(keyValue))) {
-            if (!def.optional) {
-                invalidKeys.push({name: keyName, type: "required", message: ss.messageForError("required", keyName, def)});
-                return invalidKeys;
-            }
-            //whether required or not, the value is null so no further checks are necessary
-            if (keyValue === void 0 || keyValue === null) {
-                return invalidKeys;
-            }
-            //if it's an empty string, continue so that other checks like min length can be performed
-        }
+    //no further checks are necessary for null or undefined values,
+    //regardless of whether the key is required or not
+    if (keyValue === void 0 || keyValue === null) {
+        return invalidKeys;
     }
 
     //Type Checking
@@ -233,25 +170,15 @@ validateOne = function(operator, def, keyName, keyLabel, keyValue, ss, fullDoc) 
         }
     }
 
-    //if it's an array, loop through it and call validateOne recursively
+    //if it's an array, loop through it and validate each value in the array
     if (_.isArray(def.type)) {
-        if (!_.isArray(keyValue)) {
-            invalidKeys.push({name: keyName, type: "expectedArray", message: ss.messageForError("expectedArray", keyName, def)});
-        } else if (def.minCount && keyValue.length < def.minCount) {
-            invalidKeys.push({name: keyName, type: "minCount", message: ss.messageForError("minCount", keyName, def)});
-        } else if (def.maxCount && keyValue.length > def.maxCount) {
-            invalidKeys.push({name: keyName, type: "maxCount", message: ss.messageForError("maxCount", keyName, def)});
-        } else {
-            //if it's an array with the right number of values, etc., then we need to go through them all and
-            //validate each value in the array
-            var childDef = _.clone(def), loopVal;
-            childDef.type = def.type[0]; //strip array off of type
-            for (var i = 0, ln = keyValue.length; i < ln; i++) {
-                loopVal = keyValue[i];
-                invalidKeys = _.union(invalidKeys, validateOne(operator, childDef, keyName, keyLabel, loopVal, ss, fullDoc));
-                if (invalidKeys.length) {
-                    break;
-                }
+        var childDef = _.clone(def), loopVal;
+        childDef.type = def.type[0]; //strip array off of type
+        for (var i = 0, ln = keyValue.length; i < ln; i++) {
+            loopVal = keyValue[i];
+            invalidKeys = _.union(invalidKeys, validateOne(operator, childDef, keyName, loopVal, ss, fullDoc));
+            if (invalidKeys.length) {
+                break;
             }
         }
     } else {
@@ -307,5 +234,194 @@ SimpleSchemaValidationContext.prototype.keyErrorMessage = function(name) {
 };
 
 var isBlank = function(str) {
+    if (typeof str !== "string") {
+        return false;
+    }
     return (/^\s*$/).test(str);
+};
+
+var isBlankNullOrUndefined = function(str) {
+    return (str === void 0 || str === null || isBlank(str));
+};
+
+var validateRequired = function(keyName, keyValue, def, ss) {
+    if (!def.optional && isBlankNullOrUndefined(keyValue)) {
+        return {name: keyName, type: "required", message: ss.messageForError("required", keyName, def)};
+    }
+};
+
+var validateArray = function(keyName, keyValue, def, ss) {
+    if (_.isArray(def.type) && !isBlankNullOrUndefined(keyValue)) {
+        if (!_.isArray(keyValue)) {
+            return {name: keyName, type: "expectedArray", message: ss.messageForError("expectedArray", keyName, def)};
+        } else if (def.minCount && keyValue.length < def.minCount) {
+            return {name: keyName, type: "minCount", message: ss.messageForError("minCount", keyName, def)};
+        } else if (def.maxCount && keyValue.length > def.maxCount) {
+            return {name: keyName, type: "maxCount", message: ss.messageForError("maxCount", keyName, def)};
+        }
+    }
+};
+
+var getRequiredAndArrayErrors = function(doc, keyName, def, ss, hasModifiers, hasSet, hasSetOnInsert, hasUnset, hasRename) {
+    var keyValue, requiredError, arrayError;
+
+    if (hasModifiers) {
+        //Do required checks for modifiers. The general logic is this:
+        //if required, then:
+        //-in $set and $setOnInsert, val must not be null or empty string, AND
+        //-in $unset, key must not be present, AND
+        //-in $rename, key must not be present
+        //But make sure only one required error is logged per keyName
+        if (hasSet) {
+            keyValue = doc.$set[keyName];
+
+            //check for missing required, unless undefined,
+            //except validate required keys in objects in arrays later, when looping through doc ("foo.$.bar")
+            if (keyValue !== void 0 && keyName.indexOf(".$.") === -1) {
+                requiredError = validateRequired(keyName, keyValue, def, ss);
+            }
+        }
+
+        if (!requiredError && hasSetOnInsert) {
+            keyValue = doc.$setOnInsert[keyName];
+
+            //check for missing required, unless undefined,
+            //except validate required keys in objects in arrays later, when looping through doc ("foo.$.bar")
+            if (keyValue !== void 0 && keyName.indexOf(".$.") === -1) {
+                requiredError = validateRequired(keyName, keyValue, def, ss);
+            }
+        }
+
+        if (!requiredError && hasUnset && !def.optional && (keyName in doc.$unset)) {
+            requiredError = {name: keyName, type: "required", message: ss.messageForError("required", keyName, def)};
+        }
+
+        if (!requiredError && hasRename && !def.optional && (keyName in doc.$rename)) {
+            requiredError = {name: keyName, type: "required", message: ss.messageForError("required", keyName, def)};
+        }
+    } else {
+        //keyName might be implied by another key in doc
+        //(e.g., "name.first" implies "name")
+        //if so, assume that it is set in the original object,
+        //so don't log any errors
+        //(this check only applies to non-modifier objects)
+        if (!(keyName in doc)) {
+            var shouldQuit = false;
+            _.each(doc, function(val, key) {
+                if (key.indexOf(keyName + '.') !== -1) {
+                    shouldQuit = true;
+                }
+            });
+            if (shouldQuit) {
+                return [];
+            }
+        }
+
+        //Do required checks for normal objects. The general logic is this:
+        //if required, then the key must be present and it's value
+        //must not be undefined, null, or an empty string
+        keyValue = doc[keyName];
+
+        //check for missing required,
+        //except validate required keys in objects in arrays later, when looping through doc ("foo.$.bar")
+        if (keyName.indexOf(".$.") === -1) {
+            requiredError = validateRequired(keyName, keyValue, def, ss);
+        }
+    }
+
+    if (requiredError) {
+        return [requiredError]; //once we've logged a required error for the key, no further checking is necessary
+    }
+
+    //Second do array checks
+
+    if (hasModifiers) {
+        if (hasSet) {
+            keyValue = doc.$set[keyName];
+            arrayError = validateArray(keyName, keyValue, def, ss);
+        }
+
+        if (!arrayError && hasSetOnInsert) {
+            keyValue = doc.$setOnInsert[keyName];
+            arrayError = validateArray(keyName, keyValue, def, ss);
+        }
+    } else {
+        arrayError = validateArray(keyName, keyValue, def, ss);
+    }
+
+    if (arrayError) {
+        return [arrayError];
+    }
+
+    return [];
+};
+
+var validateObj = function(obj, keyToValidate, invalidKeys, ss, schema, operator) {
+    _.each(obj, function(val, key) {
+        //replace .Number. with .$. in key
+        var schemaKey = key.replace(/\.[0-9]+\./g, '.$.');
+
+        if (keyToValidate && keyToValidate !== schemaKey) {
+            return;
+        }
+
+        //do no further checks if we've already logged one error for this key
+        if (_.findWhere(invalidKeys, {name: schemaKey})) {
+            return;
+        }
+
+        var def = schema[schemaKey];
+        invalidKeys = _.union(invalidKeys, validateOne(operator, def, schemaKey, val, ss, obj));
+    });
+    return invalidKeys;
+};
+
+var doValidation = function(doc, isModifier, keyToValidate, ss, schema) {
+    //check arguments
+    if (typeof doc !== "object") {
+        throw new Error("The first argument of validate() or validateOne() must be an object");
+    }
+    
+    var invalidKeys = [];
+    var hasSet = ("$set" in doc);
+    var hasSetOnInsert = ("$setOnInsert" in doc);
+    var hasUnset = ("$unset" in doc);
+    var hasRename = ("$rename" in doc);
+
+    if (!isModifier) {
+        //flatten the object to one level, using mongo operator dot notation
+        doc = ss.collapseObj(doc);
+    }
+
+    //first, loop through schema to do required and array checks
+    var found = false;
+    _.each(schema, function(def, keyName) {
+        if (keyToValidate) {
+            if (keyToValidate === keyName) {
+                found = true;
+            } else {
+                return;
+            }
+        }
+        invalidKeys = _.union(invalidKeys, getRequiredAndArrayErrors(doc, keyName, def, ss, isModifier, hasSet, hasSetOnInsert, hasUnset, hasRename));
+    });
+
+    if (keyToValidate && !found) {
+        throw new Error("The schema contains no key named " + keyToValidate);
+    }
+
+    if (isModifier) {
+        //second, loop through present modifiers
+        _.each(doc, function(modObj, operator) {
+            if (operator.substring(0, 1) !== "$") {
+                throw new Error("When the modifier option is true, all validation object keys must be operators");
+            }
+            invalidKeys = _.union(invalidKeys, validateObj(modObj, keyToValidate, invalidKeys, ss, schema, operator));
+        });
+    } else {
+        //second, loop through doc and validate all keys that are present
+        invalidKeys = _.union(invalidKeys, validateObj(doc, keyToValidate, invalidKeys, ss, schema, null));
+    }
+
+    return invalidKeys;
 };
