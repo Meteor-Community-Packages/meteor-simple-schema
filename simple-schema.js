@@ -205,7 +205,7 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
     if (typeof def.maxCount !== "undefined") {
         message = message.replace("[maxCount]", def.maxCount);
     }
-    if (typeof value !== "undefined") {
+    if (value !== void 0 && value !== null) {
         message = message.replace("[value]", value.toString());
     }
     if (def.type === Date || def.type === [Date]) {
