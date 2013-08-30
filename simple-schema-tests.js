@@ -1066,3 +1066,21 @@ Tinytest.add("SimpleSchema - Validate with the Match API", function(test) {
     test.isFalse(Match.test({password: 'pass'}, pss.match()));
     test.isTrue(Match.test({password: 'pass', confirmPassword: 'pass'}, pss.match()));
 });
+
+Tinytest.add("SimpleSchema - additionalKeyPatterns", function(test) {
+    try {
+        var ssWithUnique = new SimpleSchema({
+            name: {
+                type: String,
+                unique: true
+            }
+        }, {
+            additionalKeyPatterns: {
+                unique: Match.Optional(Boolean)
+            }
+        });
+
+    } catch (exception) {
+        test.fail({type: 'exception', message: 'define a schema with a unique option in field definition'});
+    }
+});
