@@ -29,8 +29,9 @@ var defaultMessages = {
 };
 
 //exported
-SimpleSchema = function(schema) {
+SimpleSchema = function(schema, options) {
     var self = this;
+    options = options || {};
     self._schema = schema || {};
     self._schemaKeys = _.keys(schema);
     self._invalidKeys = [];
@@ -45,11 +46,35 @@ SimpleSchema = function(schema) {
             delete self._schema[key].regExMessage;
         }
     });
+
+    //set schemaDefinition validator
+    var schemaDefinition = {
+        type: Match.OneOf(Function, [Function]),
+        label: Match.Optional(String),
+        optional: Match.Optional(Boolean),
+        min: Match.Optional(Match.OneOf(Number, Date)),
+        max: Match.Optional(Match.OneOf(Number, Date)),
+        minCount: Match.Optional(Number),
+        maxCount: Match.Optional(Number),
+        allowedValues: Match.Optional([Match.Any]),
+        valueIsAllowed: Match.Optional(Function),
+        decimal: Match.Optional(Boolean),
+        regEx: Match.Optional(RegExp)
+    };
+
+    if (typeof options.additionalKeyPatterns === "object")
+        _.extend(schemaDefinition, options.additionalKeyPatterns);
+    
     //set up validation dependencies
     self._deps = {};
     self._depsAny = new Deps.Dependency;
     _.each(self._schemaKeys, function(name) {
         self._deps[name] = new Deps.Dependency;
+
+        // Validate the field definition
+        if (!Match.test(self._schema[name], schemaDefinition)) {
+            throw new Error('Invalid definition for ' + name + ' field.');
+        }
     });
 };
 
