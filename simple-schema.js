@@ -31,7 +31,7 @@ var defaultMessages = {
 //exported
 SimpleSchema = function(schema, options) {
     var self = this;
-    var options = options || {};
+    options = options || {};
     self._schema = schema || {};
     self._schemaKeys = _.keys(schema);
     self._invalidKeys = [];
