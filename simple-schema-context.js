@@ -425,6 +425,10 @@ var doValidation = function(doc, isModifier, keyToValidate, ss, schema) {
     if (typeof doc !== "object") {
         throw new Error("The first argument of validate() or validateOne() must be an object");
     }
+    
+    if (!isModifier && looksLikeModifier(doc)) {
+        throw new Error("When the validation object contains mongo operators, you must set the modifier option to true");
+    }
 
     var invalidKeys = [];
     var hasSet = ("$set" in doc);

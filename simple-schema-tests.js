@@ -732,7 +732,7 @@ Tinytest.add("SimpleSchema - Update Type Check", function(test) {
     var sc2 = ss.newContext();
     sc2.validate({$set: {
             string: true
-        }}, true);
+        }}, {modifier: true});
     test.length(sc2.invalidKeys(), 1); //without typeconvert
 
     sc = validate(ss, {$set: {
@@ -743,7 +743,7 @@ Tinytest.add("SimpleSchema - Update Type Check", function(test) {
     //number string failure
     sc2.validate({$set: {
             string: 1
-        }}, true);
+        }}, {modifier: true});
     test.length(sc2.invalidKeys(), 1); //without typeconvert
 
     sc = validate(ss, {$set: {
@@ -754,7 +754,7 @@ Tinytest.add("SimpleSchema - Update Type Check", function(test) {
     //object string failure
     sc2.validate({$set: {
             string: {test: "test"}
-        }}, true);
+        }}, {modifier: true});
     test.length(sc2.invalidKeys(), 1); //without typeconvert
 
     sc = validate(ss, {$set: {
@@ -771,7 +771,7 @@ Tinytest.add("SimpleSchema - Update Type Check", function(test) {
     //instance string failure
     sc2.validate({$set: {
             string: (new Date())
-        }}, true);
+        }}, {modifier: true});
     test.length(sc2.invalidKeys(), 1); //without typeconvert
 
     sc = validate(ss, {$set: {
@@ -1512,7 +1512,7 @@ Tinytest.add("SimpleSchema - Array of Objects", function(test) {
 
     fc = validate(friends, {$set: {
             friends: []
-        }});
+        }}, true);
     test.length(fc.invalidKeys(), 1);
 });
 

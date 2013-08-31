@@ -115,7 +115,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
                     if (_.isArray(type)) {
                         type = type[0];
                     }
-                    if (isModifier(val)) {
+                    if (looksLikeModifier(val)) {
                         //convert modifier values
                         _.each(val, function(opVal, op) {
                             if (_.isArray(opVal)) {
@@ -332,7 +332,7 @@ var expandObj = function(doc) {
     var newDoc = doc;
     _.each(newDoc, function(val, key) {
         delete newDoc[key];
-        if (typeof val === "object" && isModifier(val)) {
+        if (typeof val === "object" && looksLikeModifier(val)) {
             for (var operator in val) {
                 if (val.hasOwnProperty(operator)) {
                     newDoc[operator] = newDoc[operator] || {};
@@ -374,7 +374,7 @@ var expandKey = function(val, key, obj) {
     }
 };
 
-var isModifier = function(obj) {
+looksLikeModifier = function(obj) {
     var ret = false;
     for (var key in obj) {
         if (obj.hasOwnProperty(key) && key.substring(0, 1) === "$") {
