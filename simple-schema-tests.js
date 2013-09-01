@@ -1451,295 +1451,35 @@ Tinytest.add("SimpleSchema - Validate Against Another Key", function(test) {
 });
 
 Tinytest.add("SimpleSchema - Validate with the Match API", function(test) {
-    test.isTrue(pss instanceof SimpleSchema);
+    test.instanceOf(pss, SimpleSchema);
     test.isFalse(Match.test({password: 'pass'}, pss));
     test.isTrue(Match.test({password: 'pass', confirmPassword: 'pass'}, pss));
-});
-
-var friends = new SimpleSchema({
-    friends: {
-        type: [Object],
-        minCount: 1
-    },
-    'friends.$.name': {
-        type: String,
-        max: 3
+    try {
+        check({password: 'pass'}, pss);
+        test.fail({type: 'exception', message: 'expect the check validation to throws an exception'});
+    } catch (exception) {
+        test.instanceOf(exception, Match.Error);
     }
+
+    // [backwards compatibility]
+    test.isFalse(Match.test({password: 'pass'}, pss.match()));
+    test.isTrue(Match.test({password: 'pass', confirmPassword: 'pass'}, pss.match()));
 });
 
-Tinytest.add("SimpleSchema - Array of Objects", function(test) {
-    var fc = validate(friends, {
-        friends: [{name: 'Bob'}]
-    });
-    test.length(fc.invalidKeys(), 0);
+Tinytest.add("SimpleSchema - additionalKeyPatterns", function(test) {
+    try {
+        var ssWithUnique = new SimpleSchema({
+            name: {
+                type: String,
+                unique: true
+            }
+        }, {
+            additionalKeyPatterns: {
+                unique: Match.Optional(Boolean)
+            }
+        });
 
-    fc = validate(friends, {$set: {
-            'friends.$.name': 'Bob'
-        }}, true);
-    test.length(fc.invalidKeys(), 0);
-
-    fc = validate(friends, {$set: {
-            'friends.1.name': 'Bob'
-        }}, true);
-    test.length(fc.invalidKeys(), 0);
-
-    fc = validate(friends, {$set: {
-            'friends.$.name': 'Bobby'
-        }}, true);
-    test.length(fc.invalidKeys(), 1);
-
-    fc = validate(friends, {$set: {
-            'friends.1.name': 'Bobby'
-        }}, true);
-    test.length(fc.invalidKeys(), 1);
-
-    fc = validate(friends, {$unset: {
-            'friends.1.name': 1
-        }}, true);
-    test.length(fc.invalidKeys(), 1);
-
-    fc = validate(friends, {$unset: {
-            'friends.1.name': 1,
-            'friends.2.name': 1,
-            'friends.3.name': 1
-        }}, true);
-    test.length(fc.invalidKeys(), 1);
-
-    fc = validate(friends, {
-        friends: []
-    });
-    test.length(fc.invalidKeys(), 1);
-
-    fc = validate(friends, {$set: {
-            friends: []
-        }}, true);
-    test.length(fc.invalidKeys(), 1);
-});
-
-Tinytest.add("SimpleSchema - Multiple Contexts", function(test) {
-    var ssContext1 = ssr.newContext();
-    ssContext1.validate({});
-    test.length(ssContext1.invalidKeys(), 8);
-    var ssContext2 = ssr.newContext();
-    ssContext2.validate({
-        requiredString: "test",
-        requiredBoolean: true,
-        requiredNumber: 1,
-        requiredDate: (new Date()),
-        requiredEmail: "test123@sub.example.edu",
-        requiredUrl: "http://google.com",
-        requiredObject: {},
-        subdoc: {
-            requiredString: "test"
-        }
-    });
-    test.length(ssContext1.invalidKeys(), 8);
-    test.length(ssContext2.invalidKeys(), 0);
-});
-
-Tinytest.add("SimpleSchema - Cleanup With Modifier Operators", function(test) {
-    //BASELINE
-
-    //when you clean a good object it's still good
-    var goodObj = {string: "This is a string"};
-    var cleanObj = ss.clean(goodObj);
-    test.equal(cleanObj, goodObj);
-    //when you clean a bad object it's now good
-    var badObj = {string: "This is a string", admin: true};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //type conversion works
-    goodObj = {string: "1"};
-    badObj = {string: 1};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //$SET
-
-    //when you clean a good object it's still good
-    goodObj = {$set: {string: "This is a string"}};
-    cleanObj = ss.clean(goodObj);
-    test.equal(cleanObj, goodObj);
-    //when you clean a bad object it's now good
-    badObj = {$set: {string: "This is a string", admin: true}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //type conversion works
-    goodObj = {$set: {string: "1"}};
-    badObj = {$set: {string: 1}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //$UNSET
-
-    //when you clean a good object it's still good
-    goodObj = {$unset: {string: null}};
-    cleanObj = ss.clean(goodObj);
-    test.equal(cleanObj, goodObj);
-    //when you clean a bad object it's now good
-    badObj = {$unset: {string: null, admin: null}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //$SETONINSERT
-
-    //when you clean a good object it's still good
-    goodObj = {$setOnInsert: {string: "This is a string"}};
-    cleanObj = ss.clean(goodObj);
-    test.equal(cleanObj, goodObj);
-    //when you clean a bad object it's now good
-    badObj = {$setOnInsert: {string: "This is a string", admin: true}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //type conversion works
-    goodObj = {$setOnInsert: {string: "1"}};
-    badObj = {$setOnInsert: {string: 1}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //$INC
-
-    //when you clean a good object it's still good
-    goodObj = {$inc: {number: 1}};
-    cleanObj = ss.clean(goodObj);
-    test.equal(cleanObj, goodObj);
-    //when you clean a bad object it's now good
-    badObj = {$inc: {number: 1, admin: 1}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //type conversion works
-    goodObj = {$inc: {number: 1}};
-    badObj = {$inc: {number: "1"}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //$ADDTOSET
-
-    //when you clean a good object it's still good
-    goodObj = {$addToSet: {allowedNumbersArray: 1}};
-    cleanObj = ss.clean(goodObj);
-    test.equal(cleanObj, goodObj);
-    //when you clean a bad object it's now good
-    badObj = {$addToSet: {allowedNumbersArray: 1, admin: 1}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //type conversion works
-    goodObj = {$addToSet: {allowedNumbersArray: 1}};
-    badObj = {$addToSet: {allowedNumbersArray: "1"}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //$ADDTOSET WITH EACH
-
-    //when you clean a good object it's still good
-    goodObj = {$addToSet: {allowedNumbersArray: {$each: [1, 2, 3]}}};
-    cleanObj = ss.clean(goodObj);
-    test.equal(cleanObj, goodObj);
-    //when you clean a bad object it's now good
-    badObj = {$addToSet: {allowedNumbersArray: {$each: [1, 2, 3]}, admin: {$each: [1, 2, 3]}}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //type conversion works
-    goodObj = {$addToSet: {allowedNumbersArray: {$each: [1, 2, 3]}}};
-    badObj = {$addToSet: {allowedNumbersArray: {$each: ["1", 2, 3]}}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //$PUSH
-
-    //when you clean a good object it's still good
-    goodObj = {$push: {allowedNumbersArray: 1}};
-    cleanObj = ss.clean(goodObj);
-    test.equal(cleanObj, goodObj);
-    //when you clean a bad object it's now good
-    badObj = {$push: {allowedNumbersArray: 1, admin: 1}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //type conversion works
-    goodObj = {$push: {allowedNumbersArray: 1}};
-    badObj = {$push: {allowedNumbersArray: "1"}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //$PUSH WITH EACH
-
-    //when you clean a good object it's still good
-    goodObj = {$push: {allowedNumbersArray: {$each: [1, 2, 3]}}};
-    cleanObj = ss.clean(goodObj);
-    test.equal(cleanObj, goodObj);
-    //when you clean a bad object it's now good
-    badObj = {$push: {allowedNumbersArray: {$each: [1, 2, 3]}, admin: {$each: [1, 2, 3]}}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //type conversion works
-    goodObj = {$push: {allowedNumbersArray: {$each: [1, 2, 3]}}};
-    badObj = {$push: {allowedNumbersArray: {$each: ["1", 2, 3]}}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //$PULL
-
-    //when you clean a good object it's still good
-    goodObj = {$pull: {allowedNumbersArray: 1}};
-    cleanObj = ss.clean(goodObj);
-    test.equal(cleanObj, goodObj);
-    //when you clean a bad object it's now good
-    badObj = {$pull: {allowedNumbersArray: 1, admin: 1}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //type conversion works
-    goodObj = {$pull: {allowedNumbersArray: 1}};
-    badObj = {$pull: {allowedNumbersArray: "1"}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //$POP
-
-    //when you clean a good object it's still good
-    goodObj = {$pop: {allowedNumbersArray: 1}};
-    cleanObj = ss.clean(goodObj);
-    test.equal(cleanObj, goodObj);
-    //when you clean a bad object it's now good
-    badObj = {$pop: {allowedNumbersArray: 1, admin: 1}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //type conversion works
-    goodObj = {$pop: {allowedNumbersArray: 1}};
-    badObj = {$pop: {allowedNumbersArray: "1"}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //$SLICE
-
-    //when you clean a good object it's still good
-    goodObj = {$slice: {allowedNumbersArray: 1}};
-    cleanObj = ss.clean(goodObj);
-    test.equal(cleanObj, goodObj);
-    //when you clean a bad object it's now good
-    badObj = {$slice: {allowedNumbersArray: 1, admin: 1}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //type conversion works
-    goodObj = {$slice: {allowedNumbersArray: 1}};
-    badObj = {$slice: {allowedNumbersArray: "1"}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, goodObj);
-    //DEPRECATED OPERATORS SHOULD BE REMOVED
-
-    //$PUSHALL
-
-    badObj = {$pushAll: {allowedNumbersArray: [1, 2, 3]}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, {});
-    //$PULLALL
-
-    badObj = {$pullAll: {allowedNumbersArray: [1, 2, 3]}};
-    cleanObj = ss.clean(badObj);
-    test.equal(cleanObj, {});
-});
-
-Tinytest.add("SimpleSchema - Rename", function(test) {
-    //rename from optional key to another key in schema
-    var ss1 = ss.newContext();
-    ss1.validate({$rename: {string: "minMaxString"}}, {modifier: true});
-    test.length(ss1.invalidKeys(), 0);
-
-    //rename from optional key to a key not in schema
-    var ss1 = ss.newContext();
-    ss1.validate({$rename: {string: "newString"}}, {modifier: true});
-    test.length(ss1.invalidKeys(), 1);
-
-    //rename from required key
-    ss1 = ssr.newContext();
-    ss1.validate({$rename: {requiredString: "newRequiredString"}}, {modifier: true});
-    test.length(ss1.invalidKeys(), 1);
+    } catch (exception) {
+        test.fail({type: 'exception', message: 'define a schema with a unique option in field definition'});
+    }
 });
