@@ -283,7 +283,7 @@ var collapseObj = function(doc, skip) {
     var res = {};
     (function recurse(obj, current, currentOperator) {
         if (_.isArray(obj)) {
-            if (obj.length && typeof obj[0] === "object" && !_.contains(skip, newKey)) {
+            if (obj.length && _.isObject(obj[0]) && !_.contains(skip, newKey)) {
                 for (var i = 0, ln = obj.length; i < ln; i++) {
                     var value = obj[i];
                     var newKey = (current ? current + "." + i : i);  // joined index with dot
@@ -297,7 +297,7 @@ var collapseObj = function(doc, skip) {
                 var value = obj[key];
 
                 var newKey = (current ? current + "." + key : key);  // joined key with dot
-                if (typeof value === "object" && !_.isEmpty(value) && !_.contains(skip, newKey)) {
+                if (_.isObject(value) && !_.isEmpty(value) && !_.contains(skip, newKey)) {
                     //nested non-empty object so recurse into it
                     if (key.substring(0, 1) === "$") {
                         //handle mongo operator keys a bit differently
@@ -332,7 +332,7 @@ var expandObj = function(doc) {
     var newDoc = doc;
     _.each(newDoc, function(val, key) {
         delete newDoc[key];
-        if (typeof val === "object" && looksLikeModifier(val)) {
+        if (_.isObject(val) && looksLikeModifier(val)) {
             for (var operator in val) {
                 if (val.hasOwnProperty(operator)) {
                     newDoc[operator] = newDoc[operator] || {};

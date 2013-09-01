@@ -422,7 +422,7 @@ var validateObj = function(obj, keyToValidate, invalidKeys, ss, schema, operator
 
 var doValidation = function(doc, isModifier, keyToValidate, ss, schema) {
     //check arguments
-    if (typeof doc !== "object") {
+    if (!_.isObject(doc)) {
         throw new Error("The first argument of validate() or validateOne() must be an object");
     }
     
