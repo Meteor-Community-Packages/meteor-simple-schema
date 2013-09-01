@@ -33,19 +33,12 @@ var defaultMessages = {
 SimpleSchema = function(schema, options) {
     var self = this;
     options = options || {};
+    schema = addImplicitKeys(schema);
     self._schema = schema || {};
     self._schemaKeys = _.keys(schema);
     self._validators = [];
     //set up default message for each error type
     self._messages = defaultMessages;
-    //regEx messages were previously defined in the schema
-    //we'll continue to support that by copying them to _messages at this point
-    _.each(self._schemaKeys, function(key) {
-        if (self._schema[key].regExMessage) {
-            self._messages["regEx " + key] = "[label] " + self._schema[key].regExMessage;
-            delete self._schema[key].regExMessage;
-        }
-    });
 
     //set schemaDefinition validator
     var schemaDefinition = {
@@ -65,12 +58,7 @@ SimpleSchema = function(schema, options) {
     if (typeof options.additionalKeyPatterns === "object")
         _.extend(schemaDefinition, options.additionalKeyPatterns);
     
-    //set up validation dependencies
-    self._deps = {};
-    self._depsAny = new Deps.Dependency;
     _.each(self._schemaKeys, function(name) {
-        self._deps[name] = new Deps.Dependency;
-
         // Validate the field definition
         if (!Match.test(self._schema[name], schemaDefinition)) {
             throw new Error('Invalid definition for ' + name + ' field.');
