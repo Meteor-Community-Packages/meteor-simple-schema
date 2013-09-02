@@ -349,3 +349,7 @@ This all becomes pretty great when put to use in the [collection2](https://githu
 
 Anyone is welcome to contribute. Fork, make and test your changes (`meteor test-packages ./`),
 and then submit a pull request.
+
+### Major Contributors
+
+@mquandalle
