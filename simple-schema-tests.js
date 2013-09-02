@@ -27,7 +27,8 @@ var ssr = new SimpleSchema({
     },
     anOptionalOne: {
         type: String,
-        optional: true
+        optional: true,
+        min: 20
     }
 });
 ssr.messages({
@@ -384,9 +385,21 @@ Tinytest.add("SimpleSchema - Unset Required", function(test) {
             requiredUrl: 1
         }}, true);
     test.length(sc.invalidKeys(), 6);
+
     //make sure an optional can be unset when others are required
+    //retest with various values to be sure the value is ignored
     sc = validate(ssr, {$unset: {
             anOptionalOne: 1
+        }}, true);
+    test.length(sc.invalidKeys(), 0);
+
+    sc = validate(ssr, {$unset: {
+            anOptionalOne: null
+        }}, true);
+    test.length(sc.invalidKeys(), 0);
+
+    sc = validate(ssr, {$unset: {
+            anOptionalOne: ""
         }}, true);
     test.length(sc.invalidKeys(), 0);
 });
@@ -943,7 +956,7 @@ Tinytest.add("SimpleSchema - Update Type Check", function(test) {
             allowedNumbersArray: {$each: [2, 1]}
         }}, true);
     test.length(sc.invalidKeys(), 0);
-    
+
     //make sure slice is ignored
     sc = validate(ss, {$push: {
             booleanArray: {$each: [false, true], $slice: -5},
@@ -977,7 +990,7 @@ Tinytest.add("SimpleSchema - Update Type Check", function(test) {
             allowedNumbersArray: [200, 500]
         }}, true);
     test.length(sc.invalidKeys(), 0);
-    
+
     sc = validate(ss, {$pop: {
             booleanArray: 1,
             dateArray: 1,
@@ -985,7 +998,7 @@ Tinytest.add("SimpleSchema - Update Type Check", function(test) {
             allowedNumbersArray: 1
         }}, true);
     test.length(sc.invalidKeys(), 0);
-    
+
     sc = validate(ss, {$pop: {
             booleanArray: -1,
             dateArray: -1,
@@ -1477,7 +1490,7 @@ Tinytest.add("SimpleSchema - additionalKeyPatterns", function(test) {
     } catch (exception) {
         test.fail({type: 'exception', message: 'define a schema with a unique option in field definition'});
     }
-    
+
     try {
         ssWithUnique = new SimpleSchema({
             name: {

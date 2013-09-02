@@ -120,8 +120,10 @@ var validateOne = function(operator, def, keyName, keyValue, ss, fullDoc) {
     }
 
     //no further checks are necessary for null or undefined values,
-    //regardless of whether the key is required or not
-    if (keyValue === void 0 || keyValue === null) {
+    //regardless of whether the key is required or not;
+    //also no further checks are needed for $unset because the value of a $unset key does not matter
+    //and we've already done the checks for requiredness
+    if (keyValue === void 0 || keyValue === null || operator === "$unset") {
         return invalidKeys;
     }
 
