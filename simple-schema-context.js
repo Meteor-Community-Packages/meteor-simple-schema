@@ -166,8 +166,7 @@ var validateOne = function(operator, def, keyName, keyValue, ss, fullDoc) {
     } else if (def.type instanceof Function) {
         if (!(keyValue instanceof def.type)) {
             invalidKeys.push({name: keyName, type: "expectedConstructor", message: ss.messageForError("expectedConstructor", keyName, def)});
-        }
-        if (def.type === Date) {
+        } else if (def.type === Date) {
             if (_.isDate(def.min) && def.min.getTime() > keyValue.getTime()) {
                 invalidKeys.push({name: keyName, type: "minDate", message: ss.messageForError("minDate", keyName, def)});
             } else if (_.isDate(def.max) && def.max.getTime() < keyValue.getTime()) {
