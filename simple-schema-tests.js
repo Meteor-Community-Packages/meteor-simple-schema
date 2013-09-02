@@ -1460,10 +1460,6 @@ Tinytest.add("SimpleSchema - Validate with the Match API", function(test) {
     } catch (exception) {
         test.instanceOf(exception, Match.Error);
     }
-
-    // [backwards compatibility]
-    test.isFalse(Match.test({password: 'pass'}, pss.match()));
-    test.isTrue(Match.test({password: 'pass', confirmPassword: 'pass'}, pss.match()));
 });
 
 Tinytest.add("SimpleSchema - additionalKeyPatterns", function(test) {
@@ -1480,6 +1476,17 @@ Tinytest.add("SimpleSchema - additionalKeyPatterns", function(test) {
         });
     } catch (exception) {
         test.fail({type: 'exception', message: 'define a schema with a unique option in field definition'});
+    }
+    
+    try {
+        ssWithUnique = new SimpleSchema({
+            name: {
+                type: String,
+                unique: true
+            }
+        });
+    } catch (exception) {
+        test.instanceOf(exception, Error);
     }
 });
 
