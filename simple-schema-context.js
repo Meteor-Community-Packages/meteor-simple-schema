@@ -185,7 +185,7 @@ var validateOne = function(operator, def, keyName, keyValue, ss, fullDoc) {
     if (validatorCount) {
         for (var i = 0, validator, result; i < validatorCount; i++) {
             validator = ss._validators[i];
-            result = validator(keyName, keyValue, def);
+            result = validator(keyName, keyValue, def, operator);
             if (result !== true && typeof result === "string") {
                 invalidKeys.push({name: keyName, type: result, message: ss.messageForError(result, keyName, def)});
             }
