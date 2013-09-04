@@ -81,36 +81,51 @@ SimpleSchemaValidationContext.prototype.validateOne = function(doc, keyName, opt
 //this is where all the validation happens for a particular key for a single operator
 var validateOne = function(operator, def, keyName, keyValue, ss, fullDoc) {
     var invalidKeys = [], requiredError;
-    
+
     if (operator === "$pushAll")
         throw new Error("$pushAll is deprecated; use $each");
-    
+
     if (operator === "$pull" || operator === "$pullAll" || operator === "$pop") {
         //these don't require any validation
         return invalidKeys;
     }
 
+    //replace .Number. with .$. in key
+    var schemaKeyName = keyName.replace(/\.[0-9]+\./g, '.$.');
+
+    def = def || ss.schema(schemaKeyName);
+
     if (!def) {
-        invalidKeys.push({name: keyName, type: "keyNotInSchema", message: ss.messageForError("keyNotInSchema", keyName, def, keyValue)});
+        invalidKeys.push({name: schemaKeyName, type: "keyNotInSchema", message: ss.messageForError("keyNotInSchema", schemaKeyName, def, keyValue)});
         return invalidKeys;
     }
 
-    //handle $each values
-    if (_.isObject(keyValue) && ("$each" in keyValue)) {
-        keyValue = keyValue.$each;
+    var expectedType = def.type;
+
+    if (_.isObject(keyValue)) {
+        //handle $each values
+        if ("$each" in keyValue) {
+            keyValue = keyValue.$each;
+        }
+
+        //handle $push and $addToSet where value is an object
+        else if ((operator === "$push" || operator === "$addToSet") && _.isArray(expectedType)) {
+            expectedType = expectedType[0];
+        }
     }
 
     //we did most "required" validation previously, but it is easier to do
     //required keys in objects that are in arrays now
-    if (keyName.indexOf(".$.") !== -1) {
+    var dollarPos = schemaKeyName.indexOf(".$.");
+    if (dollarPos !== -1) {
         if (!operator || operator === "$setOnInsert") {
-            requiredError = validateRequired(keyName, keyValue, def, ss);
+            requiredError = validateRequired(schemaKeyName, keyValue, def, ss);
         } else if (operator === "$set") {
             if (keyValue !== void 0) {
-                requiredError = validateRequired(keyName, keyValue, def, ss);
+                requiredError = validateRequired(schemaKeyName, keyValue, def, ss);
             }
         } else if (!def.optional && (operator === "$unset" || operator === "$rename")) {
-            requiredError = {name: keyName, type: "required", message: ss.messageForError("required", keyName, def)};
+            requiredError = {name: schemaKeyName, type: "required", message: ss.messageForError("required", schemaKeyName, def)};
         }
 
         if (requiredError) {
@@ -136,49 +151,77 @@ var validateOne = function(operator, def, keyName, keyValue, ss, fullDoc) {
         return invalidKeys;
     }
 
+    //handle keys that expect arrays
+    if (_.isArray(expectedType)) {
+        //if it's an array, loop through it and validate each value in the array
+        if (_.isArray(keyValue)) {
+            var childDef = _.clone(def), loopVal;
+            childDef.type = def.type[0]; //strip array off of type
+            for (var i = 0, ln = keyValue.length; i < ln; i++) {
+                loopVal = keyValue[i];
+                invalidKeys = _.union(invalidKeys, validateOne(operator, childDef, schemaKeyName, loopVal, ss, fullDoc));
+                if (invalidKeys.length) {
+                    break;
+                }
+            }
+        } else {
+            invalidKeys.push({name: schemaKeyName, type: "expectedArray", message: ss.messageForError("expectedArray", schemaKeyName, def)});
+        }
+        return invalidKeys;
+    }
+
+    //For any keys that do not expect arrays, continue with more checks
+
     //Type Checking
-    if (def.type === String) {
+    if (expectedType === String) {
         if (typeof keyValue !== "string") {
-            invalidKeys.push({name: keyName, type: "expectedString", message: ss.messageForError("expectedString", keyName, def)});
+            invalidKeys.push({name: schemaKeyName, type: "expectedString", message: ss.messageForError("expectedString", schemaKeyName, def)});
         } else if (def.regEx && !def.regEx.test(keyValue)) {
-            invalidKeys.push({name: keyName, type: "regEx", message: ss.messageForError("regEx", keyName, def, keyValue)});
+            invalidKeys.push({name: schemaKeyName, type: "regEx", message: ss.messageForError("regEx", schemaKeyName, def, keyValue)});
         } else if (def.max && def.max < keyValue.length) {
-            invalidKeys.push({name: keyName, type: "maxString", message: ss.messageForError("maxString", keyName, def, keyValue)});
+            invalidKeys.push({name: schemaKeyName, type: "maxString", message: ss.messageForError("maxString", schemaKeyName, def, keyValue)});
         } else if (def.min && def.min > keyValue.length) {
-            invalidKeys.push({name: keyName, type: "minString", message: ss.messageForError("minString", keyName, def, keyValue)});
+            invalidKeys.push({name: schemaKeyName, type: "minString", message: ss.messageForError("minString", schemaKeyName, def, keyValue)});
         }
-    } else if (def.type === Number) {
+    } else if (expectedType === Number) {
         if (typeof keyValue !== "number") {
-            invalidKeys.push({name: keyName, type: "expectedNumber", message: ss.messageForError("expectedNumber", keyName, def)});
+            invalidKeys.push({name: schemaKeyName, type: "expectedNumber", message: ss.messageForError("expectedNumber", schemaKeyName, def)});
         } else if (def.max && def.max < keyValue) {
-            invalidKeys.push({name: keyName, type: "maxNumber", message: ss.messageForError("maxNumber", keyName, def, keyValue)});
+            invalidKeys.push({name: schemaKeyName, type: "maxNumber", message: ss.messageForError("maxNumber", schemaKeyName, def, keyValue)});
         } else if (def.min && def.min > keyValue) {
-            invalidKeys.push({name: keyName, type: "minNumber", message: ss.messageForError("minNumber", keyName, def, keyValue)});
+            invalidKeys.push({name: schemaKeyName, type: "minNumber", message: ss.messageForError("minNumber", schemaKeyName, def, keyValue)});
         } else if (!def.decimal && keyValue.toString().indexOf(".") > -1) {
-            invalidKeys.push({name: keyName, type: "noDecimal", message: ss.messageForError("noDecimal", keyName, def, keyValue)});
+            invalidKeys.push({name: schemaKeyName, type: "noDecimal", message: ss.messageForError("noDecimal", schemaKeyName, def, keyValue)});
         }
-    } else if (def.type === Boolean) {
+    } else if (expectedType === Boolean) {
         if (typeof keyValue !== "boolean") {
-            invalidKeys.push({name: keyName, type: "expectedBoolean", message: ss.messageForError("expectedBoolean", keyName, def)});
+            invalidKeys.push({name: schemaKeyName, type: "expectedBoolean", message: ss.messageForError("expectedBoolean", schemaKeyName, def)});
         }
-    } else if (def.type === Object) {
+    } else if (expectedType === Object) {
         if (typeof keyValue !== "object") {
-            invalidKeys.push({name: keyName, type: "expectedObject", message: ss.messageForError("expectedObject", keyName, def)});
+            invalidKeys.push({name: schemaKeyName, type: "expectedObject", message: ss.messageForError("expectedObject", schemaKeyName, def)});
+        } else {
+            var keyPrefix = schemaKeyName + ".$.";
+            //validate each key in the object
+            _.each(keyValue, function(v, k) {
+                invalidKeys = _.union(invalidKeys, validateOne(operator, null, keyPrefix + k, v, ss, fullDoc));
+            });
         }
-    } else if (def.type instanceof Function) {
-        if (!(keyValue instanceof def.type)) {
-            invalidKeys.push({name: keyName, type: "expectedConstructor", message: ss.messageForError("expectedConstructor", keyName, def)});
-        } else if (def.type === Date) {
+    } else if (expectedType instanceof Function) {
+        if (!(keyValue instanceof expectedType)) {
+            invalidKeys.push({name: schemaKeyName, type: "expectedConstructor", message: ss.messageForError("expectedConstructor", schemaKeyName, def)});
+        } else if (expectedType === Date) {
             if (_.isDate(def.min) && def.min.getTime() > keyValue.getTime()) {
-                invalidKeys.push({name: keyName, type: "minDate", message: ss.messageForError("minDate", keyName, def)});
+                invalidKeys.push({name: schemaKeyName, type: "minDate", message: ss.messageForError("minDate", schemaKeyName, def)});
             } else if (_.isDate(def.max) && def.max.getTime() < keyValue.getTime()) {
-                invalidKeys.push({name: keyName, type: "maxDate", message: ss.messageForError("maxDate", keyName, def)});
+                invalidKeys.push({name: schemaKeyName, type: "maxDate", message: ss.messageForError("maxDate", schemaKeyName, def)});
             }
         }
-    } else if (_.isArray(def.type)) {
-        if (!_.isArray(keyValue)) {
-            invalidKeys.push({name: keyName, type: "expectedArray", message: ss.messageForError("expectedArray", keyName, def)});
-        }
+    }
+
+    //stop if we've logged an error
+    if (invalidKeys.length) {
+        return invalidKeys;
     }
 
     //Custom Validation
@@ -186,35 +229,27 @@ var validateOne = function(operator, def, keyName, keyValue, ss, fullDoc) {
     if (validatorCount) {
         for (var i = 0, validator, result; i < validatorCount; i++) {
             validator = ss._validators[i];
-            result = validator(keyName, keyValue, def, operator);
+            result = validator(schemaKeyName, keyValue, def, operator);
             if (result !== true && typeof result === "string") {
-                invalidKeys.push({name: keyName, type: result, message: ss.messageForError(result, keyName, def)});
+                invalidKeys.push({name: schemaKeyName, type: result, message: ss.messageForError(result, schemaKeyName, def)});
             }
         }
     }
 
-    //if it's an array, loop through it and validate each value in the array
-    if (_.isArray(def.type) && _.isArray(keyValue)) {
-        var childDef = _.clone(def), loopVal;
-        childDef.type = def.type[0]; //strip array off of type
-        for (var i = 0, ln = keyValue.length; i < ln; i++) {
-            loopVal = keyValue[i];
-            invalidKeys = _.union(invalidKeys, validateOne(operator, childDef, keyName, loopVal, ss, fullDoc));
-            if (invalidKeys.length) {
-                break;
-            }
+    //stop if we've logged an error
+    if (invalidKeys.length) {
+        return invalidKeys;
+    }
+
+    //check to make sure the value is allowed
+    //this is the last thing we want to do for all data types, except for arrays, if we haven't already logged another error
+    if (def.allowedValues) {
+        if (!_.contains(def.allowedValues, keyValue)) {
+            invalidKeys.push({name: schemaKeyName, type: "notAllowed", message: ss.messageForError("notAllowed", schemaKeyName, def, keyValue)});
         }
-    } else if (!invalidKeys.length) {
-        //check to make sure the value is allowed
-        //this is the last thing we want to do for all data types, except for arrays, if we haven't already logged another error
-        if (def.allowedValues) {
-            if (!_.contains(def.allowedValues, keyValue)) {
-                invalidKeys.push({name: keyName, type: "notAllowed", message: ss.messageForError("notAllowed", keyName, def, keyValue)});
-            }
-        } else if (def.valueIsAllowed && def.valueIsAllowed instanceof Function) {
-            if (!def.valueIsAllowed(keyValue, fullDoc, operator)) {
-                invalidKeys.push({name: keyName, type: "notAllowed", message: ss.messageForError("notAllowed", keyName, def, keyValue)});
-            }
+    } else if (def.valueIsAllowed && def.valueIsAllowed instanceof Function) {
+        if (!def.valueIsAllowed(keyValue, fullDoc, operator)) {
+            invalidKeys.push({name: schemaKeyName, type: "notAllowed", message: ss.messageForError("notAllowed", schemaKeyName, def, keyValue)});
         }
     }
 
@@ -285,7 +320,7 @@ var validateArray = function(keyName, keyValue, def, ss) {
     }
 };
 
-var getRequiredAndArrayErrors = function(doc, keyName, def, ss, hasModifiers, hasSet, hasSetOnInsert, hasUnset, hasRename) {
+var getRequiredAndArrayErrors = function(doc, keyName, def, ss, hasModifiers, hasSet, hasSetOnInsert, hasUnset, hasRename, hasPush, hasAddToSet) {
     var keyValue, requiredError, arrayError;
 
     if (hasModifiers) {
@@ -401,7 +436,7 @@ var getRequiredAndArrayErrors = function(doc, keyName, def, ss, hasModifiers, ha
     return [];
 };
 
-var validateObj = function(obj, keyToValidate, invalidKeys, ss, schema, operator) {
+var validateObj = function(obj, keyToValidate, invalidKeys, ss, operator) {
     _.each(obj, function(val, key) {
         //replace .Number. with .$. in key
         var schemaKey = key.replace(/\.[0-9]+\./g, '.$.');
@@ -415,10 +450,41 @@ var validateObj = function(obj, keyToValidate, invalidKeys, ss, schema, operator
             return;
         }
 
-        var def = schema[schemaKey];
-        invalidKeys = _.union(invalidKeys, validateOne(operator, def, schemaKey, val, ss, obj));
+        invalidKeys = _.union(invalidKeys, validateOne(operator, null, key, val, ss, obj));
     });
     return invalidKeys;
+};
+
+var addNullKeys = function(doc, schema) {
+    //to account for missing required keys in objects that are in arrays,
+    //we will loop through and set any missing keys to null; this will make
+    //sure that the "required" errors are logged for them
+    var keysToAdd = [];
+    _.each(doc, function(docVal, docKey) {
+        var pieces = docKey.split('.');
+        var tryKey;
+        _.each(pieces, function(piece) {
+            tryKey = tryKey ? tryKey + '.' + piece : piece;
+            var numPiece = parseInt(piece, 10);
+            if (!isNaN(numPiece)) {
+                var keyBase = tryKey.replace(/\.[0-9]+/g, '.$.');
+                _.each(schema, function(subDef, k) {
+                    if (!subDef.optional && k.startsWith(keyBase)) {
+                        k = k.substring(0, keyBase.length - 3) + "." + piece + "." + k.substring(keyBase.length - 1 + piece.length);
+                        if (!doc.hasOwnProperty(k)) {
+                            keysToAdd.push(k);
+                        }
+                    }
+                });
+            }
+        });
+    });
+
+    _.each(keysToAdd, function(keyToAdd) {
+        doc[keyToAdd] = null;
+    });
+
+    return doc;
 };
 
 var doValidation = function(doc, isModifier, keyToValidate, ss, schema) {
@@ -426,7 +492,7 @@ var doValidation = function(doc, isModifier, keyToValidate, ss, schema) {
     if (!_.isObject(doc)) {
         throw new Error("The first argument of validate() or validateOne() must be an object");
     }
-    
+
     if (!isModifier && looksLikeModifier(doc)) {
         throw new Error("When the validation object contains mongo operators, you must set the modifier option to true");
     }
@@ -436,10 +502,15 @@ var doValidation = function(doc, isModifier, keyToValidate, ss, schema) {
     var hasSetOnInsert = ("$setOnInsert" in doc);
     var hasUnset = ("$unset" in doc);
     var hasRename = ("$rename" in doc);
+    var hasPush = ("$push" in doc);
+    var hasAddToSet = ("$addToSet" in doc);
 
     if (!isModifier) {
         //flatten the object to one level, using mongo operator dot notation
         doc = ss.collapseObj(doc);
+        doc = addNullKeys(doc, schema);
+
+        console.log(doc);
     }
 
     //first, loop through schema to do required and array checks
@@ -452,7 +523,7 @@ var doValidation = function(doc, isModifier, keyToValidate, ss, schema) {
                 return;
             }
         }
-        invalidKeys = _.union(invalidKeys, getRequiredAndArrayErrors(doc, keyName, def, ss, isModifier, hasSet, hasSetOnInsert, hasUnset, hasRename));
+        invalidKeys = _.union(invalidKeys, getRequiredAndArrayErrors(doc, keyName, def, ss, isModifier, hasSet, hasSetOnInsert, hasUnset, hasRename, hasPush, hasAddToSet));
     });
 
     if (keyToValidate && !found) {
@@ -465,12 +536,33 @@ var doValidation = function(doc, isModifier, keyToValidate, ss, schema) {
             if (operator.substring(0, 1) !== "$") {
                 throw new Error("When the modifier option is true, all validation object keys must be operators");
             }
-            invalidKeys = _.union(invalidKeys, validateObj(modObj, keyToValidate, invalidKeys, ss, schema, operator));
+            if (operator === "$setOnInsert") {
+                //because $setOnInsert should validate like insert, we need to do this here, too
+                modObj = ss.collapseObj(modObj);
+                modObj = addNullKeys(modObj, schema);
+            }
+            invalidKeys = _.union(invalidKeys, validateObj(modObj, keyToValidate, invalidKeys, ss, operator));
         });
     } else {
         //second, loop through doc and validate all keys that are present
-        invalidKeys = _.union(invalidKeys, validateObj(doc, keyToValidate, invalidKeys, ss, schema, null));
+        invalidKeys = _.union(invalidKeys, validateObj(doc, keyToValidate, invalidKeys, ss, null));
     }
 
     return invalidKeys;
 };
+
+//create a .endsWith function for strings
+if (typeof String.prototype.endsWith !== "function") {
+    String.prototype.endsWith = function(suffix) {
+        "use strict";
+        return this.indexOf(suffix, this.length - suffix.length) !== -1;
+    };
+}
+
+//create a .startsWith function for strings
+if (typeof String.prototype.startsWith !== "function") {
+    String.prototype.startsWith = function(str) {
+        "use strict";
+        return this.lastIndexOf(str, 0) === 0;
+    };
+}

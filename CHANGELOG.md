@@ -5,6 +5,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.2
+
+Fix validation of arrays of objects
+
 ### 0.2.1
 
 Fix minor issues related to $unset key validation

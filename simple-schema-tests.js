@@ -1511,6 +1511,14 @@ var friends = new SimpleSchema({
     'friends.$.name': {
         type: String,
         max: 3
+    },
+    'friends.$.type': {
+        type: String,
+        allowedValues: ["best", "good", "bad"]
+    },
+    'friends.$.a.b': {
+        type: Number,
+        optional: true
     }
 });
 
@@ -1518,7 +1526,56 @@ Tinytest.add("SimpleSchema - Array of Objects", function(test) {
     var fc = validate(friends, {
         friends: [{name: 'Bob'}]
     });
+    test.length(fc.invalidKeys(), 1); //missing required key
+
+    fc = validate(friends, {
+        friends: [{name: 'Bob', type: 'smelly'}]
+    });
+    test.length(fc.invalidKeys(), 1); //not allowed
+    
+    fc = validate(friends, {
+        friends: [{name: 'Bob', type: 'best', a: {b: "wrong"}}]
+    });
+    test.length(fc.invalidKeys(), 1);
+
+    fc = validate(friends, {
+        friends: [{name: 'Bob', type: 'best'}]
+    });
     test.length(fc.invalidKeys(), 0);
+    
+    fc = validate(friends, {
+        friends: [{name: 'Bob', type: 'best', a: {b: 5000}}]
+    });
+    test.length(fc.invalidKeys(), 0);
+
+    //$setOnInsert (should validate the same as insert)
+
+    fc = validate(friends, {$setOnInsert: {
+        friends: [{name: 'Bob'}]
+    }}, true);
+    test.length(fc.invalidKeys(), 1); //missing required key
+
+    fc = validate(friends, {$setOnInsert: {
+        friends: [{name: 'Bob', type: 'smelly'}]
+    }}, true);
+    test.length(fc.invalidKeys(), 1); //not allowed
+    
+    fc = validate(friends, {$setOnInsert: {
+        friends: [{name: 'Bob', type: 'best', a: {b: "wrong"}}]
+    }}, true);
+    test.length(fc.invalidKeys(), 1);
+
+    fc = validate(friends, {$setOnInsert: {
+        friends: [{name: 'Bob', type: 'best'}]
+    }}, true);
+    test.length(fc.invalidKeys(), 0);
+    
+    fc = validate(friends, {$setOnInsert: {
+        friends: [{name: 'Bob', type: 'best', a: {b: 5000}}]
+    }}, true);
+    test.length(fc.invalidKeys(), 0);
+
+    //$set
 
     fc = validate(friends, {$set: {
             'friends.$.name': 'Bob'
@@ -1537,6 +1594,11 @@ Tinytest.add("SimpleSchema - Array of Objects", function(test) {
 
     fc = validate(friends, {$set: {
             'friends.1.name': 'Bobby'
+        }}, true);
+    test.length(fc.invalidKeys(), 1);
+    
+    fc = validate(friends, {$set: {
+            'friends.1.name': null
         }}, true);
     test.length(fc.invalidKeys(), 1);
 
@@ -1559,6 +1621,46 @@ Tinytest.add("SimpleSchema - Array of Objects", function(test) {
 
     fc = validate(friends, {$set: {
             friends: []
+        }}, true);
+    test.length(fc.invalidKeys(), 1);
+
+    fc = validate(friends, {$push: {
+            friends: {name: "Bob"}
+        }}, true);
+    test.length(fc.invalidKeys(), 0);
+
+    fc = validate(friends, {$push: {
+            friends: {name: "Bobby"}
+        }}, true);
+    test.length(fc.invalidKeys(), 1);
+
+    fc = validate(friends, {$push: {
+            friends: {$each: [{name: "Bob"}, {name: "Bob"}]}
+        }}, true);
+    test.length(fc.invalidKeys(), 0);
+
+    fc = validate(friends, {$push: {
+            friends: {$each: [{name: "Bob"}, {name: "Bobby"}]}
+        }}, true);
+    test.length(fc.invalidKeys(), 1);
+
+    fc = validate(friends, {$addToSet: {
+            friends: {name: "Bob"}
+        }}, true);
+    test.length(fc.invalidKeys(), 0);
+
+    fc = validate(friends, {$addToSet: {
+            friends: {name: "Bobby"}
+        }}, true);
+    test.length(fc.invalidKeys(), 1);
+
+    fc = validate(friends, {$addToSet: {
+            friends: {$each: [{name: "Bob"}, {name: "Bob"}]}
+        }}, true);
+    test.length(fc.invalidKeys(), 0);
+
+    fc = validate(friends, {$addToSet: {
+            friends: {$each: [{name: "Bob"}, {name: "Bobby"}]}
         }}, true);
     test.length(fc.invalidKeys(), 1);
 });
