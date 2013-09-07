@@ -1532,7 +1532,7 @@ Tinytest.add("SimpleSchema - Array of Objects", function(test) {
         friends: [{name: 'Bob', type: 'smelly'}]
     });
     test.length(fc.invalidKeys(), 1); //not allowed
-    
+
     fc = validate(friends, {
         friends: [{name: 'Bob', type: 'best', a: {b: "wrong"}}]
     });
@@ -1542,7 +1542,7 @@ Tinytest.add("SimpleSchema - Array of Objects", function(test) {
         friends: [{name: 'Bob', type: 'best'}]
     });
     test.length(fc.invalidKeys(), 0);
-    
+
     fc = validate(friends, {
         friends: [{name: 'Bob', type: 'best', a: {b: 5000}}]
     });
@@ -1551,28 +1551,28 @@ Tinytest.add("SimpleSchema - Array of Objects", function(test) {
     //$setOnInsert (should validate the same as insert)
 
     fc = validate(friends, {$setOnInsert: {
-        friends: [{name: 'Bob'}]
-    }}, true);
+            friends: [{name: 'Bob'}]
+        }}, true);
     test.length(fc.invalidKeys(), 1); //missing required key
 
     fc = validate(friends, {$setOnInsert: {
-        friends: [{name: 'Bob', type: 'smelly'}]
-    }}, true);
+            friends: [{name: 'Bob', type: 'smelly'}]
+        }}, true);
     test.length(fc.invalidKeys(), 1); //not allowed
-    
+
     fc = validate(friends, {$setOnInsert: {
-        friends: [{name: 'Bob', type: 'best', a: {b: "wrong"}}]
-    }}, true);
+            friends: [{name: 'Bob', type: 'best', a: {b: "wrong"}}]
+        }}, true);
     test.length(fc.invalidKeys(), 1);
 
     fc = validate(friends, {$setOnInsert: {
-        friends: [{name: 'Bob', type: 'best'}]
-    }}, true);
+            friends: [{name: 'Bob', type: 'best'}]
+        }}, true);
     test.length(fc.invalidKeys(), 0);
-    
+
     fc = validate(friends, {$setOnInsert: {
-        friends: [{name: 'Bob', type: 'best', a: {b: 5000}}]
-    }}, true);
+            friends: [{name: 'Bob', type: 'best', a: {b: 5000}}]
+        }}, true);
     test.length(fc.invalidKeys(), 0);
 
     //$set
@@ -1596,7 +1596,7 @@ Tinytest.add("SimpleSchema - Array of Objects", function(test) {
             'friends.1.name': 'Bobby'
         }}, true);
     test.length(fc.invalidKeys(), 1);
-    
+
     fc = validate(friends, {$set: {
             'friends.1.name': null
         }}, true);
@@ -1891,4 +1891,89 @@ Tinytest.add("SimpleSchema - Rename", function(test) {
     ss1 = ssr.newContext();
     ss1.validate({$rename: {requiredString: "newRequiredString"}}, {modifier: true});
     test.length(ss1.invalidKeys(), 1);
+});
+
+Tinytest.add("SimpleSchema - Custom Types", function(test) {
+
+    Address = function(city, state) {
+        this.city = city;
+        this.state = state;
+    };
+
+    Address.prototype = {
+        constructor: Address,
+        toString: function() {
+            return this.city + ', ' + this.state;
+        },
+        clone: function() {
+            return new Address(this.city, this.state);
+        },
+        equals: function(other) {
+            if (!(other instanceof Address))
+                return false;
+            return EJSON.stringify(this) === EJSON.stringify(other);
+        },
+        typeName: function() {
+            return "Address";
+        },
+        toJSONValue: function() {
+            return {
+                city: this.city,
+                state: this.state
+            };
+        }
+    };
+
+    var peopleSchema = new SimpleSchema({
+        name: {
+            type: String,
+            max: 200
+        },
+        address: {
+            type: Address
+        },
+        createdAt: {
+            type: Date
+        },
+        file: {
+            type: Uint8Array
+        }
+    });
+
+    var c1 = peopleSchema.newContext();
+    var person = {
+        name: "Person One",
+        createdAt: new Date(),
+        file: new Uint8Array([104, 101, 108, 108, 111]),
+        address: new Address("San Francisco", "CA")
+    };
+    c1.validate(person);
+    test.length(c1.invalidKeys(), 0);
+
+    var person2 = {
+        name: "Person Two",
+        createdAt: {},
+        file: {},
+        address: {}
+    };
+    c1.validate(person2);
+    test.length(c1.invalidKeys(), 3);
+
+    peopleSchema = new SimpleSchema({
+        name: {
+            type: Object
+        },
+        address: {
+            type: Object
+        },
+        createdAt: {
+            type: Object
+        },
+        file: {
+            type: Object
+        }
+    });
+    c1 = peopleSchema.newContext();
+    c1.validate(person);
+    test.length(c1.invalidKeys(), 4);
 });

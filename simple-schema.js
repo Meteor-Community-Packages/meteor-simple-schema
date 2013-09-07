@@ -304,6 +304,11 @@ SimpleSchema.prototype.expandObj = function(doc) {
     return expandObj(doc);
 };
 
+//tests whether it's an Object as opposed to something that inherits from Object
+var isBasicObject = function (obj) {
+    return _.isObject(obj) && Object.getPrototypeOf(obj) === Object.prototype; 
+};
+
 //collapses object into one level, with dot notation following the mongo $set syntax
 var collapseObj = function(doc, skip) {
     var res = {};
@@ -323,7 +328,7 @@ var collapseObj = function(doc, skip) {
                 var value = obj[key];
 
                 var newKey = (current ? current + "." + key : key);  // joined key with dot
-                if (_.isObject(value) && !_.isEmpty(value) && !_.contains(skip, newKey)) {
+                if (isBasicObject(value) && !_.isEmpty(value) && !_.contains(skip, newKey)) {
                     //nested non-empty object so recurse into it
                     if (key.substring(0, 1) === "$") {
                         //handle mongo operator keys a bit differently

@@ -198,7 +198,7 @@ var validateOne = function(operator, def, keyName, keyValue, ss, fullDoc) {
             invalidKeys.push({name: schemaKeyName, type: "expectedBoolean", message: ss.messageForError("expectedBoolean", schemaKeyName, def)});
         }
     } else if (expectedType === Object) {
-        if (typeof keyValue !== "object") {
+        if (!isBasicObject(keyValue)) {
             invalidKeys.push({name: schemaKeyName, type: "expectedObject", message: ss.messageForError("expectedObject", schemaKeyName, def)});
         } else {
             var keyPrefix = schemaKeyName + ".$.";
@@ -509,8 +509,6 @@ var doValidation = function(doc, isModifier, keyToValidate, ss, schema) {
         //flatten the object to one level, using mongo operator dot notation
         doc = ss.collapseObj(doc);
         doc = addNullKeys(doc, schema);
-
-        console.log(doc);
     }
 
     //first, loop through schema to do required and array checks
@@ -566,3 +564,8 @@ if (typeof String.prototype.startsWith !== "function") {
         return this.lastIndexOf(str, 0) === 0;
     };
 }
+
+//tests whether it's an Object as opposed to something that inherits from Object
+var isBasicObject = function (obj) {
+    return _.isObject(obj) && Object.getPrototypeOf(obj) === Object.prototype; 
+};
