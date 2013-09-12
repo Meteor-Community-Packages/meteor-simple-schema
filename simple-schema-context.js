@@ -101,18 +101,19 @@ var validateOne = function(operator, def, keyName, arrayPos, keyValue, ss, fullD
     }
 
     var expectedType = def.type;
-
+    var isEach = false;
     if (_.isObject(keyValue)) {
         //handle $each values
         if ("$each" in keyValue) {
             keyValue = keyValue.$each;
+            isEach = true;
         }
+    }
 
-        //handle $push and $addToSet where value is an object
-        else if ((operator === "$push" || operator === "$addToSet") && _.isArray(expectedType)) {
-            expectedType = expectedType[0];
-            arrayPos = "$";
-        }
+    //handle $push and $addToSet where value is an object
+    if (!isEach && (operator === "$push" || operator === "$addToSet") && _.isArray(expectedType)) {
+        expectedType = expectedType[0];
+        arrayPos = "$";
     }
 
     //we did most "required" validation previously, but it is easier to do
@@ -571,6 +572,6 @@ if (typeof String.prototype.startsWith !== "function") {
 }
 
 //tests whether it's an Object as opposed to something that inherits from Object
-var isBasicObject = function (obj) {
-    return _.isObject(obj) && Object.getPrototypeOf(obj) === Object.prototype; 
+var isBasicObject = function(obj) {
+    return _.isObject(obj) && Object.getPrototypeOf(obj) === Object.prototype;
 };

@@ -862,12 +862,12 @@ Tinytest.add("SimpleSchema - Update Type Check", function(test) {
             sub: {number: 29}
         }}, true);
     test.length(sc.invalidKeys(), 0);
-    
+
     sc = validate(ss, {$set: {
             sub: {number: true}
         }}, true);
     test.length(sc.invalidKeys(), 1);
-    
+
     sc = validate(ss, {$set: {
             sub: {number: [29]}
         }}, true);
@@ -930,6 +930,23 @@ Tinytest.add("SimpleSchema - Update Type Check", function(test) {
             allowedNumbersArray: 200
         }}, true);
     test.length(sc.invalidKeys(), 4);
+
+    //these should work
+    sc = validate(ss, {$push: {
+            booleanArray: true,
+            dateArray: new Date,
+            allowedStringsArray: "tuna",
+            allowedNumbersArray: 2
+        }}, true);
+    test.length(sc.invalidKeys(), 0);
+
+    sc = validate(ss, {$addToSet: {
+            booleanArray: true,
+            dateArray: new Date,
+            allowedStringsArray: "tuna",
+            allowedNumbersArray: 2
+        }}, true);
+    test.length(sc.invalidKeys(), 0);
 
     //$each with both invalid
     sc = validate(ss, {$push: {
