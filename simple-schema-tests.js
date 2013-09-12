@@ -83,6 +83,10 @@ var ss = new SimpleSchema({
         type: Number,
         optional: true
     },
+    'sub.number': {
+        type: Number,
+        optional: true
+    },
     minMaxNumber: {
         type: Number,
         optional: true,
@@ -845,6 +849,27 @@ Tinytest.add("SimpleSchema - Update Type Check", function(test) {
     //instance number failure
     sc = validate(ss, {$set: {
             number: (new Date())
+        }}, true);
+    test.length(sc.invalidKeys(), 1);
+
+    //sub objects
+    sc = validate(ss, {$set: {
+            'sub.number': 29
+        }}, true);
+    test.length(sc.invalidKeys(), 0);
+
+    sc = validate(ss, {$set: {
+            sub: {number: 29}
+        }}, true);
+    test.length(sc.invalidKeys(), 0);
+    
+    sc = validate(ss, {$set: {
+            sub: {number: true}
+        }}, true);
+    test.length(sc.invalidKeys(), 1);
+    
+    sc = validate(ss, {$set: {
+            sub: {number: [29]}
         }}, true);
     test.length(sc.invalidKeys(), 1);
 

@@ -79,7 +79,7 @@ SimpleSchemaValidationContext.prototype.validateOne = function(doc, keyName, opt
 };
 
 //this is where all the validation happens for a particular key for a single operator
-var validateOne = function(operator, def, keyName, keyValue, ss, fullDoc) {
+var validateOne = function(operator, def, keyName, arrayPos, keyValue, ss, fullDoc) {
     var invalidKeys = [], requiredError;
 
     if (operator === "$pushAll")
@@ -111,6 +111,7 @@ var validateOne = function(operator, def, keyName, keyValue, ss, fullDoc) {
         //handle $push and $addToSet where value is an object
         else if ((operator === "$push" || operator === "$addToSet") && _.isArray(expectedType)) {
             expectedType = expectedType[0];
+            arrayPos = "$";
         }
     }
 
@@ -159,7 +160,7 @@ var validateOne = function(operator, def, keyName, keyValue, ss, fullDoc) {
             childDef.type = def.type[0]; //strip array off of type
             for (var i = 0, ln = keyValue.length; i < ln; i++) {
                 loopVal = keyValue[i];
-                invalidKeys = _.union(invalidKeys, validateOne(operator, childDef, schemaKeyName, loopVal, ss, fullDoc));
+                invalidKeys = _.union(invalidKeys, validateOne(operator, childDef, schemaKeyName, i, loopVal, ss, fullDoc));
                 if (invalidKeys.length) {
                     break;
                 }
@@ -201,10 +202,13 @@ var validateOne = function(operator, def, keyName, keyValue, ss, fullDoc) {
         if (!isBasicObject(keyValue)) {
             invalidKeys.push({name: schemaKeyName, type: "expectedObject", message: ss.messageForError("expectedObject", schemaKeyName, def)});
         } else {
-            var keyPrefix = schemaKeyName + ".$.";
+            var keyPrefix = schemaKeyName + ".";
+            if (arrayPos !== void 0 && arrayPos !== null) {
+                keyPrefix += arrayPos + ".";
+            }
             //validate each key in the object
             _.each(keyValue, function(v, k) {
-                invalidKeys = _.union(invalidKeys, validateOne(operator, null, keyPrefix + k, v, ss, fullDoc));
+                invalidKeys = _.union(invalidKeys, validateOne(operator, null, keyPrefix + k, null, v, ss, fullDoc));
             });
         }
     } else if (expectedType instanceof Function) {
@@ -232,6 +236,7 @@ var validateOne = function(operator, def, keyName, keyValue, ss, fullDoc) {
             result = validator(schemaKeyName, keyValue, def, operator);
             if (result !== true && typeof result === "string") {
                 invalidKeys.push({name: schemaKeyName, type: result, message: ss.messageForError(result, schemaKeyName, def)});
+                break;
             }
         }
     }
@@ -450,7 +455,7 @@ var validateObj = function(obj, keyToValidate, invalidKeys, ss, operator) {
             return;
         }
 
-        invalidKeys = _.union(invalidKeys, validateOne(operator, null, key, val, ss, obj));
+        invalidKeys = _.union(invalidKeys, validateOne(operator, null, key, null, val, ss, obj));
     });
     return invalidKeys;
 };
