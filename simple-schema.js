@@ -33,7 +33,7 @@ var defaultMessages = {
 SimpleSchema = function(schema, options) {
     var self = this;
     options = options || {};
-    schema = addImplicitKeys(schema);
+    schema = addImplicitKeys(expandSchema(schema));
     self._schema = schema || {};
     self._schemaKeys = _.keys(schema);
     self._validators = [];
@@ -427,6 +427,30 @@ var dateToDateString = function(date) {
     }
     return date.getUTCFullYear() + '-' + m + '-' + d;
 };
+
+//flatten schema by inserting nested definitions
+var expandSchema = function(schema) {
+    _.each(schema, function(val, key) {
+        var dot, type;
+        if (Match.test(val.type, SimpleSchema)) {
+            dot = '.';
+            type = val.type;
+            val.type = Object;
+        } else if (Match.test(val.type, [SimpleSchema])) {
+            dot = '.$.';
+            type = val.type[0];
+            val.type = [Object];
+        } else {
+            return;
+        }
+        //add child schema definitions to parent schema
+        _.each(type._schema, function(subVal, subKey) {
+            var newKey = key + dot + subKey;
+            if (!(newKey in schema)) schema[newKey] = subVal;
+        });
+    });
+    return schema;
+}
 
 var addImplicitKeys = function(schema) {
     //if schema contains key like "foo.$.bar" but not "foo", add "foo"
