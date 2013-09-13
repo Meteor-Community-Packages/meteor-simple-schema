@@ -1977,3 +1977,33 @@ Tinytest.add("SimpleSchema - Custom Types", function(test) {
     c1.validate(person);
     test.length(c1.invalidKeys(), 4);
 });
+
+Tinytest.add("SimpleSchema - Nested Schemas", function(test) {
+    var childDef = { type: String, min: 10 };
+    var parentDef = { type: Number, min: 10 };
+
+    var child = new SimpleSchema({
+        copied: childDef,
+        overridden: childDef
+    });
+
+    var parent = new SimpleSchema({
+        value: {
+            type: child
+        },
+        array: {
+            type: [child]
+        },
+        'value.overridden': parentDef,
+        'array.$.overridden': parentDef
+    });
+
+    var defs = parent._schema;
+
+    test.equal(defs['value'].type, Object, "should change parent definition types to Object");
+    test.equal(defs['value.copied'], childDef, "should add child definitions to parent schema");
+    test.equal(defs['value.overridden'], parentDef, "parent definitions should override child definitions");
+    test.equal(defs['array'].type, [Object], "should change array parent definition types to [Object]")
+    test.equal(defs['array.$.copied'], childDef, "should add array child definitions to parent schema");
+    test.equal(defs['array.$.overridden'], parentDef, "parent definitions should override array child definitions");
+});
