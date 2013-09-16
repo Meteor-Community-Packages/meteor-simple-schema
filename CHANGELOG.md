@@ -5,6 +5,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.6
+
+Add subschema support (@sbking) and use Match.Any for `type` schema key test
+
 ### 0.2.5
 
 Fix validation of $push or $addToSet for non-objects

@@ -1546,6 +1546,10 @@ Tinytest.add("SimpleSchema - additionalKeyPatterns", function(test) {
 });
 
 var friends = new SimpleSchema({
+    name: {
+        type: String,
+        optional: true
+    },
     friends: {
         type: [Object],
         minCount: 1
@@ -2021,8 +2025,8 @@ Tinytest.add("SimpleSchema - Custom Types", function(test) {
 });
 
 Tinytest.add("SimpleSchema - Nested Schemas", function(test) {
-    var childDef = { type: String, min: 10 };
-    var parentDef = { type: Number, min: 10 };
+    var childDef = {type: String, min: 10};
+    var parentDef = {type: Number, min: 10};
 
     var child = new SimpleSchema({
         copied: childDef,
