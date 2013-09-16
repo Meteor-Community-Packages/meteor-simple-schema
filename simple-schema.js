@@ -42,7 +42,7 @@ SimpleSchema = function(schema, options) {
 
     //set schemaDefinition validator
     var schemaDefinition = {
-        type: Match.OneOf(Function, [Function]),
+        type: Match.Any,
         label: Match.Optional(String),
         optional: Match.Optional(Boolean),
         min: Match.Optional(Match.OneOf(Number, Date)),

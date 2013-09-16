@@ -2045,7 +2045,7 @@ Tinytest.add("SimpleSchema - Nested Schemas", function(test) {
     test.equal(defs['value'].type, Object, "should change parent definition types to Object");
     test.equal(defs['value.copied'], childDef, "should add child definitions to parent schema");
     test.equal(defs['value.overridden'], parentDef, "parent definitions should override child definitions");
-    test.equal(defs['array'].type, [Object], "should change array parent definition types to [Object]")
+    test.equal(defs['array'].type, [Object], "should change array parent definition types to [Object]");
     test.equal(defs['array.$.copied'], childDef, "should add array child definitions to parent schema");
     test.equal(defs['array.$.overridden'], parentDef, "parent definitions should override array child definitions");
 });
