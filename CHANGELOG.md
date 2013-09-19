@@ -5,6 +5,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.7
+
+Refactor validation loop to improve and not use collapse/expand
+
 ### 0.2.6
 
 Add subschema support (@sbking) and use Match.Any for `type` schema key test

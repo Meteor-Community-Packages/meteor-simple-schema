@@ -31,11 +31,11 @@ var defaultMessages = {
 
 //exported
 SimpleSchema = function(schema, options) {
-    var self = this;
+    var self = this, requiredSchemaKeys = [], firstLevelRequiredSchemaKeys = [];
     options = options || {};
     schema = addImplicitKeys(expandSchema(schema));
     self._schema = schema || {};
-    self._schemaKeys = _.keys(schema);
+    self._schemaKeys = []; //for speedier checking
     self._validators = [];
     //set up default message for each error type
     self._messages = defaultMessages;
@@ -58,12 +58,22 @@ SimpleSchema = function(schema, options) {
     if (typeof options.additionalKeyPatterns === "object")
         _.extend(schemaDefinition, options.additionalKeyPatterns);
     
-    _.each(self._schemaKeys, function(name) {
+    _.each(schema, function(definition, fieldName) {
         // Validate the field definition
-        if (!Match.test(self._schema[name], schemaDefinition)) {
-            throw new Error('Invalid definition for ' + name + ' field.');
+        if (!Match.test(definition, schemaDefinition)) {
+            throw new Error('Invalid definition for ' + fieldName + ' field.');
+        }
+        self._schemaKeys.push(fieldName);
+        
+        if (!definition.optional) {
+            requiredSchemaKeys.push(fieldName);
+            firstLevelRequiredSchemaKeys.push(fieldName.split(".")[0]);
         }
     });
+    
+    self._requiredSchemaKeys = requiredSchemaKeys; //for speedier checking
+    self._firstLevelRequiredSchemaKeys = firstLevelRequiredSchemaKeys;
+    self._requiredObjectKeys = requiredObjectKeys(schema, requiredSchemaKeys);
 };
 
 // Inherit from Match.Where
@@ -304,12 +314,76 @@ SimpleSchema.prototype.expandObj = function(doc) {
     return expandObj(doc);
 };
 
+SimpleSchema.prototype.requiredObjectKeys = function(keyPrefix) {
+    var self = this;
+    if (!keyPrefix) {
+        return self._requiredObjectKeys;
+    }
+    return self._requiredObjectKeys[keyPrefix] || [];
+};
+
+SimpleSchema.prototype.requiredSchemaKeys = function(keyPrefix) {
+    return this._requiredSchemaKeys;
+};
+
+SimpleSchema.prototype.firstLevelRequiredSchemaKeys = function(keyPrefix) {
+    return this._firstLevelRequiredSchemaKeys;
+};
+
 //tests whether it's an Object as opposed to something that inherits from Object
 var isBasicObject = function (obj) {
     return _.isObject(obj) && Object.getPrototypeOf(obj) === Object.prototype; 
 };
 
 //collapses object into one level, with dot notation following the mongo $set syntax
+//var collapseObj = function(doc, skip) {
+//    var res = {};
+//    (function recurse(obj, current, currentOperator) {
+//        if (_.isArray(obj)) {
+//            if (obj.length && _.isObject(obj[0]) && !_.contains(skip, newKey)) {
+//                for (var i = 0, ln = obj.length; i < ln; i++) {
+//                    var value = obj[i];
+//                    var newKey = (current ? current + "." + i : i);  // joined index with dot
+//                    recurse(value, newKey, currentOperator);  // it's a nested object or array of objects, so do it again
+//                }
+//            } else {
+//                res[current] = obj;  // it's not an object or array of objects, so set the property
+//            }
+//        } else {
+//            for (var key in obj) {
+//                var value = obj[key];
+//
+//                var newKey = (current ? current + "." + key : key);  // joined key with dot
+//                if (isBasicObject(value) && !_.isEmpty(value) && !_.contains(skip, newKey)) {
+//                    //nested non-empty object so recurse into it
+//                    if (key.substring(0, 1) === "$") {
+//                        //handle mongo operator keys a bit differently
+//                        recurse(value, current, key);
+//                    } else {
+//                        //not a mongo operator key
+//                        recurse(value, newKey, currentOperator);
+//                    }
+//                } else if (value && _.isArray(value) && value.length && !_.contains(skip, newKey)) {
+//                    //nested non-empty array, so recurse into it
+//                    recurse(value, newKey, currentOperator);
+//                } else {
+//                    // it's not an object or array, or we've said we
+//                    // want to keep it as an object or array (skip),
+//                    // or it's an empty object or array,
+//                    // so set the property now and stop recursing
+//                    if (currentOperator) {
+//                        res[newKey] = res[newKey] || {};
+//                        res[newKey][currentOperator] = value;
+//                    } else {
+//                        res[newKey] = value;
+//                    }
+//                }
+//            }
+//        }
+//    })(doc);
+//    return res;
+//};
+
 var collapseObj = function(doc, skip) {
     var res = {};
     (function recurse(obj, current, currentOperator) {
@@ -489,3 +563,39 @@ var addImplicitKeys = function(schema) {
 
     return schema;
 };
+
+//gets an object that lists all of the required keys for each object parent key
+var requiredObjectKeys = function (schema, requiredSchemaKeys) {
+    var keyPrefix, remainingText, rKeys = {}, loopArray;
+    _.each(schema, function (definition, fieldName) {       
+        if (_.isArray(definition.type) && definition.type[0] === Object) {
+            //array of objects
+            keyPrefix = fieldName + ".$.";
+        } else if (definition.type === Object) {
+            //object
+            keyPrefix = fieldName + ".";
+        } else {
+            return;
+        }
+        
+        loopArray = [];
+        _.each(requiredSchemaKeys, function (fieldName2) {
+            if (fieldName2.startsWith(keyPrefix)) {
+                remainingText = fieldName2.substring(keyPrefix.length);
+                if (remainingText.indexOf(".") === -1) {
+                    loopArray.push(remainingText);
+                }
+            }
+        });
+        rKeys[keyPrefix] = loopArray;
+    });
+    return rKeys;
+};
+
+//create a .startsWith function for strings
+if (typeof String.prototype.startsWith !== "function") {
+    String.prototype.startsWith = function(str) {
+        "use strict";
+        return this.lastIndexOf(str, 0) === 0;
+    };
+}

@@ -1670,45 +1670,71 @@ Tinytest.add("SimpleSchema - Array of Objects", function(test) {
         }}, true);
     test.length(fc.invalidKeys(), 1);
 
+    fc = validate(friends, {$set: {
+            friends: [{name: 'Bob'}] //missing required key
+        }}, true);
+    test.length(fc.invalidKeys(), 1);
+
     fc = validate(friends, {$push: {
             friends: {name: "Bob"}
         }}, true);
-    test.length(fc.invalidKeys(), 0);
-
-    fc = validate(friends, {$push: {
-            friends: {name: "Bobby"}
-        }}, true);
     test.length(fc.invalidKeys(), 1);
 
     fc = validate(friends, {$push: {
-            friends: {$each: [{name: "Bob"}, {name: "Bob"}]}
+            friends: {name: "Bob", type: "best"}
         }}, true);
     test.length(fc.invalidKeys(), 0);
 
     fc = validate(friends, {$push: {
-            friends: {$each: [{name: "Bob"}, {name: "Bobby"}]}
+            friends: {name: "Bobby", type: "best"}
         }}, true);
     test.length(fc.invalidKeys(), 1);
+
+    fc = validate(friends, {$push: {
+            friends: {$each: [{name: "Bob", type: "best"}, {name: "Bob", type: "best"}]}
+        }}, true);
+    test.length(fc.invalidKeys(), 0);
+
+    fc = validate(friends, {$push: {
+            friends: {$each: [{name: "Bob", type: "best"}, {name: "Bobby", type: "best"}]}
+        }}, true);
+    test.length(fc.invalidKeys(), 1);
+
+    fc = validate(friends, {$push: {
+            friends: {$each: [{name: "Bob", type: 2}, {name: "Bobby", type: "best"}]}
+        }}, true);
+    test.length(fc.invalidKeys(), 2);
+    console.log(fc.invalidKeys());
 
     fc = validate(friends, {$addToSet: {
             friends: {name: "Bob"}
         }}, true);
-    test.length(fc.invalidKeys(), 0);
-
-    fc = validate(friends, {$addToSet: {
-            friends: {name: "Bobby"}
-        }}, true);
     test.length(fc.invalidKeys(), 1);
 
     fc = validate(friends, {$addToSet: {
-            friends: {$each: [{name: "Bob"}, {name: "Bob"}]}
+            friends: {name: "Bob", type: "best"}
         }}, true);
     test.length(fc.invalidKeys(), 0);
 
     fc = validate(friends, {$addToSet: {
-            friends: {$each: [{name: "Bob"}, {name: "Bobby"}]}
+            friends: {name: "Bobby", type: "best"}
         }}, true);
     test.length(fc.invalidKeys(), 1);
+
+    fc = validate(friends, {$addToSet: {
+            friends: {$each: [{name: "Bob", type: "best"}, {name: "Bob", type: "best"}]}
+        }}, true);
+    test.length(fc.invalidKeys(), 0);
+
+    fc = validate(friends, {$addToSet: {
+            friends: {$each: [{name: "Bob", type: "best"}, {name: "Bobby", type: "best"}]}
+        }}, true);
+    test.length(fc.invalidKeys(), 1);
+
+    fc = validate(friends, {$addToSet: {
+            friends: {$each: [{name: "Bob", type: 2}, {name: "Bobby", type: "best"}]}
+        }}, true);
+    test.length(fc.invalidKeys(), 2);
 });
 
 Tinytest.add("SimpleSchema - Multiple Contexts", function(test) {
@@ -1936,7 +1962,7 @@ Tinytest.add("SimpleSchema - Rename", function(test) {
     //rename from required key
     ss1 = ssr.newContext();
     ss1.validate({$rename: {requiredString: "newRequiredString"}}, {modifier: true});
-    test.length(ss1.invalidKeys(), 1);
+    test.length(ss1.invalidKeys(), 2); //old is required and new is not in schema
 });
 
 Tinytest.add("SimpleSchema - Custom Types", function(test) {
