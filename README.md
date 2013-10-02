@@ -13,7 +13,7 @@ MySchema = new SimpleSchema({
     key: {
         type: type, //allow only this data type
         label: "Name", //how to refer to this key in the error messages;
-                       //default is the key name itself
+                       //default is an inflected (humanized) derivation of the key name itself
         optional: true, //default is false, meaning the key must be present
         min: min, //minimum numeric value, or minimum string length,
                   //or minimum date, inclusive; or a function that takes

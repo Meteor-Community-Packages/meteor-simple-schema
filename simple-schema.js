@@ -1,6 +1,13 @@
 //URL RegEx from https://gist.github.com/dperini/729294
 //http://mathiasbynens.be/demo/url-regex
 
+if (Meteor.isServer) {
+  S = Npm.require("string");
+}
+if (Meteor.isClient) {
+  S = window.S;
+}
+
 //exported
 SchemaRegEx = {
     Email: /^([0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*@([0-9a-zA-Z][-\w]*[0-9a-zA-Z]\.)+[a-zA-Z]{2,9})$/,
@@ -33,12 +40,14 @@ var defaultMessages = {
 SimpleSchema = function(schema, options) {
     var self = this, requiredSchemaKeys = [], firstLevelRequiredSchemaKeys = [];
     options = options || {};
-    schema = addImplicitKeys(expandSchema(schema));
+    schema = inflectLabels(addImplicitKeys(expandSchema(schema)));
     self._schema = schema || {};
     self._schemaKeys = []; //for speedier checking
     self._validators = [];
     //set up default message for each error type
     self._messages = defaultMessages;
+    
+    console.log(schema);
 
     //set schemaDefinition validator
     var schemaDefinition = {
@@ -233,7 +242,7 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
     if (!def) {
         def = self._schema[key] || {};
     }
-    var label = def.label || key;
+    var label = def.label;
     message = message.replace("[label]", label);
     if (typeof def.minCount !== "undefined") {
         message = message.replace("[minCount]", def.minCount);
@@ -588,7 +597,7 @@ var requiredObjectKeys = function (schema, requiredSchemaKeys) {
         
         loopArray = [];
         _.each(requiredSchemaKeys, function (fieldName2) {
-            if (fieldName2.startsWith(keyPrefix)) {
+            if (S(fieldName2).startsWith(keyPrefix)) {
                 remainingText = fieldName2.substring(keyPrefix.length);
                 if (remainingText.indexOf(".") === -1) {
                     loopArray.push(remainingText);
@@ -600,10 +609,25 @@ var requiredObjectKeys = function (schema, requiredSchemaKeys) {
     return rKeys;
 };
 
-//create a .startsWith function for strings
-if (typeof String.prototype.startsWith !== "function") {
-    String.prototype.startsWith = function(str) {
-        "use strict";
-        return this.lastIndexOf(str, 0) === 0;
-    };
-}
+//label inflection
+var inflectLabels = function (schema) {
+  if (!_.isObject(schema))
+    return schema;
+  
+  var editedSchema = {};
+  _.each(schema, function (definition, fieldName) {
+    if (typeof definition.label === "string") {
+      editedSchema[fieldName] = definition;
+      return;
+    }
+    
+    var label = fieldName, lastPeriod = label.lastIndexOf(".");
+    if (lastPeriod !== -1) {
+      label = label.substring(lastPeriod + 1);
+    }
+    definition.label = S(label).humanize().s;
+    editedSchema[fieldName] = definition;
+  });
+  
+  return editedSchema;
+};
