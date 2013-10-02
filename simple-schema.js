@@ -45,8 +45,8 @@ SimpleSchema = function(schema, options) {
         type: Match.Any,
         label: Match.Optional(String),
         optional: Match.Optional(Boolean),
-        min: Match.Optional(Match.OneOf(Number, Date)),
-        max: Match.Optional(Match.OneOf(Number, Date)),
+        min: Match.Optional(Match.OneOf(Number, Date, Function)),
+        max: Match.Optional(Match.OneOf(Number, Date, Function)),
         minCount: Match.Optional(Number),
         maxCount: Match.Optional(Number),
         allowedValues: Match.Optional([Match.Any]),
@@ -244,19 +244,27 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
     if (value !== void 0 && value !== null) {
         message = message.replace("[value]", value.toString());
     }
+    var min = def.min;
+    var max = def.max;
+    if (typeof min === "function") {
+      min = min();
+    }
+    if (typeof max === "function") {
+      max = max();
+    }
     if (def.type === Date || def.type === [Date]) {
-        if (typeof def.min !== "undefined") {
-            message = message.replace("[min]", dateToDateString(def.min));
+        if (typeof min !== "undefined") {
+            message = message.replace("[min]", dateToDateString(min));
         }
-        if (typeof def.max !== "undefined") {
-            message = message.replace("[max]", dateToDateString(def.max));
+        if (typeof max !== "undefined") {
+            message = message.replace("[max]", dateToDateString(max));
         }
     } else {
-        if (typeof def.min !== "undefined") {
-            message = message.replace("[min]", def.min);
+        if (typeof min !== "undefined") {
+            message = message.replace("[min]", min);
         }
-        if (typeof def.max !== "undefined") {
-            message = message.replace("[max]", def.max);
+        if (typeof max !== "undefined") {
+            message = message.replace("[max]", max);
         }
     }
     if (def.type instanceof Function) {

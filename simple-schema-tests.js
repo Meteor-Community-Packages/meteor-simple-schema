@@ -93,6 +93,16 @@ var ss = new SimpleSchema({
         min: 10,
         max: 20
     },
+    minMaxNumberCalculated: {
+        type: Number,
+        optional: true,
+        min: function () {
+          return 10;
+        },
+        max: function () {
+          return 20;
+        }
+    },
     allowedNumbers: {
         type: Number,
         optional: true,
@@ -128,6 +138,16 @@ var ss = new SimpleSchema({
         optional: true,
         min: (new Date(Date.UTC(2013, 0, 1))),
         max: (new Date(Date.UTC(2013, 11, 31)))
+    },
+    minMaxDateCalculated: {
+        type: Date,
+        optional: true,
+        min: function () {
+          return (new Date(Date.UTC(2013, 0, 1)));
+        },
+        max: function () {
+          return (new Date(Date.UTC(2013, 11, 31)));
+        }
     },
     email: {
         type: String,
@@ -1069,6 +1089,14 @@ Tinytest.add("SimpleSchema - Insert Min Check", function(test) {
         minMaxNumber: 9
     });
     test.length(sc.invalidKeys(), 1);
+    sc = validate(ss, {
+        minMaxNumberCalculated: 10
+    });
+    test.length(sc.invalidKeys(), 0);
+    sc = validate(ss, {
+        minMaxNumberCalculated: 9
+    });
+    test.length(sc.invalidKeys(), 1);
     /* DATE */
     sc = validate(ss, {
         minMaxDate: (new Date(Date.UTC(2013, 0, 1)))
@@ -1076,6 +1104,14 @@ Tinytest.add("SimpleSchema - Insert Min Check", function(test) {
     test.length(sc.invalidKeys(), 0);
     sc = validate(ss, {
         minMaxDate: (new Date(Date.UTC(2012, 11, 31)))
+    });
+    test.length(sc.invalidKeys(), 1);
+    sc = validate(ss, {
+        minMaxDateCalculated: (new Date(Date.UTC(2013, 0, 1)))
+    });
+    test.length(sc.invalidKeys(), 0);
+    sc = validate(ss, {
+        minMaxDateCalculated: (new Date(Date.UTC(2012, 11, 31)))
     });
     test.length(sc.invalidKeys(), 1);
     /* ARRAY COUNT PLUS STRING LENGTH */
@@ -1112,6 +1148,14 @@ Tinytest.add("SimpleSchema - Upsert Min Check", function(test) {
             minMaxNumber: 9
         }}, true);
     test.length(sc.invalidKeys(), 1);
+    sc = validate(ss, {$setOnInsert: {
+            minMaxNumberCalculated: 10
+        }}, true);
+    test.length(sc.invalidKeys(), 0);
+    sc = validate(ss, {$setOnInsert: {
+            minMaxNumberCalculated: 9
+        }}, true);
+    test.length(sc.invalidKeys(), 1);
     /* DATE */
     sc = validate(ss, {$setOnInsert: {
             minMaxDate: (new Date(Date.UTC(2013, 0, 1)))
@@ -1119,6 +1163,13 @@ Tinytest.add("SimpleSchema - Upsert Min Check", function(test) {
     test.length(sc.invalidKeys(), 0);
     sc = validate(ss, {$setOnInsert: {
             minMaxDate: (new Date(Date.UTC(2012, 11, 31)))
+        }}, true);
+    sc = validate(ss, {$setOnInsert: {
+            minMaxDateCalculated: (new Date(Date.UTC(2013, 0, 1)))
+        }}, true);
+    test.length(sc.invalidKeys(), 0);
+    sc = validate(ss, {$setOnInsert: {
+            minMaxDateCalculated: (new Date(Date.UTC(2012, 11, 31)))
         }}, true);
     test.length(sc.invalidKeys(), 1);
     /* ARRAY COUNT PLUS STRING LENGTH */
@@ -1155,6 +1206,14 @@ Tinytest.add("SimpleSchema - Update Min Check", function(test) {
             minMaxNumber: 9
         }}, true);
     test.length(sc.invalidKeys(), 1);
+    sc = validate(ss, {$set: {
+            minMaxNumberCalculated: 10
+        }}, true);
+    test.length(sc.invalidKeys(), 0);
+    sc = validate(ss, {$set: {
+            minMaxNumberCalculated: 9
+        }}, true);
+    test.length(sc.invalidKeys(), 1);
     /* DATE */
     sc = validate(ss, {$set: {
             minMaxDate: (new Date(Date.UTC(2013, 0, 1)))
@@ -1162,6 +1221,14 @@ Tinytest.add("SimpleSchema - Update Min Check", function(test) {
     test.length(sc.invalidKeys(), 0);
     sc = validate(ss, {$set: {
             minMaxDate: (new Date(Date.UTC(2012, 11, 31)))
+        }}, true);
+    test.length(sc.invalidKeys(), 1);
+    sc = validate(ss, {$set: {
+            minMaxDateCalculated: (new Date(Date.UTC(2013, 0, 1)))
+        }}, true);
+    test.length(sc.invalidKeys(), 0);
+    sc = validate(ss, {$set: {
+            minMaxDateCalculated: (new Date(Date.UTC(2012, 11, 31)))
         }}, true);
     test.length(sc.invalidKeys(), 1);
     /* ARRAY COUNT PLUS STRING LENGTH */
@@ -1198,6 +1265,14 @@ Tinytest.add("SimpleSchema - Insert Max Check", function(test) {
         minMaxNumber: 21
     });
     test.length(sc.invalidKeys(), 1);
+    sc = validate(ss, {
+        minMaxNumberCalculated: 20
+    });
+    test.length(sc.invalidKeys(), 0);
+    sc = validate(ss, {
+        minMaxNumberCalculated: 21
+    });
+    test.length(sc.invalidKeys(), 1);
     /* DATE */
     sc = validate(ss, {
         minMaxDate: (new Date(Date.UTC(2013, 11, 31)))
@@ -1205,6 +1280,14 @@ Tinytest.add("SimpleSchema - Insert Max Check", function(test) {
     test.length(sc.invalidKeys(), 0);
     sc = validate(ss, {
         minMaxDate: (new Date(Date.UTC(2014, 0, 1)))
+    });
+    test.length(sc.invalidKeys(), 1);
+    sc = validate(ss, {
+        minMaxDateCalculated: (new Date(Date.UTC(2013, 11, 31)))
+    });
+    test.length(sc.invalidKeys(), 0);
+    sc = validate(ss, {
+        minMaxDateCalculated: (new Date(Date.UTC(2014, 0, 1)))
     });
     test.length(sc.invalidKeys(), 1);
     /* ARRAY COUNT PLUS STRING LENGTH */
@@ -1241,6 +1324,14 @@ Tinytest.add("SimpleSchema - Upsert Max Check", function(test) {
             minMaxNumber: 21
         }}, true);
     test.length(sc.invalidKeys(), 1);
+    sc = validate(ss, {$setOnInsert: {
+            minMaxNumberCalculated: 20
+        }}, true);
+    test.length(sc.invalidKeys(), 0);
+    sc = validate(ss, {$setOnInsert: {
+            minMaxNumberCalculated: 21
+        }}, true);
+    test.length(sc.invalidKeys(), 1);
     /* DATE */
     sc = validate(ss, {$setOnInsert: {
             minMaxDate: (new Date(Date.UTC(2013, 11, 31)))
@@ -1248,6 +1339,14 @@ Tinytest.add("SimpleSchema - Upsert Max Check", function(test) {
     test.length(sc.invalidKeys(), 0);
     sc = validate(ss, {$setOnInsert: {
             minMaxDate: (new Date(Date.UTC(2014, 0, 1)))
+        }}, true);
+    test.length(sc.invalidKeys(), 1);
+    sc = validate(ss, {$setOnInsert: {
+            minMaxDateCalculated: (new Date(Date.UTC(2013, 11, 31)))
+        }}, true);
+    test.length(sc.invalidKeys(), 0);
+    sc = validate(ss, {$setOnInsert: {
+            minMaxDateCalculated: (new Date(Date.UTC(2014, 0, 1)))
         }}, true);
     test.length(sc.invalidKeys(), 1);
     /* ARRAY COUNT PLUS STRING LENGTH */
@@ -1284,6 +1383,14 @@ Tinytest.add("SimpleSchema - Update Max Check", function(test) {
             minMaxNumber: 21
         }}, true);
     test.length(sc.invalidKeys(), 1);
+    sc = validate(ss, {$set: {
+            minMaxNumberCalculated: 20
+        }}, true);
+    test.length(sc.invalidKeys(), 0);
+    sc = validate(ss, {$set: {
+            minMaxNumberCalculated: 21
+        }}, true);
+    test.length(sc.invalidKeys(), 1);
     /* DATE */
     sc = validate(ss, {$set: {
             minMaxDate: (new Date(Date.UTC(2013, 11, 31)))
@@ -1291,6 +1398,14 @@ Tinytest.add("SimpleSchema - Update Max Check", function(test) {
     test.length(sc.invalidKeys(), 0);
     sc = validate(ss, {$set: {
             minMaxDate: (new Date(Date.UTC(2014, 0, 1)))
+        }}, true);
+    test.length(sc.invalidKeys(), 1);
+    sc = validate(ss, {$set: {
+            minMaxDateCalculated: (new Date(Date.UTC(2013, 11, 31)))
+        }}, true);
+    test.length(sc.invalidKeys(), 0);
+    sc = validate(ss, {$set: {
+            minMaxDateCalculated: (new Date(Date.UTC(2014, 0, 1)))
         }}, true);
     test.length(sc.invalidKeys(), 1);
     /* ARRAY COUNT PLUS STRING LENGTH */
@@ -1704,7 +1819,6 @@ Tinytest.add("SimpleSchema - Array of Objects", function(test) {
             friends: {$each: [{name: "Bob", type: 2}, {name: "Bobby", type: "best"}]}
         }}, true);
     test.length(fc.invalidKeys(), 2);
-    console.log(fc.invalidKeys());
 
     fc = validate(friends, {$addToSet: {
             friends: {name: "Bob"}

@@ -207,6 +207,16 @@ var recursivelyValidate = function(operator, def, keyName, arrayPos, keyValue, s
     }
 
     //For any keys that do not expect arrays, continue with more checks
+    
+    //If min/max are functions, call them
+    var min = def.min;
+    var max = def.max;
+    if (typeof min === "function") {
+      min = min();
+    }
+    if (typeof max === "function") {
+      max = max();
+    }
 
     //Type Checking
     if (expectedType === String) {
@@ -214,17 +224,17 @@ var recursivelyValidate = function(operator, def, keyName, arrayPos, keyValue, s
             invalidKeys.push(errorObject("expectedString", schemaKeyName, keyValue, def, ss));
         } else if (def.regEx && !def.regEx.test(keyValue)) {
             invalidKeys.push(errorObject("regEx", schemaKeyName, keyValue, def, ss));
-        } else if (def.max && def.max < keyValue.length) {
+        } else if (max && max < keyValue.length) {
             invalidKeys.push(errorObject("maxString", schemaKeyName, keyValue, def, ss));
-        } else if (def.min && def.min > keyValue.length) {
+        } else if (min && min > keyValue.length) {
             invalidKeys.push(errorObject("minString", schemaKeyName, keyValue, def, ss));
         }
     } else if (expectedType === Number) {
         if (typeof keyValue !== "number") {
             invalidKeys.push(errorObject("expectedNumber", schemaKeyName, keyValue, def, ss));
-        } else if (def.max && def.max < keyValue) {
+        } else if (max && max < keyValue) {
             invalidKeys.push(errorObject("maxNumber", schemaKeyName, keyValue, def, ss));
-        } else if (def.min && def.min > keyValue) {
+        } else if (min && min > keyValue) {
             invalidKeys.push(errorObject("minNumber", schemaKeyName, keyValue, def, ss));
         } else if (!def.decimal && keyValue.toString().indexOf(".") > -1) {
             invalidKeys.push(errorObject("noDecimal", schemaKeyName, keyValue, def, ss));
@@ -241,9 +251,9 @@ var recursivelyValidate = function(operator, def, keyName, arrayPos, keyValue, s
         if (!(keyValue instanceof expectedType)) {
             invalidKeys.push(errorObject("expectedConstructor", schemaKeyName, keyValue, def, ss));
         } else if (expectedType === Date) {
-            if (_.isDate(def.min) && def.min.getTime() > keyValue.getTime()) {
+            if (_.isDate(min) && min.getTime() > keyValue.getTime()) {
                 invalidKeys.push(errorObject("minDate", schemaKeyName, keyValue, def, ss));
-            } else if (_.isDate(def.max) && def.max.getTime() < keyValue.getTime()) {
+            } else if (_.isDate(max) && max.getTime() < keyValue.getTime()) {
                 invalidKeys.push(errorObject("maxDate", schemaKeyName, keyValue, def, ss));
             }
         }

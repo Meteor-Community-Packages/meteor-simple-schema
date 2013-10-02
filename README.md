@@ -16,9 +16,11 @@ MySchema = new SimpleSchema({
                        //default is the key name itself
         optional: true, //default is false, meaning the key must be present
         min: min, //minimum numeric value, or minimum string length,
-                  //or minimum date, inclusive
+                  //or minimum date, inclusive; or a function that takes
+                  //no arguments and returns one of these
         max: max, //maximum numeric value, or maximum string length,
-                  //or maximum date, inclusive
+                  //or maximum date, inclusive; or a function that takes
+                  //no arguments and returns one of these
         minCount: minCount, //minimum array length, used only if type is an array
         maxCount: maxCount, //maximum array length, used only if type is an array
         allowedValues: [], //an array of allowed values; the key's value
