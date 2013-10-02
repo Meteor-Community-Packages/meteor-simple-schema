@@ -1,3 +1,4 @@
 .build*
 .meteor
+.npm
 smart.lock
