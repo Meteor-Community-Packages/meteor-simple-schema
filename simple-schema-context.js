@@ -222,8 +222,22 @@ var recursivelyValidate = function(operator, def, keyName, arrayPos, keyValue, s
   if (expectedType === String) {
     if (typeof keyValue !== "string") {
       invalidKeys.push(errorObject("expectedString", schemaKeyName, keyValue, def, ss));
-    } else if (def.regEx && !def.regEx.test(keyValue)) {
-      invalidKeys.push(errorObject("regEx", schemaKeyName, keyValue, def, ss));
+    } else if (def.regEx) {
+      if (def.regEx instanceof RegExp) {
+        if (!def.regEx.test(keyValue)) {
+          invalidKeys.push(errorObject("regEx", schemaKeyName, keyValue, def, ss));
+        }
+      } else {
+        //it's an array with multiple regEx
+        var re;
+        for (var i = 0, ln = def.regEx.length; i < ln; i++) {
+          re = def.regEx[i];
+          if (!re.test(keyValue)) {
+            invalidKeys.push(errorObject("regEx." + i, schemaKeyName, keyValue, def, ss));
+            break;
+          }
+        }
+      }
     } else if (max && max < keyValue.length) {
       invalidKeys.push(errorObject("maxString", schemaKeyName, keyValue, def, ss));
     } else if (min && min > keyValue.length) {

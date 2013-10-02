@@ -29,7 +29,8 @@ MySchema = new SimpleSchema({
         decimal: true, //default is false; set to true if type=Number
                        //and you want to allow non-integers
         regEx: /[0-255]/, //any regular expression that must be matched
-                          //for the key to be valid
+                          //for the key to be valid, or an array of regular expressions
+                          //that will be tested in order
     }
 });
 ```
@@ -284,6 +285,17 @@ You can also specify override messages for specific fields:
   "errorType schemaKey": message
 }
 ```
+
+You can also specify override messages for specific regular expressions:
+
+```js
+{
+  "regEx.0": message,
+  "regEx.0 schemaKey": message
+}
+```
+
+Where `regEx.0` means the first regular expression in the regEx array for the schemaKey.
 
 The message is a string. It can contain a number of different placeholders indicated by square brackets:
 * `[label]` will be replaced with the field label

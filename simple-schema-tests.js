@@ -2203,3 +2203,45 @@ Tinytest.add("SimpleSchema - Labels", function(test) {
   ss.labels({"sub.number": "A different label"});
   test.equal(ss.schema("sub.number").label, "A different label", '"sub.number" label should have been changed to "A different label"');
 });
+
+Tinytest.add("SimpleSchema - RegEx", function(test) {
+  
+  var testSchema = new SimpleSchema({
+    one: {
+      type: String,
+      regEx: [
+        /^A/,
+        /B$/
+      ]
+    }
+  });
+  
+  testSchema.messages({
+    'regEx': 'Message One',
+    'regEx one': 'Message Two',
+    'regEx.0 one': 'Message Three',
+    'regEx.1 one': 'Message Four'
+  });
+
+  var c1 = testSchema.newContext();
+  c1.validate({one: "BBB"});
+  test.length(c1.invalidKeys(), 1);
+  
+  var err = c1.invalidKeys()[0] || {};
+  test.equal(err.message, 'Message Three');
+  
+  c1.validate({one: "AAA"});
+  test.length(c1.invalidKeys(), 1);
+  
+  err = c1.invalidKeys()[0] || {};
+  test.equal(err.message, 'Message Four');
+  
+  c1.validate({one: "CCC"});
+  test.length(c1.invalidKeys(), 1);
+  
+  err = c1.invalidKeys()[0] || {};
+  test.equal(err.message, 'Message Three');
+  
+  c1.validate({one: "ACB"});
+  test.length(c1.invalidKeys(), 0);
+});

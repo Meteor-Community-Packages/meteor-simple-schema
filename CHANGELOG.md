@@ -9,6 +9,7 @@ A simple, reactive schema validation smart package for Meteor.
 
 * Add label inflection and allow labels to be changed dynamically with `labels` method.
 * Allow min and max to be a function that returns a min/max value
+* Allow array of regEx with specific messages for each
 
 ### 0.2.7
 

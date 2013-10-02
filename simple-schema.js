@@ -59,7 +59,7 @@ SimpleSchema = function(schema, options) {
     allowedValues: Match.Optional([Match.Any]),
     valueIsAllowed: Match.Optional(Function),
     decimal: Match.Optional(Boolean),
-    regEx: Match.Optional(RegExp)
+    regEx: Match.Optional(Match.OneOf(RegExp, [RegExp]))
   };
 
   if (typeof options.additionalKeyPatterns === "object")
@@ -245,16 +245,24 @@ SimpleSchema.prototype.labels = function(labels) {
 };
 
 SimpleSchema.prototype.messageForError = function(type, key, def, value) {
-  var self = this, typePlusKey = type + " " + key;
-  var message = self._messages[typePlusKey] || self._messages[type];
-  if (!message) {
+  var self = this, typePlusKey = type + " " + key, genType, genTypePlusKey, firstTypePeriod = type.indexOf(".");
+  if (firstTypePeriod !== -1) {
+    genType = type.substring(0, firstTypePeriod);
+    genTypePlusKey = genType + " " + key;
+  }
+  var message = self._messages[typePlusKey];
+  if (!message)
+    message = self._messages[type];
+  if (!message && genType) {
+    message = self._messages[genTypePlusKey];
+    if (!message)
+      message = self._messages[genType];
+  }
+  if (!message)
     return "Unknown validation error";
-  }
-  if (!def) {
+  if (!def)
     def = self._schema[key] || {};
-  }
-  var label = def.label;
-  message = message.replace("[label]", label);
+  message = message.replace("[label]", def.label);
   if (typeof def.minCount !== "undefined") {
     message = message.replace("[minCount]", def.minCount);
   }
