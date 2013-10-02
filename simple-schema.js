@@ -233,6 +233,19 @@ SimpleSchema.prototype.messages = function(messages) {
   _.extend(this._messages, messages);
 };
 
+SimpleSchema.prototype.labels = function(labels) {
+  var self = this;
+  _.each(labels, function (label, fieldName) {
+    if (typeof label !== "string")
+      return;
+    
+    if (!(fieldName in self._schema))
+      return;
+    
+    self._schema[fieldName]["label"] = label;
+  });
+};
+
 SimpleSchema.prototype.messageForError = function(type, key, def, value) {
   var self = this, typePlusKey = type + " " + key;
   var message = self._messages[typePlusKey] || self._messages[type];

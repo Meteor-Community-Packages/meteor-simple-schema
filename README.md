@@ -324,6 +324,19 @@ If you are interested in supporting multiple languages, you should be able to re
 to change the messages at any time, for example, in an autorun function based on a language value stored in session
 that loads the message object from static json files.
 
+## Changing Labels
+
+If you need to alter labels on the fly, such as to support user-selectable
+languages, you can do so using the `labels` method.
+
+```js
+MySchema.labels({
+    password: "Enter your password"
+});
+```
+
+This is not currently reactive but should be. (Pull request welcome.)
+
 ## Defining Allowed Values
 
 To define which values are allowed for a schema key, use the `allowedValues` option

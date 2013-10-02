@@ -2193,3 +2193,13 @@ Tinytest.add("SimpleSchema - Nested Schemas", function(test) {
   test.equal(defs['array.$.copied'], childDef, "should add array child definitions to parent schema");
   test.equal(defs['array.$.overridden'], parentDef, "parent definitions should override array child definitions");
 });
+
+Tinytest.add("SimpleSchema - Labels", function(test) {
+  //inflection
+  test.equal(ss.schema("minMaxNumber").label, "Min max number", '"minMaxNumber" should have inflected to "Min max number" label');
+  test.equal(ss.schema("sub.number").label, "Number", '"sub.number" should have inflected to "Number" label');
+  
+  //dynamic
+  ss.labels({"sub.number": "A different label"});
+  test.equal(ss.schema("sub.number").label, "A different label", '"sub.number" label should have been changed to "A different label"');
+});
