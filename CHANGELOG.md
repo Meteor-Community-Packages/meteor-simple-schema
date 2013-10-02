@@ -5,6 +5,11 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.8
+
+* Add label inflection and allow labels to be changed dynamically with `labels` method.
+* Allow min and max to be a function that returns a min/max value
+
 ### 0.2.7
 
 Refactor validation loop to improve and not use collapse/expand

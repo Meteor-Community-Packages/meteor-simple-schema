@@ -47,8 +47,6 @@ SimpleSchema = function(schema, options) {
   //set up default message for each error type
   self._messages = defaultMessages;
 
-  console.log(schema);
-
   //set schemaDefinition validator
   var schemaDefinition = {
     type: Match.Any,
