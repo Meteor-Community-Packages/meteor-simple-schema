@@ -2198,14 +2198,14 @@ Tinytest.add("SimpleSchema - Labels", function(test) {
   //inflection
   test.equal(ss.schema("minMaxNumber").label, "Min max number", '"minMaxNumber" should have inflected to "Min max number" label');
   test.equal(ss.schema("sub.number").label, "Number", '"sub.number" should have inflected to "Number" label');
-  
+
   //dynamic
   ss.labels({"sub.number": "A different label"});
   test.equal(ss.schema("sub.number").label, "A different label", '"sub.number" label should have been changed to "A different label"');
 });
 
 Tinytest.add("SimpleSchema - RegEx", function(test) {
-  
+
   var testSchema = new SimpleSchema({
     one: {
       type: String,
@@ -2215,7 +2215,7 @@ Tinytest.add("SimpleSchema - RegEx", function(test) {
       ]
     }
   });
-  
+
   testSchema.messages({
     'regEx': 'Message One',
     'regEx one': 'Message Two',
@@ -2226,22 +2226,42 @@ Tinytest.add("SimpleSchema - RegEx", function(test) {
   var c1 = testSchema.newContext();
   c1.validate({one: "BBB"});
   test.length(c1.invalidKeys(), 1);
-  
+
   var err = c1.invalidKeys()[0] || {};
   test.equal(err.message, 'Message Three');
-  
+
   c1.validate({one: "AAA"});
   test.length(c1.invalidKeys(), 1);
-  
+
   err = c1.invalidKeys()[0] || {};
   test.equal(err.message, 'Message Four');
-  
+
   c1.validate({one: "CCC"});
   test.length(c1.invalidKeys(), 1);
-  
+
   err = c1.invalidKeys()[0] || {};
   test.equal(err.message, 'Message Three');
-  
+
   c1.validate({one: "ACB"});
   test.length(c1.invalidKeys(), 0);
+});
+
+Tinytest.add("SimpleSchema - Issue 28", function(test) {
+  var is28ss = new SimpleSchema({
+    "name": {
+      type: String
+    },
+    "embed": {
+      type: Object
+    },
+    "embed._id": {
+      type: String
+    }
+  });
+
+  var is28sc = validate(is28ss, {$set: {
+      name: "name"
+    }}, true);
+  test.length(is28sc.invalidKeys(), 0);
+
 });

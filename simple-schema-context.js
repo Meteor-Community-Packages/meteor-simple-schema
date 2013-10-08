@@ -157,8 +157,10 @@ var recursivelyValidate = function(operator, def, keyName, arrayPos, keyValue, s
   if (expectedType === Object) {
     var keysToCheck, checkObj;
     var keyPrefix = schemaKeyName + ".";
+    var isArrayItem = false;
     if (arrayPos !== void 0 && arrayPos !== null) {
       keyPrefix += arrayPos + ".";
+      isArrayItem = true;
     }
 
     if (!isBasicObject(keyValue)) {
@@ -178,7 +180,11 @@ var recursivelyValidate = function(operator, def, keyName, arrayPos, keyValue, s
     _.each(keysToCheck, function(k) {
       //recurse only if the key wasn't checked at the first level, due to being passed in under a modifier operator
       if (!_.contains(allKeys, keyPrefix + k)) {
-        childVal = checkObj[k] || null; //use null instead of undefined so that $set knows to consider required fields invalid
+        childVal = checkObj[k];
+        
+        if (isArrayItem && childVal === void 0)
+          childVal = null; //within arrays, use null instead of undefined so that $set knows to consider required fields invalid
+        
         invalidKeys = _.union(invalidKeys, recursivelyValidate(operator, null, keyPrefix + k, null, childVal, ss, fullDoc, allKeys, keyToValidate));
       }
     });
@@ -515,37 +521,37 @@ var validateObj = function(obj, keyToValidate, invalidKeys, ss, operator) {
   return uniqueInvalidKeys;
 };
 
-var addNullKeys = function(doc, schema) {
-  //to account for missing required keys in objects that are in arrays,
-  //we will loop through and set any missing keys to null; this will make
-  //sure that the "required" errors are logged for them
-  var keysToAdd = [];
-  _.each(doc, function(docVal, docKey) {
-    var pieces = docKey.split('.');
-    var tryKey;
-    _.each(pieces, function(piece) {
-      tryKey = tryKey ? tryKey + '.' + piece : piece;
-      var numPiece = parseInt(piece, 10);
-      if (!isNaN(numPiece)) {
-        var keyBase = numToDollar(tryKey);
-        _.each(schema, function(subDef, k) {
-          if (!subDef.optional && k.startsWith(keyBase)) {
-            k = k.substring(0, keyBase.length - 3) + "." + piece + "." + k.substring(keyBase.length - 1 + piece.length);
-            if (!doc.hasOwnProperty(k)) {
-              keysToAdd.push(k);
-            }
-          }
-        });
-      }
-    });
-  });
-
-  _.each(keysToAdd, function(keyToAdd) {
-    doc[keyToAdd] = null;
-  });
-
-  return doc;
-};
+//var addNullKeys = function(doc, schema) {
+//  //to account for missing required keys in objects that are in arrays,
+//  //we will loop through and set any missing keys to undefined; this will make
+//  //sure that the "required" errors are logged for them
+//  var keysToAdd = [];
+//  _.each(doc, function(docVal, docKey) {
+//    var pieces = docKey.split('.');
+//    var tryKey;
+//    _.each(pieces, function(piece) {
+//      tryKey = tryKey ? tryKey + '.' + piece : piece;
+//      var numPiece = parseInt(piece, 10);
+//      if (!isNaN(numPiece)) {
+//        var keyBase = numToDollar(tryKey);
+//        _.each(schema, function(subDef, k) {
+//          if (!subDef.optional && k.startsWith(keyBase)) {
+//            k = k.substring(0, keyBase.length - 3) + "." + piece + "." + k.substring(keyBase.length - 1 + piece.length);
+//            if (!doc.hasOwnProperty(k)) {
+//              keysToAdd.push(k);
+//            }
+//          }
+//        });
+//      }
+//    });
+//  });
+//
+//  _.each(keysToAdd, function(keyToAdd) {
+//    doc[keyToAdd] = undefined;
+//  });
+//
+//  return doc;
+//};
 
 var doValidation = function(doc, isModifier, keyToValidate, ss, schema) {
   //check arguments
