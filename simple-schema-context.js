@@ -16,10 +16,11 @@ SimpleSchemaValidationContext = function(ss) {
 SimpleSchemaValidationContext.prototype.validate = function(doc, options) {
   var self = this;
   options = _.extend({
-    modifier: false
+    modifier: false,
+    upsert: false
   }, options || {});
 
-  var invalidKeys = doValidation(doc, options.modifier, null, self._simpleSchema, self._schema);
+  var invalidKeys = doValidation(doc, options.modifier, options.upsert, null, self._simpleSchema, self._schema);
 
   //now update self._invalidKeys and dependencies
 
@@ -53,7 +54,7 @@ SimpleSchemaValidationContext.prototype.validateOne = function(doc, keyName, opt
     modifier: false
   }, options || {});
 
-  var invalidKeys = doValidation(doc, options.modifier, keyName, self._simpleSchema, self._schema);
+  var invalidKeys = doValidation(doc, options.modifier, options.upsert, keyName, self._simpleSchema, self._schema);
 
   //now update self._invalidKeys and dependencies
 
@@ -79,7 +80,7 @@ SimpleSchemaValidationContext.prototype.validateOne = function(doc, keyName, opt
 };
 
 //this is where all the validation happens for a particular key for a single operator
-var recursivelyValidate = function(operator, def, keyName, arrayPos, keyValue, ss, fullDoc, allKeys, keyToValidate) {
+var recursivelyValidate = function(operator, def, keyName, arrayPos, keyValue, ss, fullDoc, allKeys, keyToValidate, isUpsert) {
   var invalidKeys = [], requiredError;
   var schemaKeyName = numToDollar(keyName); //replace .Number. with .$. in key
 
@@ -122,10 +123,10 @@ var recursivelyValidate = function(operator, def, keyName, arrayPos, keyValue, s
   //required keys in subobjects now
   var dollarPos = schemaKeyName.indexOf(".");
   if (dollarPos !== -1) {
-    if (!operator || operator === "$setOnInsert" || operator === "$push" || operator === "$addToSet") {
+    if (!operator || operator === "$push" || operator === "$addToSet") {
       requiredError = validateRequired(schemaKeyName, keyValue, def, ss);
     } else if (operator === "$set") {
-      if (keyValue !== void 0) {
+      if (keyValue !== void 0 || isUpsert) {
         requiredError = validateRequired(schemaKeyName, keyValue, def, ss);
       }
     } else if (!def.optional && (operator === "$unset" || operator === "$rename")) {
@@ -181,11 +182,11 @@ var recursivelyValidate = function(operator, def, keyName, arrayPos, keyValue, s
       //recurse only if the key wasn't checked at the first level, due to being passed in under a modifier operator
       if (!_.contains(allKeys, keyPrefix + k)) {
         childVal = checkObj[k];
-        
+
         if (isArrayItem && childVal === void 0)
           childVal = null; //within arrays, use null instead of undefined so that $set knows to consider required fields invalid
-        
-        invalidKeys = _.union(invalidKeys, recursivelyValidate(operator, null, keyPrefix + k, null, childVal, ss, fullDoc, allKeys, keyToValidate));
+
+        invalidKeys = _.union(invalidKeys, recursivelyValidate(operator, null, keyPrefix + k, null, childVal, ss, fullDoc, allKeys, keyToValidate, isUpsert));
       }
     });
   }
@@ -204,7 +205,7 @@ var recursivelyValidate = function(operator, def, keyName, arrayPos, keyValue, s
       childDef.type = def.type[0]; //strip array off of type
       for (var i = 0, ln = keyValue.length; i < ln; i++) {
         loopVal = keyValue[i];
-        invalidKeys = _.union(invalidKeys, recursivelyValidate(operator, childDef, schemaKeyName, i, loopVal, ss, fullDoc, allKeys, keyToValidate));
+        invalidKeys = _.union(invalidKeys, recursivelyValidate(operator, childDef, schemaKeyName, i, loopVal, ss, fullDoc, allKeys, keyToValidate, isUpsert));
       }
     } else {
       invalidKeys.push(errorObject("expectedArray", schemaKeyName, keyValue, def, ss));
@@ -385,54 +386,43 @@ var validateArray = function(keyName, keyValue, def, ss) {
   }
 };
 
-var getRequiredAndArrayErrors = function(doc, keyName, def, ss, hasModifiers, hasSet, hasSetOnInsert, hasUnset, hasRename, hasPush, hasAddToSet) {
+var getRequiredAndArrayErrors = function(doc, keyName, def, ss, hasModifiers, isUpsert, hasSet, hasUnset, hasRename) {
   var keyValue, requiredError, arrayError;
+  
+  //if (keyName === "requiredString" && )
 
   if (hasModifiers) {
     //Do required checks for modifiers. The general logic is this:
     //if required, then:
-    //-in $set and $setOnInsert, val must not be null or empty string, AND
+    //-in $set with isUpsert=false, val must not be null or empty string (undefined is OK), AND
+    //-in $set with isUpsert=true, val must not be undefined, null, or empty string, AND
     //-in $unset, key must not be present, AND
     //-in $rename, key must not be present
-    //But make sure only one required error is logged per keyName
+    //But make sure only one required error is logged per keyName, and we'll validate
+    //subkeys later
     if (hasSet) {
+//      //keyName might be implied by another key in doc
+//      //(e.g., "name.first" implies "name")
+//      //if so, assume that it is set in the original object,
+//      //so don't log any errors
+//      //(this check only applies to non-modifier objects)
+//      if (!(keyName in doc.$set)) {
+//        var shouldQuit = false;
+//        _.each(doc.$set, function(val, key) {
+//          if (key.indexOf(keyName + '.') !== -1) {
+//            shouldQuit = true;
+//          }
+//        });
+//        if (shouldQuit) {
+//          return;
+//        }
+//      }
+      
       keyValue = doc.$set[keyName];
 
       //check for missing required, unless undefined,
       //except validate required keys in objects in arrays later, when looping through doc ("foo.$.bar")
-      if (keyValue !== void 0 && keyName.indexOf(".") === -1) {
-        requiredError = validateRequired(keyName, keyValue, def, ss);
-      }
-    }
-
-    if (!requiredError && hasSetOnInsert) {
-      //validate $setOnInsert exactly like an insert doc
-
-      //keyName might be implied by another key in doc
-      //(e.g., "name.first" implies "name")
-      //if so, assume that it is set in the original object,
-      //so don't log any errors
-      //(this check only applies to non-modifier objects)
-      if (!(keyName in doc)) {
-        var shouldQuit = false;
-        _.each(doc, function(val, key) {
-          if (key.indexOf(keyName + '.') !== -1) {
-            shouldQuit = true;
-          }
-        });
-        if (shouldQuit) {
-          return [];
-        }
-      }
-
-      //Do required checks for normal objects. The general logic is this:
-      //if required, then the key must be present and it's value
-      //must not be undefined, null, or an empty string
-      keyValue = doc.$setOnInsert[keyName];
-
-      //check for missing required,
-      //except validate required keys in objects in arrays later, when looping through doc ("foo.$.bar")
-      if (keyName.indexOf(".") === -1) {
+      if ((keyValue !== void 0 || isUpsert) && keyName.indexOf(".") === -1) {
         requiredError = validateRequired(keyName, keyValue, def, ss);
       }
     }
@@ -445,22 +435,22 @@ var getRequiredAndArrayErrors = function(doc, keyName, def, ss, hasModifiers, ha
       requiredError = errorObject("required", keyName, null, def, ss);
     }
   } else {
-    //keyName might be implied by another key in doc
-    //(e.g., "name.first" implies "name")
-    //if so, assume that it is set in the original object,
-    //so don't log any errors
-    //(this check only applies to non-modifier objects)
-    if (!(keyName in doc)) {
-      var shouldQuit = false;
-      _.each(doc, function(val, key) {
-        if (key.indexOf(keyName + '.') !== -1) {
-          shouldQuit = true;
-        }
-      });
-      if (shouldQuit) {
-        return [];
-      }
-    }
+//    //keyName might be implied by another key in doc
+//    //(e.g., "name.first" implies "name")
+//    //if so, assume that it is set in the original object,
+//    //so don't log any errors
+//    //(this check only applies to non-modifier objects)
+//    if (!(keyName in doc)) {
+//      var shouldQuit = false;
+//      _.each(doc, function(val, key) {
+//        if (key.indexOf(keyName + '.') !== -1) {
+//          shouldQuit = true;
+//        }
+//      });
+//      if (shouldQuit) {
+//        return [];
+//      }
+//    }
 
     //Do required checks for normal objects. The general logic is this:
     //if required, then the key must be present and it's value
@@ -475,39 +465,20 @@ var getRequiredAndArrayErrors = function(doc, keyName, def, ss, hasModifiers, ha
   }
 
   if (requiredError) {
-    return [requiredError]; //once we've logged a required error for the key, no further checking is necessary
+    return requiredError; //once we've logged a required error for the key, no further checking is necessary
   }
 
   //Second do array checks
-
-  if (hasModifiers) {
-    if (hasSet) {
-      keyValue = doc.$set[keyName];
-      arrayError = validateArray(keyName, keyValue, def, ss);
-    }
-
-    if (!arrayError && hasSetOnInsert) {
-      keyValue = doc.$setOnInsert[keyName];
-      arrayError = validateArray(keyName, keyValue, def, ss);
-    }
-  } else {
-    arrayError = validateArray(keyName, keyValue, def, ss);
-  }
-
-  if (arrayError) {
-    return [arrayError];
-  }
-
-  return [];
+  return validateArray(keyName, keyValue, def, ss);
 };
 
-var validateObj = function(obj, keyToValidate, invalidKeys, ss, operator) {
+var validateObj = function(obj, keyToValidate, invalidKeys, ss, operator, isUpsert) {
   var allKeys = _.keys(obj);
   //for required checks, we want to loop through all keys in the object
   //plus all keys expected based on the schema, in case any are missing
   var keysToCheck = _.union(allKeys, ss.firstLevelRequiredSchemaKeys());
   _.each(keysToCheck, function(key) {
-    invalidKeys = _.union(invalidKeys, recursivelyValidate(operator, null, key, null, obj[key], ss, obj, allKeys, keyToValidate));
+    invalidKeys = _.union(invalidKeys, recursivelyValidate(operator, null, key, null, obj[key], ss, obj, allKeys, keyToValidate, isUpsert));
   });
 
   //make sure there is only one error per fieldName
@@ -553,7 +524,7 @@ var validateObj = function(obj, keyToValidate, invalidKeys, ss, operator) {
 //  return doc;
 //};
 
-var doValidation = function(doc, isModifier, keyToValidate, ss, schema) {
+var doValidation = function(doc, isModifier, isUpsert, keyToValidate, ss, schema) {
   //check arguments
   if (!_.isObject(doc)) {
     throw new Error("The first argument of validate() or validateOne() must be an object");
@@ -563,16 +534,24 @@ var doValidation = function(doc, isModifier, keyToValidate, ss, schema) {
     throw new Error("When the validation object contains mongo operators, you must set the modifier option to true");
   }
 
+  //if this is an upsert, just add all the $setOnInsert keys to $set;
+  //since we don't know whether it will be an insert or update, we'll
+  //validate upserts as if they will be an insert
+  if ("$setOnInsert" in doc) {
+    if (isUpsert) {
+      doc["$set"] = doc["$set"] || {};
+      _.extend(doc["$set"], doc["$setOnInsert"]);
+    }
+    delete doc["$setOnInsert"];
+  }
+
   var invalidKeys = [];
   var hasSet = ("$set" in doc);
-  var hasSetOnInsert = ("$setOnInsert" in doc);
   var hasUnset = ("$unset" in doc);
   var hasRename = ("$rename" in doc);
-  var hasPush = ("$push" in doc);
-  var hasAddToSet = ("$addToSet" in doc);
 
   //first, loop through schema to do required and array checks
-  var found = false;
+  var found = false, validationError;
   _.each(schema, function(def, keyName) {
     if (keyToValidate) {
       if (keyToValidate === keyName) {
@@ -581,7 +560,8 @@ var doValidation = function(doc, isModifier, keyToValidate, ss, schema) {
         return;
       }
     }
-    invalidKeys = _.union(invalidKeys, getRequiredAndArrayErrors(doc, keyName, def, ss, isModifier, hasSet, hasSetOnInsert, hasUnset, hasRename, hasPush, hasAddToSet));
+    validationError = getRequiredAndArrayErrors(doc, keyName, def, ss, isModifier, isUpsert, hasSet, hasUnset, hasRename);
+    validationError && invalidKeys.push(validationError);
   });
 
   if (keyToValidate && !found) {
@@ -594,13 +574,13 @@ var doValidation = function(doc, isModifier, keyToValidate, ss, schema) {
       if (operator.substring(0, 1) !== "$") {
         throw new Error("When the modifier option is true, all validation object keys must be operators");
       }
-      if (operator === "$set" && _.isObject(modObj) && _.isEmpty(modObj))
-        return; //special rare case; $set obj with no keys shouldn't cause errors
-      invalidKeys = _.union(invalidKeys, validateObj(modObj, keyToValidate, invalidKeys, ss, operator));
+      if (!isUpsert && operator === "$set" && _.isObject(modObj) && _.isEmpty(modObj))
+        return; //special rare case; $set obj with no keys shouldn't cause errors unless it's an upsert
+      invalidKeys = _.union(invalidKeys, validateObj(modObj, keyToValidate, invalidKeys, ss, operator, isUpsert));
     });
   } else {
     //second, loop through doc and validate all keys that are present
-    invalidKeys = _.union(invalidKeys, validateObj(doc, keyToValidate, invalidKeys, ss, null));
+    invalidKeys = _.union(invalidKeys, validateObj(doc, keyToValidate, invalidKeys, ss, null, isUpsert));
   }
 
   return invalidKeys;

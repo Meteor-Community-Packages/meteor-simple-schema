@@ -1,3 +1,7 @@
+/*
+ * BEGIN SETUP FOR TESTS
+ */
+
 var ssr = new SimpleSchema({
   requiredString: {
     type: String
@@ -31,10 +35,12 @@ var ssr = new SimpleSchema({
     min: 20
   }
 });
+
 ssr.messages({
   "regEx requiredEmail": "[label] is not a valid e-mail address",
   "regEx requiredUrl": "[label] is not a valid URL"
 });
+
 var ss = new SimpleSchema({
   string: {
     type: String,
@@ -160,11 +166,13 @@ var ss = new SimpleSchema({
     optional: true
   }
 });
+
 ss.messages({
   minCount: "blah",
   "regEx email": "[label] is not a valid e-mail address",
   "regEx url": "[label] is not a valid URL"
 });
+
 var pss = new SimpleSchema({
   password: {
     type: String
@@ -177,17 +185,73 @@ var pss = new SimpleSchema({
     }
   }
 });
-var validate = function(ss, doc, isModifier) {
+
+var friends = new SimpleSchema({
+  name: {
+    type: String,
+    optional: true
+  },
+  friends: {
+    type: [Object],
+    minCount: 1
+  },
+  'friends.$.name': {
+    type: String,
+    max: 3
+  },
+  'friends.$.type': {
+    type: String,
+    allowedValues: ["best", "good", "bad"]
+  },
+  'friends.$.a.b': {
+    type: Number,
+    optional: true
+  }
+});
+
+/*
+ * END SETUP FOR TESTS
+ */
+
+/*
+ * BEGIN HELPER METHODS
+ */
+
+var validate = function(ss, doc, isModifier, isUpsert) {
 //we will filter, type convert, and validate everything
 //so that we can be sure the filtering and type converting are not invalidating
 //documents that should be valid
   doc = ss.clean(doc);
   var context = ss.newContext();
-  context.validate(doc, {modifier: isModifier});
+  context.validate(doc, {modifier: isModifier, upsert: isUpsert});
   return context;
 };
 
-Tinytest.add("SimpleSchema - Insert Required", function(test) {
+/*
+ * END HELPER METHODS
+ */
+
+/*
+ * BEGIN TESTS
+ */
+
+Tinytest.add("SimpleSchema - Required Checks - Insert - Valid", function(test) {
+  var sc = validate(ssr, {
+    requiredString: "test",
+    requiredBoolean: true,
+    requiredNumber: 1,
+    requiredDate: (new Date()),
+    requiredEmail: "test123@sub.example.edu",
+    requiredUrl: "http://google.com",
+    requiredObject: {},
+    subdoc: {
+      requiredString: "test"
+    }
+  });
+  test.length(sc.invalidKeys(), 0);
+});
+
+Tinytest.add("SimpleSchema - Required Checks - Insert - Invalid", function(test) {
   var sc = validate(ssr, {});
   test.length(sc.invalidKeys(), 8);
 
@@ -247,26 +311,169 @@ Tinytest.add("SimpleSchema - Insert Required", function(test) {
   });
   test.length(sc.invalidKeys(), 8);
 
-  //test opposite case
-  sc = validate(ssr, {
-    requiredString: "test",
-    requiredBoolean: true,
-    requiredNumber: 1,
-    requiredDate: (new Date()),
-    requiredEmail: "test123@sub.example.edu",
-    requiredUrl: "http://google.com",
-    requiredObject: {},
-    subdoc: {
-      requiredString: "test"
-    }
+  //array of objects
+  sc = validate(friends, {
+    friends: [{name: 'Bob'}]
   });
+  test.length(sc.invalidKeys(), 1);
+});
+
+/*
+ * Upserts should be validated more like inserts because they might be an insert
+ */
+
+Tinytest.add("SimpleSchema - Required Checks - Upsert - Valid - $set", function(test) {
+  var sc = validate(ssr, {$set: {
+      requiredString: "test",
+      requiredBoolean: true,
+      requiredNumber: 1,
+      requiredDate: (new Date()),
+      requiredEmail: "test123@sub.example.edu",
+      requiredUrl: "http://google.com",
+      requiredObject: {},
+      subdoc: {
+        requiredString: "test"
+      }
+    }}, true, true);
+  test.length(sc.invalidKeys(), 0);
+
+  sc = validate(ssr, {$set: {
+      requiredString: "test",
+      requiredBoolean: true,
+      requiredNumber: 1,
+      requiredDate: (new Date()),
+      requiredEmail: "test123@sub.example.edu",
+      requiredUrl: "http://google.com",
+      requiredObject: {},
+      'subdoc.requiredString': "test"
+    }}, true, true);
   test.length(sc.invalidKeys(), 0);
 });
 
-Tinytest.add("SimpleSchema - Upsert Required", function(test) {
-  //$setOnInsert should be validated just like inserts
+Tinytest.add("SimpleSchema - Required Checks - Upsert - Valid - $setOnInsert", function(test) {
+  var sc = validate(ssr, {$setOnInsert: {
+      requiredString: "test",
+      requiredBoolean: true,
+      requiredNumber: 1,
+      requiredDate: (new Date()),
+      requiredEmail: "test123@sub.example.edu",
+      requiredUrl: "http://google.com",
+      requiredObject: {},
+      subdoc: {
+        requiredString: "test"
+      }
+    }}, true, true);
+  test.length(sc.invalidKeys(), 0);
 
-  var sc = validate(ssr, {$setOnInsert: {}}, true);
+  sc = validate(ssr, {$setOnInsert: {
+      requiredString: "test",
+      requiredBoolean: true,
+      requiredNumber: 1,
+      requiredDate: (new Date()),
+      requiredEmail: "test123@sub.example.edu",
+      requiredUrl: "http://google.com",
+      requiredObject: {},
+      'subdoc.requiredString': "test"
+    }}, true, true);
+  test.length(sc.invalidKeys(), 0);
+
+  //array of objects
+  sc = validate(friends, {$setOnInsert: {
+      friends: [{name: 'Bob'}]
+    }}, true, true);
+  test.length(sc.invalidKeys(), 1);
+});
+
+Tinytest.add("SimpleSchema - Required Checks - Upsert - Valid - Combined", function(test) {
+  //some in $set and some in $setOnInsert, make sure they're merged for validation purposes
+  ssrCon = validate(ssr, {
+    $set: {
+      requiredString: "test",
+      requiredBoolean: true,
+      requiredNumber: 1,
+      requiredDate: (new Date())
+    },
+    $setOnInsert: {
+      requiredEmail: "test123@sub.example.edu",
+      requiredUrl: "http://google.com",
+      requiredObject: {},
+      'subdoc.requiredString': "test"
+    }
+  }, true, true);
+  test.length(ssrCon.invalidKeys(), 0);
+
+  ssrCon = validate(ssr, {
+    $set: {
+      requiredString: "test",
+      requiredBoolean: true,
+      requiredNumber: 1,
+      requiredDate: (new Date())
+    },
+    $setOnInsert: {
+      requiredEmail: "test123@sub.example.edu",
+      requiredUrl: "http://google.com",
+      requiredObject: {},
+      'subdoc.requiredString': "test"
+    }
+  }, true, true);
+  test.length(ssrCon.invalidKeys(), 0);
+});
+
+Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - $set", function(test) {
+  var sc = validate(ssr, {$set: {}}, true, true);
+  test.length(sc.invalidKeys(), 8);
+
+  sc = validate(ssr, {$set: {
+      requiredString: null,
+      requiredBoolean: null,
+      requiredNumber: null,
+      requiredDate: null,
+      requiredEmail: null,
+      requiredUrl: null,
+      requiredObject: null,
+      'subdoc.requiredString': null
+    }}, true, true);
+  test.length(sc.invalidKeys(), 8);
+
+  sc = validate(ssr, {$set: {
+      requiredString: void 0,
+      requiredBoolean: void 0,
+      requiredNumber: void 0,
+      requiredDate: void 0,
+      requiredEmail: void 0,
+      requiredUrl: void 0,
+      requiredObject: void 0,
+      'subdoc.requiredString': void 0
+    }}, true, true);
+  test.length(sc.invalidKeys(), 8);
+
+  sc = validate(ssr, {$set: {
+      requiredString: "",
+      requiredBoolean: null,
+      requiredNumber: null,
+      requiredDate: null,
+      requiredEmail: null,
+      requiredUrl: null,
+      requiredObject: null,
+      'subdoc.requiredString': ""
+    }}, true, true);
+  test.length(sc.invalidKeys(), 8);
+
+  sc = validate(ssr, {$set: {
+      requiredString: "   ",
+      requiredBoolean: null,
+      requiredNumber: null,
+      requiredDate: null,
+      requiredEmail: null,
+      requiredUrl: null,
+      requiredObject: null,
+      'subdoc.requiredString': "   "
+    }}, true, true);
+  test.length(sc.invalidKeys(), 8);
+});
+
+Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - $setOnInsert", function(test) {
+  var sc = validate(ssr, {$setOnInsert: {}}, true, true);
   test.length(sc.invalidKeys(), 8);
 
   sc = validate(ssr, {$setOnInsert: {
@@ -278,7 +485,7 @@ Tinytest.add("SimpleSchema - Upsert Required", function(test) {
       requiredUrl: null,
       requiredObject: null,
       'subdoc.requiredString': null
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 8);
 
   sc = validate(ssr, {$setOnInsert: {
@@ -290,7 +497,7 @@ Tinytest.add("SimpleSchema - Upsert Required", function(test) {
       requiredUrl: void 0,
       requiredObject: void 0,
       'subdoc.requiredString': void 0
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 8);
 
   sc = validate(ssr, {$setOnInsert: {
@@ -302,7 +509,7 @@ Tinytest.add("SimpleSchema - Upsert Required", function(test) {
       requiredUrl: null,
       requiredObject: null,
       'subdoc.requiredString': ""
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 8);
 
   sc = validate(ssr, {$setOnInsert: {
@@ -314,40 +521,86 @@ Tinytest.add("SimpleSchema - Upsert Required", function(test) {
       requiredUrl: null,
       requiredObject: null,
       'subdoc.requiredString': "   "
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 8);
-
-  //test opposite case
-  sc = validate(ssr, {$setOnInsert: {
-      requiredString: "test",
-      requiredBoolean: true,
-      requiredNumber: 1,
-      requiredDate: (new Date()),
-      requiredEmail: "test123@sub.example.edu",
-      requiredUrl: "http://google.com",
-      requiredObject: {},
-      'subdoc.requiredString': "test"
-    }}, true);
-  test.length(sc.invalidKeys(), 0);
 });
 
-Tinytest.add("SimpleSchema - Set Required", function(test) {
+Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - Combined", function(test) {
+  //some in $set and some in $setOnInsert, make sure they're merged for validation purposes
+
+  var sc = validate(ssr, {$setOnInsert: {}, $set: {}}, true, true);
+  test.length(sc.invalidKeys(), 8);
+
+  sc = validate(ssr, {
+    $set: {
+      requiredString: null,
+      requiredBoolean: null,
+      requiredNumber: null,
+      requiredDate: null
+    },
+    $setOnInsert: {
+      requiredEmail: null,
+      requiredUrl: null,
+      requiredObject: null,
+      'subdoc.requiredString': null
+    }
+  }, true, true);
+  test.length(sc.invalidKeys(), 8);
+
+  sc = validate(ssr, {
+    $set: {
+      requiredString: void 0,
+      requiredBoolean: void 0,
+      requiredNumber: void 0,
+      requiredDate: void 0
+    },
+    $setOnInsert: {
+      requiredEmail: void 0,
+      requiredUrl: void 0,
+      requiredObject: void 0,
+      'subdoc.requiredString': void 0
+    }
+  }, true, true);
+  test.length(sc.invalidKeys(), 8);
+
+  sc = validate(ssr, {
+    $set: {
+      requiredString: "",
+      requiredBoolean: null,
+      requiredNumber: null,
+      requiredDate: null
+    },
+    $setOnInsert: {
+      requiredEmail: "",
+      requiredUrl: "",
+      requiredObject: null,
+      'subdoc.requiredString': ""
+    }
+  }, true, true);
+  test.length(sc.invalidKeys(), 8);
+
+  sc = validate(ssr, {
+    $set: {
+      requiredString: "   ",
+      requiredBoolean: null,
+      requiredNumber: null,
+      requiredDate: null
+    },
+    $setOnInsert: {
+      requiredEmail: "   ",
+      requiredUrl: "   ",
+      requiredObject: null,
+      'subdoc.requiredString': "   "
+    }
+  }, true, true);
+  test.length(sc.invalidKeys(), 8);
+});
+
+Tinytest.add("SimpleSchema - Required Checks - Update - Valid - $set", function(test) {
   var sc = validate(ssr, {$set: {}}, true);
   test.length(sc.invalidKeys(), 0); //would not cause DB changes, so should not be an error
 
   sc = validate(ssr, {$set: {
-      requiredString: null,
-      requiredBoolean: null,
-      requiredNumber: null,
-      requiredDate: null,
-      requiredEmail: null,
-      requiredUrl: null,
-      requiredObject: null,
-      'subdoc.requiredString': null
-    }}, true);
-  test.length(sc.invalidKeys(), 8);
-
-  sc = validate(ssr, {$set: {
       requiredString: void 0,
       requiredBoolean: void 0,
       requiredNumber: void 0,
@@ -358,6 +611,43 @@ Tinytest.add("SimpleSchema - Set Required", function(test) {
       'subdoc.requiredString': void 0
     }}, true);
   test.length(sc.invalidKeys(), 0); //would not cause DB changes, so should not be an error
+
+  sc = validate(ssr, {$set: {
+      requiredString: "test",
+      requiredBoolean: true,
+      requiredNumber: 1,
+      requiredDate: (new Date()),
+      requiredEmail: "test123@sub.example.edu",
+      requiredUrl: "http://google.com",
+      requiredObject: {},
+      'subdoc.requiredString': "test"
+    }}, true);
+  test.length(sc.invalidKeys(), 0);
+
+  //array of objects
+  sc = validate(friends, {$set: {
+      'friends.1.name': "Bob"
+    }}, true);
+  test.length(sc.invalidKeys(), 0);
+
+  sc = validate(friends, {$set: {
+      friends: [{name: 'Bob', type: 'good'}]
+    }}, true);
+  test.length(sc.invalidKeys(), 0);
+});
+
+Tinytest.add("SimpleSchema - Required Checks - Update - Invalid - $set", function(test) {
+  var sc = validate(ssr, {$set: {
+      requiredString: null,
+      requiredBoolean: null,
+      requiredNumber: null,
+      requiredDate: null,
+      requiredEmail: null,
+      requiredUrl: null,
+      requiredObject: null,
+      'subdoc.requiredString': null
+    }}, true);
+  test.length(sc.invalidKeys(), 8);
 
   sc = validate(ssr, {$set: {
       requiredString: "",
@@ -383,32 +673,21 @@ Tinytest.add("SimpleSchema - Set Required", function(test) {
     }}, true);
   test.length(sc.invalidKeys(), 8);
 
-  //test opposite case
-  sc = validate(ssr, {$set: {
-      requiredString: "test",
-      requiredBoolean: true,
-      requiredNumber: 1,
-      requiredDate: (new Date()),
-      requiredEmail: "test123@sub.example.edu",
-      requiredUrl: "http://google.com",
-      requiredObject: {},
-      'subdoc.requiredString': "test"
+  //array of objects
+  sc = validate(friends, {$set: {
+      'friends.1.name': null
     }}, true);
-  test.length(sc.invalidKeys(), 0);
+  test.length(sc.invalidKeys(), 1);
+
+  sc = validate(friends, {$set: {
+      friends: [{name: 'Bob'}]
+    }}, true);
+  test.length(sc.invalidKeys(), 1);
 });
-Tinytest.add("SimpleSchema - Unset Required", function(test) {
+
+Tinytest.add("SimpleSchema - Required Checks - Update - Valid - $unset", function(test) {
   var sc = validate(ssr, {$unset: {}}, true);
   test.length(sc.invalidKeys(), 0); //would not cause DB changes, so should not be an error
-
-  sc = validate(ssr, {$unset: {
-      requiredString: 1,
-      requiredBoolean: 1,
-      requiredNumber: 1,
-      requiredDate: 1,
-      requiredEmail: 1,
-      requiredUrl: 1
-    }}, true);
-  test.length(sc.invalidKeys(), 6);
 
   //make sure an optional can be unset when others are required
   //retest with various values to be sure the value is ignored
@@ -426,8 +705,67 @@ Tinytest.add("SimpleSchema - Unset Required", function(test) {
       anOptionalOne: ""
     }}, true);
   test.length(sc.invalidKeys(), 0);
+
+  //array of objects
+  sc = validate(friends, {$unset: {
+      'friends.1.a.b': ""
+    }}, true);
+  test.length(sc.invalidKeys(), 0);
+
+  sc = validate(friends, {$unset: {
+      'friends.1.a.b': 1,
+      'friends.2.a.b': 1,
+      'friends.3.a.b': 1
+    }}, true);
+  test.length(sc.invalidKeys(), 0);
+
 });
-Tinytest.add("SimpleSchema - Insert Type Check", function(test) {
+
+Tinytest.add("SimpleSchema - Required Checks - Update - Invalid - $unset", function(test) {
+  var sc = validate(ssr, {$unset: {
+      requiredString: 1,
+      requiredBoolean: 1,
+      requiredNumber: 1,
+      requiredDate: 1,
+      requiredEmail: 1,
+      requiredUrl: 1
+    }}, true);
+  test.length(sc.invalidKeys(), 6);
+
+  //array of objects
+  sc = validate(friends, {$unset: {
+      'friends.1.name': 1
+    }}, true);
+  test.length(sc.invalidKeys(), 1);
+
+  sc = validate(friends, {$unset: {
+      'friends.1.name': 1,
+      'friends.2.name': 1,
+      'friends.3.name': 1
+    }}, true);
+  test.length(sc.invalidKeys(), 1);
+});
+
+Tinytest.add("SimpleSchema - Required Checks - Update - Valid - $rename", function(test) {
+  //rename from optional key to another key in schema
+  var sc = ss.newContext();
+  sc.validate({$rename: {string: "minMaxString"}}, {modifier: true});
+  test.length(sc.invalidKeys(), 0);
+});
+
+Tinytest.add("SimpleSchema - Required Checks - Update - Invalid - $rename", function(test) {
+  //rename from optional key to a key not in schema
+  var sc = ss.newContext();
+  sc.validate({$rename: {string: "newString"}}, {modifier: true});
+  test.length(sc.invalidKeys(), 1);
+
+  //rename from required key
+  sc = ssr.newContext();
+  sc.validate({$rename: {requiredString: "newRequiredString"}}, {modifier: true});
+  test.length(sc.invalidKeys(), 2); //old is required and new is not in schema
+});
+
+Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   var sc = validate(ss, {
     string: "test",
     boolean: true,
@@ -590,8 +928,8 @@ Tinytest.add("SimpleSchema - Insert Type Check", function(test) {
 
 });
 
-Tinytest.add("SimpleSchema - Upsert Type Check", function(test) {
-  //$setOnInsert should validate the same as insert
+Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
+  //should validate the same as insert
 
   var sc = validate(ss, {$setOnInsert: {
       string: "test",
@@ -601,7 +939,7 @@ Tinytest.add("SimpleSchema - Upsert Type Check", function(test) {
       date: (new Date()),
       url: "http://google.com",
       email: "test123@sub.example.edu"
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0);
   /* STRING FAILURES */
 
@@ -609,50 +947,50 @@ Tinytest.add("SimpleSchema - Upsert Type Check", function(test) {
   var sc2 = ss.newContext();
   sc2.validate({$setOnInsert: {
       string: true
-    }}, {modifier: true});
+    }}, {modifier: true, upsert: true});
   test.length(sc2.invalidKeys(), 1); //without typeconvert
 
   sc = validate(ss, {$setOnInsert: {
       string: true
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0); //with typeconvert
 
   //number string failure
   sc2.validate({$setOnInsert: {
       string: 1
-    }}, {modifier: true});
+    }}, {modifier: true, upsert: true});
   test.length(sc2.invalidKeys(), 1); //without typeconvert
 
   sc = validate(ss, {$setOnInsert: {
       string: 1
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0); //with typeconvert
 
   //object string failure
   sc2.validate({$setOnInsert: {
       string: {test: "test"}
-    }}, {modifier: true});
+    }}, {modifier: true, upsert: true});
   test.length(sc2.invalidKeys(), 1); //without typeconvert
 
   sc = validate(ss, {$setOnInsert: {
       string: {test: "test"}
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0); //with typeconvert
 
   //array string failure
   sc = validate(ss, {$setOnInsert: {
       string: ["test"]
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   //instance string failure
   sc2.validate({$setOnInsert: {
       string: (new Date())
-    }}, {modifier: true});
+    }}, {modifier: true, upsert: true});
   test.length(sc2.invalidKeys(), 1); //without typeconvert
 
   sc = validate(ss, {$setOnInsert: {
       string: (new Date())
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0); //with typeconvert
 
   /* BOOLEAN FAILURES */
@@ -660,100 +998,100 @@ Tinytest.add("SimpleSchema - Upsert Type Check", function(test) {
   //string bool failure
   sc = validate(ss, {$setOnInsert: {
       boolean: "test"
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   //number bool failure
   sc = validate(ss, {$setOnInsert: {
       boolean: 1
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   //object bool failure
   sc = validate(ss, {$setOnInsert: {
       boolean: {test: "test"}
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   //array bool failure
   sc = validate(ss, {$setOnInsert: {
       boolean: ["test"]
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   //instance bool failure
   sc = validate(ss, {$setOnInsert: {
       boolean: (new Date())
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   /* NUMBER FAILURES */
 
   //string number failure
   sc = validate(ss, {$setOnInsert: {
       number: "test"
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   //boolean number failure
   sc = validate(ss, {$setOnInsert: {
       number: true
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   //object number failure
   sc = validate(ss, {$setOnInsert: {
       number: {test: "test"}
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   //array number failure
   sc = validate(ss, {$setOnInsert: {
       number: ["test"]
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   //instance number failure
   sc = validate(ss, {$setOnInsert: {
       number: (new Date())
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   //decimal number failure
   sc = validate(ss, {$setOnInsert: {
       number: 1.1
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   /* INSTANCE FAILURES */
 
   //string date failure
   sc = validate(ss, {$setOnInsert: {
       date: "test"
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   //boolean date failure
   sc = validate(ss, {$setOnInsert: {
       date: true
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   //object date failure
   sc = validate(ss, {$setOnInsert: {
       date: {test: "test"}
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   //array date failure
   sc = validate(ss, {$setOnInsert: {
       date: ["test"]
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   //number date failure
   sc = validate(ss, {$setOnInsert: {
       date: 1
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   /* REGEX FAILURES */
 
   sc = validate(ss, {$setOnInsert: {
       url: "blah"
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   sc = validate(ss, {$setOnInsert: {
       email: "blah"
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
 });
 
-Tinytest.add("SimpleSchema - Update Type Check", function(test) {
+Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
   var sc = validate(ss, {$set: {
       string: "test",
       boolean: true,
@@ -1070,7 +1408,7 @@ Tinytest.add("SimpleSchema - Update Type Check", function(test) {
   test.length(sc.invalidKeys(), 0);
 });
 
-Tinytest.add("SimpleSchema - Insert Min Check", function(test) {
+Tinytest.add("SimpleSchema - Minimum Checks - Insert", function(test) {
   /* STRING LENGTH */
   var sc = validate(ss, {
     minMaxString: "longenough"
@@ -1129,65 +1467,65 @@ Tinytest.add("SimpleSchema - Insert Min Check", function(test) {
   test.length(sc.invalidKeys(), 1);
 });
 
-Tinytest.add("SimpleSchema - Upsert Min Check", function(test) {
+Tinytest.add("SimpleSchema - Minimum Checks - Upsert", function(test) {
   /* STRING LENGTH */
   var sc = validate(ss, {$setOnInsert: {
       minMaxString: "longenough"
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0);
   sc = validate(ss, {$setOnInsert: {
       minMaxString: "short"
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   /* NUMBER */
   sc = validate(ss, {$setOnInsert: {
       minMaxNumber: 10
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0);
   sc = validate(ss, {$setOnInsert: {
       minMaxNumber: 9
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   sc = validate(ss, {$setOnInsert: {
       minMaxNumberCalculated: 10
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0);
   sc = validate(ss, {$setOnInsert: {
       minMaxNumberCalculated: 9
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   /* DATE */
   sc = validate(ss, {$setOnInsert: {
       minMaxDate: (new Date(Date.UTC(2013, 0, 1)))
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0);
   sc = validate(ss, {$setOnInsert: {
       minMaxDate: (new Date(Date.UTC(2012, 11, 31)))
-    }}, true);
+    }}, true, true);
   sc = validate(ss, {$setOnInsert: {
       minMaxDateCalculated: (new Date(Date.UTC(2013, 0, 1)))
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0);
   sc = validate(ss, {$setOnInsert: {
       minMaxDateCalculated: (new Date(Date.UTC(2012, 11, 31)))
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   /* ARRAY COUNT PLUS STRING LENGTH */
   sc = validate(ss, {$setOnInsert: {
       minMaxStringArray: ["longenough", "longenough"]
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0);
   sc = validate(ss, {$setOnInsert: {
       minMaxStringArray: ["short", "short"]
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   sc = validate(ss, {$setOnInsert: {
       minMaxStringArray: []
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
 });
 
-Tinytest.add("SimpleSchema - Update Min Check", function(test) {
+Tinytest.add("SimpleSchema - Minimum Checks - Update", function(test) {
   /* STRING LENGTH */
   var sc = validate(ss, {$set: {
       minMaxString: "longenough"
@@ -1246,7 +1584,7 @@ Tinytest.add("SimpleSchema - Update Min Check", function(test) {
   test.length(sc.invalidKeys(), 1);
 });
 
-Tinytest.add("SimpleSchema - Insert Max Check", function(test) {
+Tinytest.add("SimpleSchema - Maximum Checks - Insert", function(test) {
   /* STRING LENGTH */
   var sc = validate(ss, {
     minMaxString: "nottoolongnottoolong"
@@ -1305,66 +1643,66 @@ Tinytest.add("SimpleSchema - Insert Max Check", function(test) {
   test.length(sc.invalidKeys(), 1);
 });
 
-Tinytest.add("SimpleSchema - Upsert Max Check", function(test) {
+Tinytest.add("SimpleSchema - Maximum Checks - Upsert", function(test) {
   /* STRING LENGTH */
   var sc = validate(ss, {$setOnInsert: {
       minMaxString: "nottoolongnottoolong"
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0);
   sc = validate(ss, {$setOnInsert: {
       minMaxString: "toolongtoolongtoolong"
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   /* NUMBER */
   sc = validate(ss, {$setOnInsert: {
       minMaxNumber: 20
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0);
   sc = validate(ss, {$setOnInsert: {
       minMaxNumber: 21
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   sc = validate(ss, {$setOnInsert: {
       minMaxNumberCalculated: 20
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0);
   sc = validate(ss, {$setOnInsert: {
       minMaxNumberCalculated: 21
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   /* DATE */
   sc = validate(ss, {$setOnInsert: {
       minMaxDate: (new Date(Date.UTC(2013, 11, 31)))
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0);
   sc = validate(ss, {$setOnInsert: {
       minMaxDate: (new Date(Date.UTC(2014, 0, 1)))
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   sc = validate(ss, {$setOnInsert: {
       minMaxDateCalculated: (new Date(Date.UTC(2013, 11, 31)))
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0);
   sc = validate(ss, {$setOnInsert: {
       minMaxDateCalculated: (new Date(Date.UTC(2014, 0, 1)))
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   /* ARRAY COUNT PLUS STRING LENGTH */
   sc = validate(ss, {$setOnInsert: {
       minMaxStringArray: ["nottoolongnottoolong", "nottoolongnottoolong"]
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0);
   sc = validate(ss, {$setOnInsert: {
       minMaxStringArray: ["toolongtoolongtoolong", "toolongtoolongtoolong"]
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
   sc = validate(ss, {$setOnInsert: {
       minMaxStringArray: ["nottoolongnottoolong", "nottoolongnottoolong", "nottoolongnottoolong"]
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
 });
 
-Tinytest.add("SimpleSchema - Update Max Check", function(test) {
+Tinytest.add("SimpleSchema - Maximum Checks - Update", function(test) {
   /* STRING LENGTH */
   var sc = validate(ss, {$set: {
       minMaxString: "nottoolongnottoolong"
@@ -1423,197 +1761,353 @@ Tinytest.add("SimpleSchema - Update Max Check", function(test) {
   test.length(sc.invalidKeys(), 1);
 });
 
-Tinytest.add("SimpleSchema - Insert Allowed Values Check", function(test) {
+Tinytest.add("SimpleSchema - Minimum Array Count - Insert - Invalid", function(test) {
+  var sc = validate(friends, {
+    friends: []
+  });
+  test.length(sc.invalidKeys(), 1);
+});
+
+Tinytest.add("SimpleSchema - Minimum Array Count - Update - Invalid", function(test) {
+  var sc = validate(friends, {$set: {
+      friends: []
+    }}, true);
+  test.length(sc.invalidKeys(), 1);
+});
+
+Tinytest.add("SimpleSchema - Minimum Array Count - Upsert - Invalid", function(test) {
+  var sc = validate(friends, {$setOnInsert: {
+      friends: []
+    }}, true, true);
+  test.length(sc.invalidKeys(), 1);
+});
+
+Tinytest.add("SimpleSchema - Allowed Values Checks - Insert - Valid", function(test) {
   /* STRING */
   var sc = validate(ss, {
     allowedStrings: "tuna"
   });
   test.length(sc.invalidKeys(), 0);
-  sc = validate(ss, {
-    allowedStrings: "tunas"
-  });
-  test.length(sc.invalidKeys(), 1);
+
   sc = validate(ss, {
     valueIsAllowedString: "pumpkin"
   });
   test.length(sc.invalidKeys(), 0);
-  sc = validate(ss, {
-    valueIsAllowedString: "pumpkins"
-  });
-  test.length(sc.invalidKeys(), 1);
+
   sc = validate(ss, {
     allowedStringsArray: ["tuna", "fish", "salad"]
   });
   test.length(sc.invalidKeys(), 0);
-  sc = validate(ss, {
-    allowedStringsArray: ["tuna", "fish", "sandwich"]
+
+  //array of objects
+  sc = validate(friends, {
+    friends: [{name: 'Bob', type: 'best'}]
   });
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.invalidKeys(), 0);
+
   /* NUMBER */
   sc = validate(ss, {
     allowedNumbers: 1
   });
   test.length(sc.invalidKeys(), 0);
-  sc = validate(ss, {
-    allowedNumbers: 4
-  });
-  test.length(sc.invalidKeys(), 1);
+
   sc = validate(ss, {
     valueIsAllowedNumber: 1
   });
   test.length(sc.invalidKeys(), 0);
-  sc = validate(ss, {
-    valueIsAllowedNumber: 2
-  });
-  test.length(sc.invalidKeys(), 1);
+
   sc = validate(ss, {
     allowedNumbersArray: [1, 2, 3]
   });
   test.length(sc.invalidKeys(), 0);
+
+  //array of objects
+  sc = validate(friends, {
+    friends: [{name: 'Bob', type: 'best', a: {b: 5000}}]
+  });
+  test.length(sc.invalidKeys(), 0);
+});
+
+Tinytest.add("SimpleSchema - Allowed Values Checks - Insert - Invalid", function(test) {
+  /* STRING */
+  var sc = validate(ss, {
+    allowedStrings: "tunas"
+  });
+  test.length(sc.invalidKeys(), 1);
+
+  sc = validate(ss, {
+    valueIsAllowedString: "pumpkins"
+  });
+  test.length(sc.invalidKeys(), 1);
+
+  //array
+  sc = validate(ss, {
+    allowedStringsArray: ["tuna", "fish", "sandwich"]
+  });
+  test.length(sc.invalidKeys(), 1);
+
+  //array of objects
+  sc = validate(friends, {
+    friends: [{name: 'Bob', type: 'smelly'}]
+  });
+  test.length(sc.invalidKeys(), 1);
+
+  /* NUMBER */
+  sc = validate(ss, {
+    allowedNumbers: 4
+  });
+  test.length(sc.invalidKeys(), 1);
+
+  sc = validate(ss, {
+    valueIsAllowedNumber: 2
+  });
+  test.length(sc.invalidKeys(), 1);
+
+  //array
   sc = validate(ss, {
     allowedNumbersArray: [1, 2, 3, 4]
   });
   test.length(sc.invalidKeys(), 1);
+
+  //array of objects
+  sc = validate(friends, {
+    friends: [{name: 'Bob', type: 'best', a: {b: "wrong"}}]
+  });
+  test.length(sc.invalidKeys(), 1);
 });
 
-Tinytest.add("SimpleSchema - Upsert Allowed Values Check", function(test) {
+Tinytest.add("SimpleSchema - Allowed Values Checks - Upsert - Valid - $setOnInsert", function(test) {
   /* STRING */
   var sc = validate(ss, {$setOnInsert: {
       allowedStrings: "tuna"
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0);
-  sc = validate(ss, {$setOnInsert: {
-      allowedStrings: "tunas"
-    }}, true);
-  test.length(sc.invalidKeys(), 1);
+
   sc = validate(ss, {$setOnInsert: {
       valueIsAllowedString: "pumpkin"
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0);
-  sc = validate(ss, {$setOnInsert: {
-      valueIsAllowedString: "pumpkins"
-    }}, true);
-  test.length(sc.invalidKeys(), 1);
+
+  //array
   sc = validate(ss, {$setOnInsert: {
       allowedStringsArray: ["tuna", "fish", "salad"]
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0);
-  sc = validate(ss, {$setOnInsert: {
-      allowedStringsArray: ["tuna", "fish", "sandwich"]
-    }}, true);
-  test.length(sc.invalidKeys(), 1);
+
+  //array of objects
+  sc = validate(friends, {$setOnInsert: {
+      friends: [{name: 'Bob', type: 'best'}]
+    }}, true, true);
+  test.length(sc.invalidKeys(), 0);
+
   /* NUMBER */
   sc = validate(ss, {$setOnInsert: {
       allowedNumbers: 1
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0);
-  sc = validate(ss, {$setOnInsert: {
-      allowedNumbers: 4
-    }}, true);
-  test.length(sc.invalidKeys(), 1);
+
   sc = validate(ss, {$setOnInsert: {
       valueIsAllowedNumber: 1
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0);
-  sc = validate(ss, {$setOnInsert: {
-      valueIsAllowedNumber: 2
-    }}, true);
-  test.length(sc.invalidKeys(), 1);
+
+  //array
   sc = validate(ss, {$setOnInsert: {
       allowedNumbersArray: [1, 2, 3]
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 0);
+
+  //array of objects
+  sc = validate(friends, {$setOnInsert: {
+      friends: [{name: 'Bob', type: 'best', a: {b: 5000}}]
+    }}, true, true);
+  test.length(sc.invalidKeys(), 0);
+});
+
+Tinytest.add("SimpleSchema - Allowed Values Checks - Upsert - Invalid - $setOnInsert", function(test) {
+  /* STRING */
+  var sc = validate(ss, {$setOnInsert: {
+      allowedStrings: "tunas"
+    }}, true, true);
+  test.length(sc.invalidKeys(), 1);
+
+  sc = validate(ss, {$setOnInsert: {
+      valueIsAllowedString: "pumpkins"
+    }}, true, true);
+  test.length(sc.invalidKeys(), 1);
+
+  //array
+  sc = validate(ss, {$setOnInsert: {
+      allowedStringsArray: ["tuna", "fish", "sandwich"]
+    }}, true, true);
+  test.length(sc.invalidKeys(), 1);
+
+  //array of objects
+  sc = validate(friends, {$setOnInsert: {
+      friends: [{name: 'Bob', type: 'smelly'}]
+    }}, true, true);
+  test.length(sc.invalidKeys(), 1);
+
+  /* NUMBER */
+  sc = validate(ss, {$setOnInsert: {
+      allowedNumbers: 4
+    }}, true, true);
+  test.length(sc.invalidKeys(), 1);
+
+  sc = validate(ss, {$setOnInsert: {
+      valueIsAllowedNumber: 2
+    }}, true, true);
+  test.length(sc.invalidKeys(), 1);
+
+  //array
   sc = validate(ss, {$setOnInsert: {
       allowedNumbersArray: [1, 2, 3, 4]
-    }}, true);
+    }}, true, true);
+  test.length(sc.invalidKeys(), 1);
+
+  //array of objects
+  sc = validate(friends, {$setOnInsert: {
+      friends: [{name: 'Bob', type: 'best', a: {b: "wrong"}}]
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
 });
 
-Tinytest.add("SimpleSchema - Update Allowed Values Check", function(test) {
+Tinytest.add("SimpleSchema - Allowed Values Checks - Update - Valid - $set", function(test) {
   /* STRING */
   var sc = validate(ss, {$set: {
       allowedStrings: "tuna"
     }}, true);
   test.length(sc.invalidKeys(), 0);
-  sc = validate(ss, {$set: {
-      allowedStrings: "tunas"
-    }}, true);
-  test.length(sc.invalidKeys(), 1);
+
   sc = validate(ss, {$set: {
       valueIsAllowedString: "pumpkin"
     }}, true);
   test.length(sc.invalidKeys(), 0);
-  sc = validate(ss, {$set: {
-      valueIsAllowedString: "pumpkins"
-    }}, true);
-  test.length(sc.invalidKeys(), 1);
+
+  //array
   sc = validate(ss, {$set: {
       allowedStringsArray: ["tuna", "fish", "salad"]
     }}, true);
   test.length(sc.invalidKeys(), 0);
-  sc = validate(ss, {$set: {
-      allowedStringsArray: ["tuna", "fish", "sandwich"]
+
+  //array of objects
+  sc = validate(friends, {$set: {
+      'friends.$.name': 'Bob'
     }}, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.invalidKeys(), 0);
+
+  sc = validate(friends, {$set: {
+      'friends.1.name': 'Bob'
+    }}, true);
+  test.length(sc.invalidKeys(), 0);
+
   /* NUMBER */
   sc = validate(ss, {$set: {
       allowedNumbers: 1
     }}, true);
   test.length(sc.invalidKeys(), 0);
-  sc = validate(ss, {$set: {
-      allowedNumbers: 4
-    }}, true);
-  test.length(sc.invalidKeys(), 1);
+
   sc = validate(ss, {$set: {
       valueIsAllowedNumber: 1
     }}, true);
   test.length(sc.invalidKeys(), 0);
-  sc = validate(ss, {$set: {
-      valueIsAllowedNumber: 2
-    }}, true);
-  test.length(sc.invalidKeys(), 1);
+
   sc = validate(ss, {$set: {
       allowedNumbersArray: [1, 2, 3]
     }}, true);
   test.length(sc.invalidKeys(), 0);
+
+});
+
+Tinytest.add("SimpleSchema - Allowed Values Checks - Update - Invalid - $set", function(test) {
+  /* STRING */
+  var sc = validate(ss, {$set: {
+      allowedStrings: "tunas"
+    }}, true);
+  test.length(sc.invalidKeys(), 1);
+
+  sc = validate(ss, {$set: {
+      valueIsAllowedString: "pumpkins"
+    }}, true);
+  test.length(sc.invalidKeys(), 1);
+
+  //array
+  sc = validate(ss, {$set: {
+      allowedStringsArray: ["tuna", "fish", "sandwich"]
+    }}, true);
+  test.length(sc.invalidKeys(), 1);
+
+  //array of objects
+  sc = validate(friends, {$set: {
+      'friends.$.name': 'Bobby'
+    }}, true);
+  test.length(sc.invalidKeys(), 1);
+
+  sc = validate(friends, {$set: {
+      'friends.1.name': 'Bobby'
+    }}, true);
+  test.length(sc.invalidKeys(), 1);
+
+  /* NUMBER */
+  sc = validate(ss, {$set: {
+      allowedNumbers: 4
+    }}, true);
+  test.length(sc.invalidKeys(), 1);
+
+  sc = validate(ss, {$set: {
+      valueIsAllowedNumber: 2
+    }}, true);
+  test.length(sc.invalidKeys(), 1);
+
   sc = validate(ss, {$set: {
       allowedNumbersArray: [1, 2, 3, 4]
     }}, true);
   test.length(sc.invalidKeys(), 1);
 });
 
-Tinytest.add("SimpleSchema - Validate Against Another Key", function(test) {
+Tinytest.add("SimpleSchema - Validation Against Another Key - Insert - Valid", function(test) {
   var sc = validate(pss, {
     password: "password",
     confirmPassword: "password"
   });
   test.length(sc.invalidKeys(), 0);
+});
 
-  sc = validate(pss, {$set: {
+Tinytest.add("SimpleSchema - Validation Against Another Key - Upsert - Valid - $setOnInsert", function(test) {
+  var sc = validate(pss, {$setOnInsert: {
+      password: "password",
+      confirmPassword: "password"
+    }}, true, true);
+  test.length(sc.invalidKeys(), 0);
+});
+
+Tinytest.add("SimpleSchema - Validation Against Another Key - Update - Valid - $set", function(test) {
+  var sc = validate(pss, {$set: {
       password: "password",
       confirmPassword: "password"
     }}, true);
 
   test.length(sc.invalidKeys(), 0);
-  sc = validate(pss, {$setOnInsert: {
-      password: "password",
-      confirmPassword: "password"
-    }}, true);
-  test.length(sc.invalidKeys(), 0);
+});
 
-  sc = validate(pss, {
+Tinytest.add("SimpleSchema - Validation Against Another Key - Insert - Invalid", function(test) {
+  var sc = validate(pss, {
     password: "password",
     confirmPassword: "password1"
   });
   test.length(sc.invalidKeys(), 1);
+});
 
-  sc = validate(pss, {$set: {
+Tinytest.add("SimpleSchema - Validation Against Another Key - Upsert - Invalid - $setOnInsert", function(test) {
+  var sc = validate(pss, {$setOnInsert: {
       password: "password",
       confirmPassword: "password1"
-    }}, true);
+    }}, true, true);
   test.length(sc.invalidKeys(), 1);
+});
 
-  sc = validate(pss, {$setOnInsert: {
+Tinytest.add("SimpleSchema - Validation Against Another Key - Update - Invalid - $set", function(test) {
+  var sc = validate(pss, {$set: {
       password: "password",
       confirmPassword: "password1"
     }}, true);
@@ -1660,195 +2154,66 @@ Tinytest.add("SimpleSchema - additionalKeyPatterns", function(test) {
   }
 });
 
-var friends = new SimpleSchema({
-  name: {
-    type: String,
-    optional: true
-  },
-  friends: {
-    type: [Object],
-    minCount: 1
-  },
-  'friends.$.name': {
-    type: String,
-    max: 3
-  },
-  'friends.$.type': {
-    type: String,
-    allowedValues: ["best", "good", "bad"]
-  },
-  'friends.$.a.b': {
-    type: Number,
-    optional: true
-  }
-});
-
 Tinytest.add("SimpleSchema - Array of Objects", function(test) {
-  var fc = validate(friends, {
-    friends: [{name: 'Bob'}]
-  });
-  test.length(fc.invalidKeys(), 1); //missing required key
-
-  fc = validate(friends, {
-    friends: [{name: 'Bob', type: 'smelly'}]
-  });
-  test.length(fc.invalidKeys(), 1); //not allowed
-
-  fc = validate(friends, {
-    friends: [{name: 'Bob', type: 'best', a: {b: "wrong"}}]
-  });
-  test.length(fc.invalidKeys(), 1);
-
-  fc = validate(friends, {
-    friends: [{name: 'Bob', type: 'best'}]
-  });
-  test.length(fc.invalidKeys(), 0);
-
-  fc = validate(friends, {
-    friends: [{name: 'Bob', type: 'best', a: {b: 5000}}]
-  });
-  test.length(fc.invalidKeys(), 0);
-
-  //$setOnInsert (should validate the same as insert)
-
-  fc = validate(friends, {$setOnInsert: {
-      friends: [{name: 'Bob'}]
-    }}, true);
-  test.length(fc.invalidKeys(), 1); //missing required key
-
-  fc = validate(friends, {$setOnInsert: {
-      friends: [{name: 'Bob', type: 'smelly'}]
-    }}, true);
-  test.length(fc.invalidKeys(), 1); //not allowed
-
-  fc = validate(friends, {$setOnInsert: {
-      friends: [{name: 'Bob', type: 'best', a: {b: "wrong"}}]
-    }}, true);
-  test.length(fc.invalidKeys(), 1);
-
-  fc = validate(friends, {$setOnInsert: {
-      friends: [{name: 'Bob', type: 'best'}]
-    }}, true);
-  test.length(fc.invalidKeys(), 0);
-
-  fc = validate(friends, {$setOnInsert: {
-      friends: [{name: 'Bob', type: 'best', a: {b: 5000}}]
-    }}, true);
-  test.length(fc.invalidKeys(), 0);
-
-  //$set
-
-  fc = validate(friends, {$set: {
-      'friends.$.name': 'Bob'
-    }}, true);
-  test.length(fc.invalidKeys(), 0);
-
-  fc = validate(friends, {$set: {
-      'friends.1.name': 'Bob'
-    }}, true);
-  test.length(fc.invalidKeys(), 0);
-
-  fc = validate(friends, {$set: {
-      'friends.$.name': 'Bobby'
-    }}, true);
-  test.length(fc.invalidKeys(), 1);
-
-  fc = validate(friends, {$set: {
-      'friends.1.name': 'Bobby'
-    }}, true);
-  test.length(fc.invalidKeys(), 1);
-
-  fc = validate(friends, {$set: {
-      'friends.1.name': null
-    }}, true);
-  test.length(fc.invalidKeys(), 1);
-
-  fc = validate(friends, {$unset: {
-      'friends.1.name': 1
-    }}, true);
-  test.length(fc.invalidKeys(), 1);
-
-  fc = validate(friends, {$unset: {
-      'friends.1.name': 1,
-      'friends.2.name': 1,
-      'friends.3.name': 1
-    }}, true);
-  test.length(fc.invalidKeys(), 1);
-
-  fc = validate(friends, {
-    friends: []
-  });
-  test.length(fc.invalidKeys(), 1);
-
-  fc = validate(friends, {$set: {
-      friends: []
-    }}, true);
-  test.length(fc.invalidKeys(), 1);
-
-  fc = validate(friends, {$set: {
-      friends: [{name: 'Bob'}] //missing required key
-    }}, true);
-  test.length(fc.invalidKeys(), 1);
-
-  fc = validate(friends, {$push: {
+  var sc = validate(friends, {$push: {
       friends: {name: "Bob"}
     }}, true);
-  test.length(fc.invalidKeys(), 1);
+  test.length(sc.invalidKeys(), 1);
 
-  fc = validate(friends, {$push: {
+  sc = validate(friends, {$push: {
       friends: {name: "Bob", type: "best"}
     }}, true);
-  test.length(fc.invalidKeys(), 0);
+  test.length(sc.invalidKeys(), 0);
 
-  fc = validate(friends, {$push: {
+  sc = validate(friends, {$push: {
       friends: {name: "Bobby", type: "best"}
     }}, true);
-  test.length(fc.invalidKeys(), 1);
+  test.length(sc.invalidKeys(), 1);
 
-  fc = validate(friends, {$push: {
+  sc = validate(friends, {$push: {
       friends: {$each: [{name: "Bob", type: "best"}, {name: "Bob", type: "best"}]}
     }}, true);
-  test.length(fc.invalidKeys(), 0);
+  test.length(sc.invalidKeys(), 0);
 
-  fc = validate(friends, {$push: {
+  sc = validate(friends, {$push: {
       friends: {$each: [{name: "Bob", type: "best"}, {name: "Bobby", type: "best"}]}
     }}, true);
-  test.length(fc.invalidKeys(), 1);
+  test.length(sc.invalidKeys(), 1);
 
-  fc = validate(friends, {$push: {
+  sc = validate(friends, {$push: {
       friends: {$each: [{name: "Bob", type: 2}, {name: "Bobby", type: "best"}]}
     }}, true);
-  test.length(fc.invalidKeys(), 2);
+  test.length(sc.invalidKeys(), 2);
 
-  fc = validate(friends, {$addToSet: {
+  sc = validate(friends, {$addToSet: {
       friends: {name: "Bob"}
     }}, true);
-  test.length(fc.invalidKeys(), 1);
+  test.length(sc.invalidKeys(), 1);
 
-  fc = validate(friends, {$addToSet: {
+  sc = validate(friends, {$addToSet: {
       friends: {name: "Bob", type: "best"}
     }}, true);
-  test.length(fc.invalidKeys(), 0);
+  test.length(sc.invalidKeys(), 0);
 
-  fc = validate(friends, {$addToSet: {
+  sc = validate(friends, {$addToSet: {
       friends: {name: "Bobby", type: "best"}
     }}, true);
-  test.length(fc.invalidKeys(), 1);
+  test.length(sc.invalidKeys(), 1);
 
-  fc = validate(friends, {$addToSet: {
+  sc = validate(friends, {$addToSet: {
       friends: {$each: [{name: "Bob", type: "best"}, {name: "Bob", type: "best"}]}
     }}, true);
-  test.length(fc.invalidKeys(), 0);
+  test.length(sc.invalidKeys(), 0);
 
-  fc = validate(friends, {$addToSet: {
+  sc = validate(friends, {$addToSet: {
       friends: {$each: [{name: "Bob", type: "best"}, {name: "Bobby", type: "best"}]}
     }}, true);
-  test.length(fc.invalidKeys(), 1);
+  test.length(sc.invalidKeys(), 1);
 
-  fc = validate(friends, {$addToSet: {
+  sc = validate(friends, {$addToSet: {
       friends: {$each: [{name: "Bob", type: 2}, {name: "Bobby", type: "best"}]}
     }}, true);
-  test.length(fc.invalidKeys(), 2);
+  test.length(sc.invalidKeys(), 2);
 });
 
 Tinytest.add("SimpleSchema - Multiple Contexts", function(test) {
@@ -2062,23 +2427,6 @@ Tinytest.add("SimpleSchema - Cleanup With Modifier Operators", function(test) {
   test.equal(cleanObj, {});
 });
 
-Tinytest.add("SimpleSchema - Rename", function(test) {
-  //rename from optional key to another key in schema
-  var ss1 = ss.newContext();
-  ss1.validate({$rename: {string: "minMaxString"}}, {modifier: true});
-  test.length(ss1.invalidKeys(), 0);
-
-  //rename from optional key to a key not in schema
-  var ss1 = ss.newContext();
-  ss1.validate({$rename: {string: "newString"}}, {modifier: true});
-  test.length(ss1.invalidKeys(), 1);
-
-  //rename from required key
-  ss1 = ssr.newContext();
-  ss1.validate({$rename: {requiredString: "newRequiredString"}}, {modifier: true});
-  test.length(ss1.invalidKeys(), 2); //old is required and new is not in schema
-});
-
 Tinytest.add("SimpleSchema - Custom Types", function(test) {
 
   Address = function(city, state) {
@@ -2197,7 +2545,6 @@ Tinytest.add("SimpleSchema - Nested Schemas", function(test) {
 Tinytest.add("SimpleSchema - Labels", function(test) {
   //inflection
   test.equal(ss.schema("minMaxNumber").label, "Min max number", '"minMaxNumber" should have inflected to "Min max number" label');
-  test.equal(ss.schema("sub.number").label, "Number", '"sub.number" should have inflected to "Number" label');
 
   //dynamic
   ss.labels({"sub.number": "A different label"});
@@ -2265,3 +2612,41 @@ Tinytest.add("SimpleSchema - Issue 28", function(test) {
   test.length(is28sc.invalidKeys(), 0);
 
 });
+
+var ssr = new SimpleSchema({
+  requiredString: {
+    type: String
+  },
+  requiredBoolean: {
+    type: Boolean
+  },
+  requiredNumber: {
+    type: Number
+  },
+  requiredDate: {
+    type: Date
+  },
+  requiredEmail: {
+    type: String,
+    regEx: SchemaRegEx.Email
+  },
+  requiredUrl: {
+    type: String,
+    regEx: SchemaRegEx.Url
+  },
+  requiredObject: {
+    type: Object
+  },
+  'subdoc.requiredString': {
+    type: String
+  },
+  anOptionalOne: {
+    type: String,
+    optional: true,
+    min: 20
+  }
+});
+
+/*
+ * END TESTS
+ */
