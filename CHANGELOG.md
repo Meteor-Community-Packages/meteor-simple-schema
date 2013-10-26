@@ -5,6 +5,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.11
+
+`Clean` method should now clean everything.
+
 ### 0.2.10
 
 Validate upserts
