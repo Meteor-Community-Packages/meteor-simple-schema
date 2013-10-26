@@ -400,24 +400,7 @@ var getRequiredAndArrayErrors = function(doc, keyName, def, ss, hasModifiers, is
     //-in $rename, key must not be present
     //But make sure only one required error is logged per keyName, and we'll validate
     //subkeys later
-    if (hasSet) {
-//      //keyName might be implied by another key in doc
-//      //(e.g., "name.first" implies "name")
-//      //if so, assume that it is set in the original object,
-//      //so don't log any errors
-//      //(this check only applies to non-modifier objects)
-//      if (!(keyName in doc.$set)) {
-//        var shouldQuit = false;
-//        _.each(doc.$set, function(val, key) {
-//          if (key.indexOf(keyName + '.') !== -1) {
-//            shouldQuit = true;
-//          }
-//        });
-//        if (shouldQuit) {
-//          return;
-//        }
-//      }
-      
+    if (hasSet) {     
       keyValue = doc.$set[keyName];
 
       //check for missing required, unless undefined,
@@ -435,22 +418,6 @@ var getRequiredAndArrayErrors = function(doc, keyName, def, ss, hasModifiers, is
       requiredError = errorObject("required", keyName, null, def, ss);
     }
   } else {
-//    //keyName might be implied by another key in doc
-//    //(e.g., "name.first" implies "name")
-//    //if so, assume that it is set in the original object,
-//    //so don't log any errors
-//    //(this check only applies to non-modifier objects)
-//    if (!(keyName in doc)) {
-//      var shouldQuit = false;
-//      _.each(doc, function(val, key) {
-//        if (key.indexOf(keyName + '.') !== -1) {
-//          shouldQuit = true;
-//        }
-//      });
-//      if (shouldQuit) {
-//        return [];
-//      }
-//    }
 
     //Do required checks for normal objects. The general logic is this:
     //if required, then the key must be present and it's value
@@ -491,38 +458,6 @@ var validateObj = function(obj, keyToValidate, invalidKeys, ss, operator, isUpse
 
   return uniqueInvalidKeys;
 };
-
-//var addNullKeys = function(doc, schema) {
-//  //to account for missing required keys in objects that are in arrays,
-//  //we will loop through and set any missing keys to undefined; this will make
-//  //sure that the "required" errors are logged for them
-//  var keysToAdd = [];
-//  _.each(doc, function(docVal, docKey) {
-//    var pieces = docKey.split('.');
-//    var tryKey;
-//    _.each(pieces, function(piece) {
-//      tryKey = tryKey ? tryKey + '.' + piece : piece;
-//      var numPiece = parseInt(piece, 10);
-//      if (!isNaN(numPiece)) {
-//        var keyBase = numToDollar(tryKey);
-//        _.each(schema, function(subDef, k) {
-//          if (!subDef.optional && k.startsWith(keyBase)) {
-//            k = k.substring(0, keyBase.length - 3) + "." + piece + "." + k.substring(keyBase.length - 1 + piece.length);
-//            if (!doc.hasOwnProperty(k)) {
-//              keysToAdd.push(k);
-//            }
-//          }
-//        });
-//      }
-//    });
-//  });
-//
-//  _.each(keysToAdd, function(keyToAdd) {
-//    doc[keyToAdd] = undefined;
-//  });
-//
-//  return doc;
-//};
 
 var doValidation = function(doc, isModifier, isUpsert, keyToValidate, ss, schema) {
   //check arguments
@@ -585,22 +520,6 @@ var doValidation = function(doc, isModifier, isUpsert, keyToValidate, ss, schema
 
   return invalidKeys;
 };
-
-//create a .endsWith function for strings
-if (typeof String.prototype.endsWith !== "function") {
-  String.prototype.endsWith = function(suffix) {
-    "use strict";
-    return this.indexOf(suffix, this.length - suffix.length) !== -1;
-  };
-}
-
-//create a .startsWith function for strings
-if (typeof String.prototype.startsWith !== "function") {
-  String.prototype.startsWith = function(str) {
-    "use strict";
-    return this.lastIndexOf(str, 0) === 0;
-  };
-}
 
 //tests whether it's an Object as opposed to something that inherits from Object
 var isBasicObject = function(obj) {
