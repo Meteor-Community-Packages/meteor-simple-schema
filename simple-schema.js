@@ -119,7 +119,6 @@ SimpleSchema.prototype.validator = function(func) {
 
 //filter and automatically type convert
 SimpleSchema.prototype.clean = function(doc, options) {
-  //TODO make sure this works with descendent objects
   var newDoc, self = this;
 
   //by default, doc will be filtered and autoconverted
@@ -135,61 +134,34 @@ SimpleSchema.prototype.clean = function(doc, options) {
   if ("$pullAll" in doc) {
     delete doc.$pullAll;
   }
-
-  //collapse
-  var cDoc = collapseObj(doc, self._schemaKeys);
-
-  //clean
+  
+  var mDoc = new MongoObject(doc);
   newDoc = {};
-  _.each(cDoc, function(val, key) {
-    var okToAdd = true;
-
-    //filter
-    if (options.filter === true) {
-      okToAdd = self.allowsKey(key);
+  mDoc.forEachNode(function(val, position, affectedKey, testValue) {
+    //replace .Number. with .$. in key
+    var affectedKeyGeneric;
+    if (affectedKey) {
+      affectedKeyGeneric = affectedKey.replace(/\.[0-9]+\./g, '.$.');
+      affectedKeyGeneric = affectedKeyGeneric.replace(/\.[0-9]+/g, '.$');
     }
+    
+    if (options.filter !== true || !affectedKey || self.allowsKey(affectedKeyGeneric)) {
 
-    if (okToAdd) {
       //autoconvert
       if (options.autoConvert === true) {
-        var def = self._schema[key];
+        var def = affectedKeyGeneric && self._schema[affectedKeyGeneric];
         if (def) {
           var type = def.type;
           if (_.isArray(type)) {
             type = type[0];
           }
-          if (looksLikeModifier(val)) {
-            //convert modifier values
-            _.each(val, function(opVal, op) {
-              if (_.isArray(opVal)) {
-                for (var i = 0, ln = opVal.length; i < ln; i++) {
-                  opVal[i] = typeconvert(opVal[i], type); //typeconvert
-                }
-              } else if (_.isObject(opVal) && ("$each" in opVal)) {
-                for (var i = 0, ln = opVal.$each.length; i < ln; i++) {
-                  opVal.$each[i] = typeconvert(opVal.$each[i], type); //typeconvert
-                }
-              } else {
-                opVal = typeconvert(opVal, type); //typeconvert
-              }
-              val[op] = opVal;
-            });
-          } else if (_.isArray(val)) {
-            for (var i = 0, ln = val.length; i < ln; i++) {
-              val[i] = typeconvert(val[i], type); //typeconvert
-            }
-          } else {
-            val = typeconvert(val, type); //typeconvert
-          }
+          val = typeconvert(val, type);
         }
       }
 
-      newDoc[key] = val;
+      expandKey(val, position, newDoc);
     }
   });
-
-  //expand
-  newDoc = expandObj(newDoc);
 
   return newDoc;
 };
@@ -233,13 +205,13 @@ SimpleSchema.prototype.messages = function(messages) {
 
 SimpleSchema.prototype.labels = function(labels) {
   var self = this;
-  _.each(labels, function (label, fieldName) {
+  _.each(labels, function(label, fieldName) {
     if (typeof label !== "string")
       return;
-    
+
     if (!(fieldName in self._schema))
       return;
-    
+
     self._schema[fieldName]["label"] = label;
   });
 };
@@ -304,19 +276,10 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
 //Returns true if key is allowed by the schema.
 //Supports implied schema keys and handles arrays (.Number. -> .$.)
 //* key should be in format returned by collapseObj
-//* will allow all $ keys
+//* will allow keys containing only modifiers
 SimpleSchema.prototype.allowsKey = function(key) {
   var self = this;
   var schemaKeys = self._schemaKeys;
-
-  //all all modifier keys
-  if (key.substring(0, 1) === "$") {
-    return true;
-  }
-
-  //replace .Number. with .$. in key
-  var re = /\.[0-9]+\./g;
-  key = key.replace(re, '.$.');
 
   //check schema
   var allowed = false;
@@ -446,20 +409,19 @@ var expandKey = function(val, key, obj) {
   var current = obj;
   for (var i = 0, subkey; i < subkeylen; i++) {
     subkey = subkeys[i];
-    if (current[subkey] && !_.isObject(current[subkey])) {
-      break; //already set for some reason; leave it alone
-    }
+    subkey = subkey.replace(/@!/g, "."); //unescape periods in prop names
     if (i === subkeylen - 1) {
-      //last iteration; time to set the value
+      //last iteration; time to set the value; always overwrite
       current[subkey] = val;
+      //if val is undefined, delete the property
+      if (val === void 0)
+        delete current[subkey];
     } else {
       //see if the next piece is a number
       nextPiece = subkeys[i + 1];
       nextPiece = parseInt(nextPiece, 10);
-      if (isNaN(nextPiece) && !_.isObject(current[subkey])) {
-        current[subkey] = {};
-      } else if (!_.isArray(current[subkey])) {
-        current[subkey] = [];
+      if (!current[subkey]) {
+        current[subkey] = isNaN(nextPiece) ? {} : [];
       }
     }
     current = current[subkey];
@@ -512,7 +474,7 @@ var expandSchema = function(schema) {
     });
   });
   return schema;
-}
+};
 
 var addImplicitKeys = function(schema) {
   //if schema contains key like "foo.$.bar" but not "foo", add "foo"
