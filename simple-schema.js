@@ -134,20 +134,24 @@ SimpleSchema.prototype.clean = function(doc, options) {
   if ("$pullAll" in doc) {
     delete doc.$pullAll;
   }
-  
+
   var mDoc = new MongoObject(doc);
   newDoc = {};
   mDoc.forEachNode(function(val, position, affectedKey, testValue) {
-    //replace .Number. with .$. in key
+    // Build a version of the affected key that has $ in place of all
+    // the numeric array positions.
     var affectedKeyGeneric;
     if (affectedKey) {
       affectedKeyGeneric = affectedKey.replace(/\.[0-9]+\./g, '.$.');
       affectedKeyGeneric = affectedKeyGeneric.replace(/\.[0-9]+/g, '.$');
     }
-    
+
+    // If no key would be affected, or the key that would be affected is allowed
+    // by the schema, or if we're not doing any filtering, add the key.
     if (options.filter !== true || !affectedKey || self.allowsKey(affectedKeyGeneric)) {
 
-      //autoconvert
+      // Before adding the key's value, autoconvert it if requested
+      // and if possible.
       if (options.autoConvert === true) {
         var def = affectedKeyGeneric && self._schema[affectedKeyGeneric];
         if (def) {
@@ -159,6 +163,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
         }
       }
 
+      // Add the key and set its value
       expandKey(val, position, newDoc);
     }
   });
@@ -189,6 +194,8 @@ var typeconvert = function(value, type) {
   return value;
 };
 
+// Returns the entire schema object or just the definition for one key
+// in the schema.
 SimpleSchema.prototype.schema = function(key) {
   var self = this;
   if (key) {
@@ -203,6 +210,7 @@ SimpleSchema.prototype.messages = function(messages) {
   _.extend(this._messages, messages);
 };
 
+// Use to dynamically change the schema labels.
 SimpleSchema.prototype.labels = function(labels) {
   var self = this;
   _.each(labels, function(label, fieldName) {
@@ -216,6 +224,8 @@ SimpleSchema.prototype.labels = function(labels) {
   });
 };
 
+// Returns a string message for the given error type and key. Uses the
+// def and value arguments to fill in placeholders in the error messages.
 SimpleSchema.prototype.messageForError = function(type, key, def, value) {
   var self = this, typePlusKey = type + " " + key, genType, genTypePlusKey, firstTypePeriod = type.indexOf(".");
   if (firstTypePeriod !== -1) {
@@ -273,25 +283,27 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
   return message;
 };
 
-//Returns true if key is allowed by the schema.
-//Supports implied schema keys and handles arrays (.Number. -> .$.)
-//* key should be in format returned by collapseObj
-//* will allow keys containing only modifiers
+// Returns true if key is explicitly allowed by the schema or implied
+// by other explicitly allowed keys.
+// The key string should have $ in place of any numeric array positions.
 SimpleSchema.prototype.allowsKey = function(key) {
-  var self = this;
-  var schemaKeys = self._schemaKeys;
+  var self = this, schemaKeys = self._schemaKeys;
 
-  //check schema
+  // Begin by assuming it's not allowed.
   var allowed = false;
+
+  // Loop through all keys in the schema
   for (var i = 0, ln = schemaKeys.length, schemaKey; i < ln; i++) {
     schemaKey = schemaKeys[i];
+
+    // If the schema key is the test key, it's allowed.
     if (schemaKey === key) {
       allowed = true;
       break;
     }
 
-    //check whether key is implied by this schema key
-    //(the key in schema starts with key followed by dot)
+    // If the schema key implies the test key, i.e., the schema key
+    // starts with the test key followed by a period, it's allowed.
     if (schemaKey.substring(0, key.length + 1) === key + ".") {
       allowed = true;
       break;
@@ -305,40 +317,12 @@ SimpleSchema.prototype.newContext = function() {
   return new SimpleSchemaValidationContext(this);
 };
 
+//XXX This is not used by internal code anymore. Deprecate?
 SimpleSchema.prototype.collapseObj = function(doc) {
-  return collapseObj(doc);
-};
-
-SimpleSchema.prototype.expandObj = function(doc) {
-  return expandObj(doc);
-};
-
-SimpleSchema.prototype.requiredObjectKeys = function(keyPrefix) {
-  var self = this;
-  if (!keyPrefix) {
-    return self._requiredObjectKeys;
-  }
-  return self._requiredObjectKeys[keyPrefix] || [];
-};
-
-SimpleSchema.prototype.requiredSchemaKeys = function(keyPrefix) {
-  return this._requiredSchemaKeys;
-};
-
-SimpleSchema.prototype.firstLevelRequiredSchemaKeys = function(keyPrefix) {
-  return this._firstLevelRequiredSchemaKeys;
-};
-
-//tests whether it's an Object as opposed to something that inherits from Object
-var isBasicObject = function(obj) {
-  return _.isObject(obj) && Object.getPrototypeOf(obj) === Object.prototype;
-};
-
-var collapseObj = function(doc, skip) {
   var res = {};
   (function recurse(obj, current, currentOperator) {
     if (_.isArray(obj)) {
-      if (obj.length && _.isObject(obj[0]) && !_.contains(skip, newKey)) {
+      if (obj.length && _.isObject(obj[0])) {
         for (var i = 0, ln = obj.length; i < ln; i++) {
           var value = obj[i];
           var newKey = (current ? current + "." + i : i);  // joined index with dot
@@ -352,7 +336,7 @@ var collapseObj = function(doc, skip) {
         var value = obj[key];
 
         var newKey = (current ? current + "." + key : key);  // joined key with dot
-        if (isBasicObject(value) && !_.isEmpty(value) && !_.contains(skip, newKey)) {
+        if (isBasicObject(value) && !_.isEmpty(value)) {
           //nested non-empty object so recurse into it
           if (key.substring(0, 1) === "$") {
             //handle mongo operator keys a bit differently
@@ -361,7 +345,7 @@ var collapseObj = function(doc, skip) {
             //not a mongo operator key
             recurse(value, newKey, currentOperator);
           }
-        } else if (value && _.isArray(value) && value.length && !_.contains(skip, newKey)) {
+        } else if (value && _.isArray(value) && value.length) {
           //nested non-empty array, so recurse into it
           recurse(value, newKey, currentOperator);
         } else {
@@ -382,8 +366,8 @@ var collapseObj = function(doc, skip) {
   return res;
 };
 
-//opposite of collapseObj
-var expandObj = function(doc) {
+//XXX This is not used by internal code anymore. Deprecate?
+SimpleSchema.prototype.expandObj = function(doc) {
   var newDoc = doc;
   _.each(newDoc, function(val, key) {
     delete newDoc[key];
@@ -401,7 +385,28 @@ var expandObj = function(doc) {
   return newDoc;
 };
 
-//called by expandObj
+SimpleSchema.prototype.requiredObjectKeys = function(keyPrefix) {
+  var self = this;
+  if (!keyPrefix) {
+    return self._requiredObjectKeys;
+  }
+  return self._requiredObjectKeys[keyPrefix] || [];
+};
+
+SimpleSchema.prototype.requiredSchemaKeys = function() {
+  return this._requiredSchemaKeys;
+};
+
+SimpleSchema.prototype.firstLevelRequiredSchemaKeys = function() {
+  return this._firstLevelRequiredSchemaKeys;
+};
+
+//tests whether it's an Object as opposed to something that inherits from Object
+var isBasicObject = function(obj) {
+  return _.isObject(obj) && Object.getPrototypeOf(obj) === Object.prototype;
+};
+
+//called by expandObj and clean
 var expandKey = function(val, key, obj) {
   var nextPiece;
   var subkeys = key.split(".");
