@@ -268,7 +268,7 @@ var recursivelyValidate = function(operator, def, keyName, arrayPos, keyValue, s
     if (!isBasicObject(keyValue)) {
       invalidKeys.push(errorObject("expectedObject", schemaKeyName, keyValue, def, ss));
     }
-  } else if (expectedType instanceof Function) {
+  } else if (expectedType instanceof Function || safariBugFix(expectedType)) {
     if (!(keyValue instanceof expectedType)) {
       invalidKeys.push(errorObject("expectedConstructor", schemaKeyName, keyValue, def, ss));
     } else if (expectedType === Date) {
@@ -529,3 +529,12 @@ var isBasicObject = function(obj) {
 var numToDollar = function(str) {
   return str.replace(/\.[0-9]+\./g, '.$.');
 };
+
+// The latest Safari returns false for Uint8Array, etc. instanceof Function
+// unlike other browsers.
+var safariBugFix = function (type) {
+  return (typeof Uint8Array !== "undefined" && type === Uint8Array)
+          || (typeof Uint16Array !== "undefined" && type === Uint16Array)
+          || (typeof Uint32Array !== "undefined" && type === Uint32Array)
+          || (typeof Uint8ClampedArray !== "undefined" && type === Uint8ClampedArray);
+}
