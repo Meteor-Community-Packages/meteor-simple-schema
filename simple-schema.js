@@ -117,22 +117,27 @@ SimpleSchema.prototype.validator = function(func) {
   this._validators.push(func);
 };
 
-//filter and automatically type convert
+// Filter and automatically type convert
 SimpleSchema.prototype.clean = function(doc, options) {
   var newDoc, self = this;
 
-  //by default, doc will be filtered and autoconverted
+  // By default, doc will be filtered and autoconverted
   options = _.extend({
     filter: true,
     autoConvert: true
   }, options || {});
 
-  //delete deprecated operators
+  // Convert $pushAll (deprecated) to $push with $each
   if ("$pushAll" in doc) {
-    delete doc.$pushAll;
-  }
-  if ("$pullAll" in doc) {
-    delete doc.$pullAll;
+    doc.$push = doc.$push || {};
+    for (var field in doc.$pushAll) {
+      doc.$push[field] = doc.$push[field] || {};
+      doc.$push[field].$each = doc.$push[field].$each || [];
+      for (var i = 0, ln = doc.$pushAll[field].length; i < ln; i++) {
+        doc.$push[field].$each.push(doc.$pushAll[field][i]);
+      }
+      delete doc.$pushAll;
+    }
   }
 
   var mDoc = new MongoObject(doc);

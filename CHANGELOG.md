@@ -5,6 +5,11 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.13
+
+Fix $pullAll and clean $pushAll by converting it to $push+$each rather than
+deleting it.
+
 ### 0.2.12
 
 Add workaround for Safari bug.

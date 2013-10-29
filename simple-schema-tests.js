@@ -2438,13 +2438,29 @@ Tinytest.add("SimpleSchema - Cleanup With Modifier Operators", function(test) {
   //type conversion works
   doTest({$pop: {allowedNumbersArray: "1"}}, {$pop: {allowedNumbersArray: 1}});
 
-  //DEPRECATED OPERATORS SHOULD BE REMOVED
-
-  //$PUSHALL
-  doTest({$pushAll: {allowedNumbersArray: [1, 2, 3]}}, {});
-
   //$PULLALL
-  doTest({$pullAll: {allowedNumbersArray: [1, 2, 3]}}, {});
+  
+  doTest({$pullAll: {allowedNumbersArray: [1, 2, 3]}}, {$pullAll: {allowedNumbersArray: [1, 2, 3]}});
+  doTest({$pullAll: {allowedNumbersArray: ["1", 2, 3]}}, {$pullAll: {allowedNumbersArray: [1, 2, 3]}});
+
+  //$PUSHALL (DEPRECATED - SHOULD BE TRANSLATED TO $PUSH+$EACH
+
+  doTest({$pushAll: {allowedNumbersArray: [1, 2, 3]}}, {$push: {allowedNumbersArray: {$each: [1, 2, 3]}}});
+  doTest({$pushAll: {allowedNumbersArray: ["1", 2, 3]}}, {$push: {allowedNumbersArray: {$each: [1, 2, 3]}}});
+  //if there's also $push for some reason, the two should be combined
+  doTest({
+    $push: {
+      allowedNumbersArray: {$each: ["1", 2, 3]},
+      allowedStringsArray: {$each: ["tuna", "fish"]}
+    },
+    $pushAll: {allowedNumbersArray: ["4", 5, 6]}
+  }, {
+    $push: {
+      allowedNumbersArray: {$each: [1, 2, 3, 4, 5, 6]},
+      allowedStringsArray: {$each: ["tuna", "fish"]}
+    }
+  });
+
 });
 
 Tinytest.add("SimpleSchema - Custom Types", function(test) {
