@@ -5,6 +5,14 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.14
+
+* Ensure valueIsAllowed function is called for undefined and null values. This
+change means that you must not ensure that your valueIsAllowed function returns
+true when the value is `null` or `undefined`, if you want the field to be optional.
+* Fix an issue with false "required" errors for some arrays of objects when
+validating a modifier.
+
 ### 0.2.13
 
 Fix $pullAll and clean $pushAll by converting it to $push+$each rather than

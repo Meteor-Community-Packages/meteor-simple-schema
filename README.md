@@ -361,12 +361,17 @@ invalid if it's value is not one of these.
 The function is passed three arguments:
 
 * `value`: The value to be validated
-* `obj`: The entire object being validated (could be a mongo modifier)
-* `operator`: A string identifying which operator is currently being validated if `obj` is a modifier. For normal objects, this will be null.
+* `obj`: The entire object (document or modifier) being validated
+* `operator`: A string identifying which operator is currently being validated if `obj` is a modifier. For non-modifier objects, this will be null.
 
 The valueIsAllowed function may be called multiple times with different `operator` arguments
 for a single validation run. If you are unsure what operators might be used, your
 code must handle all possible operators or return false for operators you don't want to allow.
+
+The valueIsAllowed function is called for undefined or null values, too. If the
+field is `optional: true`, be sure to return true from your valueIsAllowed
+function whenever `value` is null or undefined, unless you want to override the
+`optional` setting and make it required in certain circumstances.
 
 ### Validating One Key Against Another
 
