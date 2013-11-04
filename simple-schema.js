@@ -38,7 +38,7 @@ var defaultMessages = {
 
 //exported
 SimpleSchema = function(schema, options) {
-  var self = this, requiredSchemaKeys = [], firstLevelRequiredSchemaKeys = [];
+  var self = this, requiredSchemaKeys = [], firstLevelSchemaKeys = [], fieldNameRoot;
   options = options || {};
   schema = inflectLabels(addImplicitKeys(expandSchema(schema)));
   self._schema = schema || {};
@@ -70,16 +70,21 @@ SimpleSchema = function(schema, options) {
     if (!Match.test(definition, schemaDefinition)) {
       throw new Error('Invalid definition for ' + fieldName + ' field.');
     }
+    
+    fieldNameRoot = fieldName.split(".")[0];
+    
     self._schemaKeys.push(fieldName);
+    
+    if (!_.contains(firstLevelSchemaKeys, fieldNameRoot))
+      firstLevelSchemaKeys.push(fieldNameRoot);
 
     if (!definition.optional) {
       requiredSchemaKeys.push(fieldName);
-      firstLevelRequiredSchemaKeys.push(fieldName.split(".")[0]);
     }
   });
 
   self._requiredSchemaKeys = requiredSchemaKeys; //for speedier checking
-  self._firstLevelRequiredSchemaKeys = firstLevelRequiredSchemaKeys;
+  self._firstLevelSchemaKeys = firstLevelSchemaKeys;
   self._requiredObjectKeys = requiredObjectKeys(schema, requiredSchemaKeys);
 };
 
@@ -402,8 +407,8 @@ SimpleSchema.prototype.requiredSchemaKeys = function() {
   return this._requiredSchemaKeys;
 };
 
-SimpleSchema.prototype.firstLevelRequiredSchemaKeys = function() {
-  return this._firstLevelRequiredSchemaKeys;
+SimpleSchema.prototype.firstLevelSchemaKeys = function() {
+  return this._firstLevelSchemaKeys;
 };
 
 //tests whether it's an Object as opposed to something that inherits from Object
