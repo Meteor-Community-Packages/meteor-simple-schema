@@ -356,13 +356,13 @@ var getRequiredAndArrayErrors = function(doc, keyName, def, ss, hasModifiers, is
   return validateArray(keyName, keyValue, def, ss);
 };
 
-var validateObj = function(obj, keyToValidate, invalidKeys, ss, operator, isUpsert) {
+var validateObj = function(obj, fullDoc, keyToValidate, invalidKeys, ss, operator, isUpsert) {
   var allKeys = _.keys(obj);
   //for required checks, we want to loop through all keys in the object
   //plus all keys expected based on the schema, in case any are missing
   var keysToCheck = _.union(allKeys, ss.firstLevelSchemaKeys());
   _.each(keysToCheck, function(key) {
-    invalidKeys = _.union(invalidKeys, recursivelyValidate(operator, null, key, null, obj[key], ss, obj, allKeys, keyToValidate, isUpsert));
+    invalidKeys = _.union(invalidKeys, recursivelyValidate(operator, null, key, null, obj[key], ss, fullDoc, allKeys, keyToValidate, isUpsert));
   });
 
   //make sure there is only one error per fieldName
@@ -428,11 +428,11 @@ var doValidation = function(doc, isModifier, isUpsert, keyToValidate, ss, schema
       }
       if (!isUpsert && operator === "$set" && _.isObject(modObj) && _.isEmpty(modObj))
         return; //special rare case; $set obj with no keys shouldn't cause errors unless it's an upsert
-      invalidKeys = _.union(invalidKeys, validateObj(modObj, keyToValidate, invalidKeys, ss, operator, isUpsert));
+      invalidKeys = _.union(invalidKeys, validateObj(modObj, doc, keyToValidate, invalidKeys, ss, operator, isUpsert));
     });
   } else {
     //second, loop through doc and validate all keys that are present
-    invalidKeys = _.union(invalidKeys, validateObj(doc, keyToValidate, invalidKeys, ss, null, isUpsert));
+    invalidKeys = _.union(invalidKeys, validateObj(doc, doc, keyToValidate, invalidKeys, ss, null, isUpsert));
   }
 
   return invalidKeys;

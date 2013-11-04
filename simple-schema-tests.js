@@ -2679,14 +2679,22 @@ Tinytest.add("SimpleSchema - Issue 30", function(test) {
       label: "Last name",
       optional: true,
       valueIsAllowed: function(val, doc, op) {
-        if (op && op !== "$set")
-          return false; //allow only inserts and $set
-
-        if ((doc.firstname && doc.firstname.length) && (!val || !val.length)) {
-          return false;
-        } else {
-          return true;
+        if (!op) { //insert
+          if ((doc.firstname && doc.firstname.length) && (!val || !val.length)) {
+            return false;
+          } else {
+            return true;
+          }
         }
+        if (op === "$set") { //update
+          if ((doc.$set.firstname && doc.$set.firstname.length)
+                  && (!val || !val.length)) {
+            return false;
+          } else {
+            return true;
+          }
+        }
+        return false; //allow only inserts and $set
       }
     }
   });
