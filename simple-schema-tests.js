@@ -206,6 +206,12 @@ var friends = new SimpleSchema({
   'friends.$.a.b': {
     type: Number,
     optional: true
+  },
+  enemies: {
+    type: [Object]
+  },
+  'enemies.$.name': {
+    type: String
   }
 });
 
@@ -313,9 +319,10 @@ Tinytest.add("SimpleSchema - Required Checks - Insert - Invalid", function(test)
 
   //array of objects
   sc = validate(friends, {
-    friends: [{name: 'Bob'}]
+    friends: [{name: 'Bob'}],
+    enemies: [{}]
   });
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.invalidKeys(), 2);
 });
 
 /*
@@ -379,7 +386,8 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Valid - $setOnInsert", f
 
   //array of objects
   sc = validate(friends, {$setOnInsert: {
-      friends: [{name: 'Bob'}]
+      friends: [{name: 'Bob'}],
+      enemies: []
     }}, true, true);
   test.length(sc.invalidKeys(), 1);
 });
@@ -1860,7 +1868,8 @@ Tinytest.add("SimpleSchema - Maximum Checks - Update", function(test) {
 
 Tinytest.add("SimpleSchema - Minimum Array Count - Insert - Invalid", function(test) {
   var sc = validate(friends, {
-    friends: []
+    friends: [],
+    enemies: []
   });
   test.length(sc.invalidKeys(), 1);
 });
@@ -1874,7 +1883,8 @@ Tinytest.add("SimpleSchema - Minimum Array Count - Update - Invalid", function(t
 
 Tinytest.add("SimpleSchema - Minimum Array Count - Upsert - Invalid", function(test) {
   var sc = validate(friends, {$setOnInsert: {
-      friends: []
+      friends: [],
+      enemies: []
     }}, true, true);
   test.length(sc.invalidKeys(), 1);
 });
@@ -1898,7 +1908,8 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Insert - Valid", function(t
 
   //array of objects
   sc = validate(friends, {
-    friends: [{name: 'Bob', type: 'best'}]
+    friends: [{name: 'Bob', type: 'best'}],
+    enemies: []
   });
   test.equal(sc.invalidKeys(), []);
 
@@ -1920,7 +1931,8 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Insert - Valid", function(t
 
   //array of objects
   sc = validate(friends, {
-    friends: [{name: 'Bob', type: 'best', a: {b: 5000}}]
+    friends: [{name: 'Bob', type: 'best', a: {b: 5000}}],
+    enemies: []
   });
   test.equal(sc.invalidKeys(), []);
 });
@@ -1945,7 +1957,8 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Insert - Invalid", function
 
   //array of objects
   sc = validate(friends, {
-    friends: [{name: 'Bob', type: 'smelly'}]
+    friends: [{name: 'Bob', type: 'smelly'}],
+    enemies: []
   });
   test.length(sc.invalidKeys(), 1);
 
@@ -1968,7 +1981,8 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Insert - Invalid", function
 
   //array of objects
   sc = validate(friends, {
-    friends: [{name: 'Bob', type: 'best', a: {b: "wrong"}}]
+    friends: [{name: 'Bob', type: 'best', a: {b: "wrong"}}],
+    enemies: []
   });
   test.length(sc.invalidKeys(), 1);
 });
@@ -1993,7 +2007,8 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Upsert - Valid - $setOnInse
 
   //array of objects
   sc = validate(friends, {$setOnInsert: {
-      friends: [{name: 'Bob', type: 'best'}]
+      friends: [{name: 'Bob', type: 'best'}],
+      enemies: []
     }}, true, true);
   test.equal(sc.invalidKeys(), []);
 
@@ -2016,7 +2031,8 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Upsert - Valid - $setOnInse
 
   //array of objects
   sc = validate(friends, {$setOnInsert: {
-      friends: [{name: 'Bob', type: 'best', a: {b: 5000}}]
+      friends: [{name: 'Bob', type: 'best', a: {b: 5000}}],
+      enemies: []
     }}, true, true);
   test.equal(sc.invalidKeys(), []);
 });
@@ -2041,7 +2057,8 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Upsert - Invalid - $setOnIn
 
   //array of objects
   sc = validate(friends, {$setOnInsert: {
-      friends: [{name: 'Bob', type: 'smelly'}]
+      friends: [{name: 'Bob', type: 'smelly'}],
+      enemies: []
     }}, true, true);
   test.length(sc.invalidKeys(), 1);
 
@@ -2064,7 +2081,8 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Upsert - Invalid - $setOnIn
 
   //array of objects
   sc = validate(friends, {$setOnInsert: {
-      friends: [{name: 'Bob', type: 'best', a: {b: "wrong"}}]
+      friends: [{name: 'Bob', type: 'best', a: {b: "wrong"}}],
+      enemies: []
     }}, true, true);
   test.length(sc.invalidKeys(), 1);
 });
@@ -2677,13 +2695,13 @@ Tinytest.add("SimpleSchema - Issue 30", function(test) {
     firstname: "name"
   });
   test.equal(is30sc.invalidKeys()[0]["type"], "notAllowed");
-  
+
   is30sc = validate(is30ss, {
     firstname: "name",
     lastname: ""
   });
   test.equal(is30sc.invalidKeys()[0]["type"], "notAllowed");
-  
+
   is30sc = validate(is30ss, {
     firstname: "name",
     lastname: "name"
@@ -2694,17 +2712,17 @@ Tinytest.add("SimpleSchema - Issue 30", function(test) {
       firstname: "name"
     }}, true);
   test.equal(is30sc.invalidKeys()[0]["type"], "notAllowed");
-  
+
   is30sc = validate(is30ss, {$set: {
       firstname: "name",
       lastname: ""
     }}, true);
   test.equal(is30sc.invalidKeys()[0]["type"], "notAllowed");
-  
+
   is30sc = validate(is30ss, {$set: {
-    firstname: "name",
-    lastname: "name"
-  }}, true);
+      firstname: "name",
+      lastname: "name"
+    }}, true);
   test.equal(is30sc.invalidKeys(), []);
 
 });

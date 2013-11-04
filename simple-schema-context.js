@@ -146,7 +146,7 @@ var recursivelyValidate = function(operator, def, keyName, arrayPos, keyValue, s
 
   // Recurse into objects if necessary
   if (operator !== "$unset" && operator !== "$rename" && expectedType === Object) {
-    var keysToCheck, checkObj;
+    var keysToCheck, additionalKeys, checkObj;
     var keyPrefix = schemaKeyName + ".";
     var isArrayItem = false;
     if (arrayPos !== void 0 && arrayPos !== null) {
@@ -155,11 +155,16 @@ var recursivelyValidate = function(operator, def, keyName, arrayPos, keyValue, s
     }
 
     checkObj = isBasicObject(keyValue) ? keyValue : {};
+    additionalKeys = ((isArrayItem && isSet(keyValue)) || !isArrayItem) ? ss.requiredObjectKeys(numToDollar(keyPrefix)) : [];
 
     // In addition to all keys in the object, we'll check any required object
     // keys that are not in the object. This will cause a "required" validation
     // error.
-    keysToCheck = _.union(_.keys(checkObj), ss.requiredObjectKeys(numToDollar(keyPrefix)));
+    //if (operator === "$push" || operator === "$addToSet") {
+    //  keysToCheck = _.keys(checkObj);
+    //} else {
+      keysToCheck = _.union(_.keys(checkObj), additionalKeys);
+    //}
 
     //recursive calls
     var childVal;
