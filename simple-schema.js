@@ -147,15 +147,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
 
   var mDoc = new MongoObject(doc);
   newDoc = {};
-  mDoc.forEachNode(function(val, position, affectedKey, testValue) {
-    // Build a version of the affected key that has $ in place of all
-    // the numeric array positions.
-    var affectedKeyGeneric;
-    if (affectedKey) {
-      affectedKeyGeneric = affectedKey.replace(/\.[0-9]+\./g, '.$.');
-      affectedKeyGeneric = affectedKeyGeneric.replace(/\.[0-9]+/g, '.$');
-    }
-
+  mDoc.forEachNode(function(val, position, affectedKey, affectedKeyGeneric) {
     // If no key would be affected, or the key that would be affected is allowed
     // by the schema, or if we're not doing any filtering, add the key.
     if (options.filter !== true || !affectedKey || self.allowsKey(affectedKeyGeneric)) {

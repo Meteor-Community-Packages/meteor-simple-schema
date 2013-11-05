@@ -10,25 +10,23 @@ MongoObject = function(obj) {
 // (2) a string representing the node position using mongo dot notation. If the key
 //     itself contains periods, they are escaped as "@!"
 // (3) the representation of what would be changed in mongo, using mongo dot notation
+// (4) the generic equivalent of argument 3, with "$" instead of numeric pieces
 MongoObject.prototype.forEachNode = function(func) {
   var self = this;
   func = func || function() {
   };
 
   function recurse(obj, currentPosition, affectedKey, isEachObject, isEachArray, isArrayType, isUnderSlice) {
-    var value, tVal, escapedKey, newPosition, newAffectedKey, newIsArrayType, newIsUnderSlice;
+    var value, escapedKey, newPosition, newAffectedKey, newIsArrayType, newIsUnderSlice;
     var objIsArray = isArray(obj);
     var objIsObject = isBasicObject(obj);
 
     //call user-defined function
     if (currentPosition && (!objIsArray || !obj.length) && (!objIsObject || _.isEmpty(obj))) {
-      tVal = isArrayType ? [obj] : obj;
       if (isUnderSlice) {
         func(obj, currentPosition, null, null);
-      } else if (currentPosition.indexOf("$unset") !== -1) {
-        func(obj, currentPosition, affectedKey, null);
       } else {
-        func(obj, currentPosition, affectedKey, tVal);
+        func(obj, currentPosition, affectedKey, makeGeneric(affectedKey));
       }
     }
 
@@ -89,10 +87,9 @@ var isBasicObject = function(obj) {
   return isObject(obj) && Object.getPrototypeOf(obj) === Object.prototype;
 };
 
-var isOperator = function(str) {
-  return typeof str === "string" && str.substring(0, 1) === "$" && str.length > 1;
-};
-
-var numToDollar = function(str) {
-  return str.replace(/\.[0-9]+\./g, '.$.');
+var makeGeneric = function (name) {
+  if (typeof name !== "string")
+    return null;
+  
+  return name.replace(/\.[0-9]+\./g, '.$.').replace(/\.[0-9]+/g, '.$');
 };

@@ -5,6 +5,13 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.15
+
+Adjust handling of validation errors for arrays of objects. Now when a validation
+error is added to the list for a property of an object that is a member of an
+array, the key name is listed with the array index instead of a dollar sign. For
+example, `friends.0.name` instead of `friends.$.name`.
+
 ### 0.2.14
 
 * Ensure valueIsAllowed function is called for undefined and null values. This

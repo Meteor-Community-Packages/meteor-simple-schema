@@ -751,7 +751,7 @@ Tinytest.add("SimpleSchema - Required Checks - Update - Invalid - $unset", funct
       'friends.2.name': 1,
       'friends.3.name': 1
     }}, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.invalidKeys(), 3);
 });
 
 Tinytest.add("SimpleSchema - Required Checks - Update - Valid - $rename", function(test) {
