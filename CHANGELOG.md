@@ -5,6 +5,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.16
+
+Fix handling of min or max when set to 0.
+
 ### 0.2.15
 
 Adjust handling of validation errors for arrays of objects. Now when a validation

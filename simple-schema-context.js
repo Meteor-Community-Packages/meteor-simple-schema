@@ -298,9 +298,9 @@ var validateArray = function(keyName, keyValue, def, ss) {
   if (_.isArray(def.type) && !isBlankNullOrUndefined(keyValue)) {
     if (!_.isArray(keyValue)) {
       return errorObject("expectedArray", keyName, null, def, ss);
-    } else if (def.minCount && keyValue.length < def.minCount) {
+    } else if (def.minCount !== null && keyValue.length < def.minCount) {
       return errorObject("minCount", keyName, null, def, ss);
-    } else if (def.maxCount && keyValue.length > def.maxCount) {
+    } else if (def.maxCount !== null && keyValue.length > def.maxCount) {
       return errorObject("maxCount", keyName, null, def, ss);
     }
   }
@@ -476,17 +476,17 @@ var doTypeChecks = function(def, expectedType, keyName, keyValue, ss) {
           }
         }
       }
-    } else if (max && max < keyValue.length) {
+    } else if (max !== null && max < keyValue.length) {
       invalidKeys.push(errorObject("maxString", keyName, keyValue, def, ss));
-    } else if (min && min > keyValue.length) {
+    } else if (min !== null && min > keyValue.length) {
       invalidKeys.push(errorObject("minString", keyName, keyValue, def, ss));
     }
   } else if (expectedType === Number) {
     if (typeof keyValue !== "number") {
       invalidKeys.push(errorObject("expectedNumber", keyName, keyValue, def, ss));
-    } else if (max && max < keyValue) {
+    } else if (max !== null && max < keyValue) {
       invalidKeys.push(errorObject("maxNumber", keyName, keyValue, def, ss));
-    } else if (min && min > keyValue) {
+    } else if (min !== null && min > keyValue) {
       invalidKeys.push(errorObject("minNumber", keyName, keyValue, def, ss));
     } else if (!def.decimal && keyValue.toString().indexOf(".") > -1) {
       invalidKeys.push(errorObject("noDecimal", keyName, keyValue, def, ss));
