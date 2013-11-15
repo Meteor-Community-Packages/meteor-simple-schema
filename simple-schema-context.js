@@ -427,6 +427,9 @@ var doValidation = function(doc, isModifier, isUpsert, keyToValidate, ss, schema
   }
 
   if (isModifier) {
+    if (_.isEmpty(doc)) {
+      throw new Error("When the modifier option is true, validation object must have at least one operator");
+    }
     //second, loop through present modifiers
     _.each(doc, function(modObj, operator) {
       if (operator.substring(0, 1) !== "$") {
