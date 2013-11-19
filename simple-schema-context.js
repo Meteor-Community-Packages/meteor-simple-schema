@@ -387,15 +387,18 @@ var doValidation = function(doc, isModifier, isUpsert, keyToValidate, ss, schema
     throw new Error("When the validation object contains mongo operators, you must set the modifier option to true");
   }
 
-  //if this is an upsert, just add all the $setOnInsert keys to $set;
-  //since we don't know whether it will be an insert or update, we'll
-  //validate upserts as if they will be an insert
+  // If this is an upsert, just add all the $setOnInsert keys to $set;
+  // since we don't know whether it will be an insert or update, we'll
+  // validate upserts as if they will be an insert.
+  // TODO It would be more secure to validate twice, once as
+  // an update and once as an insert, because $set validation does not
+  // consider missing required keys to be an issue.
   if ("$setOnInsert" in doc) {
     if (isUpsert) {
-      doc["$set"] = doc["$set"] || {};
-      _.extend(doc["$set"], doc["$setOnInsert"]);
+      doc.$set = doc.$set || {};
+      doc.$set = _.extend(doc.$set, doc.$setOnInsert);
     }
-    delete doc["$setOnInsert"];
+    delete doc.$setOnInsert;
   }
 
   var invalidKeys = [];

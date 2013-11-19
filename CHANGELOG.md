@@ -5,6 +5,12 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.17
+
+Throw an error when the modifier is an empty object for an update or upsert.
+This prevents overwriting the entire document with nothing, leaving only
+an `_id` field left.
+
 ### 0.2.16
 
 Fix handling of min or max when set to 0.
