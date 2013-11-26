@@ -5,6 +5,20 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.18
+
+* Add support for named contexts. Use `mySimpleSchema.namedContext(name)`
+method to access the named context, creating it if it does not exist yet.
+* The `validate` and `validateOne` methods on a SimpleSchema context now
+clean (filter and autoconvert) the doc before validating it. You should no
+longer call the `clean` method yourself before validating. If you do have a
+good reason to call the `clean` method before calling `validate` or
+`validateOne`, then set the `filter` and `autoConvert` options to `false`
+when calling `validate` or `validateOne` to prevent double cleaning.
+* The `validate` and `validateOne` methods on a SimpleSchema context now return
+`true` or `false` to indicate the validity of the document or field, respectively.
+You do not need to call a separate method to check validity.
+
 ### 0.2.17
 
 Throw an error when the modifier is an empty object for an update or upsert.
