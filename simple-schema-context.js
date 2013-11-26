@@ -48,6 +48,9 @@ SimpleSchemaValidationContext.prototype.validate = function(doc, options) {
   if (changedKeys.length) {
     self._depsAny.changed();
   }
+  
+  // Return true if it was valid; otherwise, return false
+  return self._invalidKeys.length === 0;
 };
 
 //validates doc against self._schema for one key and sets a reactive array of error objects
@@ -83,6 +86,9 @@ SimpleSchemaValidationContext.prototype.validateOne = function(doc, keyName, opt
     self._deps[genericName].changed();
   }
   self._depsAny.changed();
+  
+  // Return true if it was valid; otherwise, return false
+  return !self._keyIsInvalid(keyName);
 };
 
 //this is where all the validation happens for a particular key for a single operator
@@ -255,12 +261,18 @@ SimpleSchemaValidationContext.prototype.invalidKeys = function() {
   return self._invalidKeys;
 };
 
-SimpleSchemaValidationContext.prototype.keyIsInvalid = function(name) {
-  var self = this, genericName = makeGeneric(name);
-  self._deps[genericName].depend();
+SimpleSchemaValidationContext.prototype._keyIsInvalid = function(name, genericName) {
+  var self = this;
+  genericName = genericName || makeGeneric(name);
   var specificIsInvalid = !!_.findWhere(self._invalidKeys, {name: name});
   var genericIsInvalid = (genericName !== name) ? (!!_.findWhere(self._invalidKeys, {name: genericName})) : false;
   return specificIsInvalid || genericIsInvalid;
+};
+
+SimpleSchemaValidationContext.prototype.keyIsInvalid = function(name) {
+  var self = this, genericName = makeGeneric(name);
+  self._deps[genericName].depend();
+  return self._keyIsInvalid(name, genericName);
 };
 
 SimpleSchemaValidationContext.prototype.keyErrorMessage = function(name) {

@@ -36,6 +36,8 @@ var defaultMessages = {
   keyNotInSchema: "[label] is not allowed by the schema"
 };
 
+var extendedOptions = {};
+
 //exported
 SimpleSchema = function(schema, options) {
   var self = this, requiredSchemaKeys = [], firstLevelSchemaKeys = [], fieldNameRoot;
@@ -62,8 +64,12 @@ SimpleSchema = function(schema, options) {
     regEx: Match.Optional(Match.OneOf(RegExp, [RegExp]))
   };
 
+  // This way of extending options is deprecated. TODO Remove this eventually
   if (typeof options.additionalKeyPatterns === "object")
     _.extend(schemaDefinition, options.additionalKeyPatterns);
+  
+  // Extend schema options
+  _.extend(schemaDefinition, extendedOptions);
 
   _.each(schema, function(definition, fieldName) {
     // Validate the field definition
@@ -86,6 +92,12 @@ SimpleSchema = function(schema, options) {
   self._requiredSchemaKeys = requiredSchemaKeys; //for speedier checking
   self._firstLevelSchemaKeys = firstLevelSchemaKeys;
   self._requiredObjectKeys = requiredObjectKeys(schema, requiredSchemaKeys);
+};
+
+// This allows other packages to extend the schema definition options that
+// are supported.
+SimpleSchema.extendOptions = function (options) {
+  _.extend(extendedOptions, options);
 };
 
 // Inherit from Match.Where
