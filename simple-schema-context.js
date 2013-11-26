@@ -22,6 +22,9 @@ SimpleSchemaValidationContext.prototype.validate = function(doc, options) {
     modifier: false,
     upsert: false
   }, options || {});
+  
+  //clean doc
+  doc = self._simpleSchema.clean(doc, options);
 
   var invalidKeys = doValidation(doc, options.modifier, options.upsert, null, self._simpleSchema, self._schema);
 
@@ -59,6 +62,9 @@ SimpleSchemaValidationContext.prototype.validateOne = function(doc, keyName, opt
   options = _.extend({
     modifier: false
   }, options || {});
+  
+  //clean doc
+  doc = self._simpleSchema.clean(doc, options);
 
   var invalidKeys = doValidation(doc, options.modifier, options.upsert, keyName, self._simpleSchema, self._schema);
 

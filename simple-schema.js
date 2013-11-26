@@ -92,6 +92,11 @@ SimpleSchema = function(schema, options) {
   self._requiredSchemaKeys = requiredSchemaKeys; //for speedier checking
   self._firstLevelSchemaKeys = firstLevelSchemaKeys;
   self._requiredObjectKeys = requiredObjectKeys(schema, requiredSchemaKeys);
+  
+  //store a generic validation context
+  self._validationContexts = {
+    "default": new SimpleSchemaValidationContext(self)
+  };
 };
 
 // This allows other packages to extend the schema definition options that
@@ -128,6 +133,12 @@ SimpleSchema.prototype.condition = function(obj) {
   if (!context.isValid())
     throw new Match.Error("One or more properties do not match the schema.");
   return true;
+};
+
+SimpleSchema.prototype.namedContext = function(name) {
+  var self = this;
+  self._validationContexts[name] = self._validationContexts[name] || new SimpleSchemaValidationContext(self);
+  return self._validationContexts[name];
 };
 
 SimpleSchema.prototype.validator = function(func) {
