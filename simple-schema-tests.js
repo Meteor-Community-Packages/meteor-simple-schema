@@ -227,7 +227,6 @@ var validate = function(ss, doc, isModifier, isUpsert) {
 //we will filter, type convert, and validate everything
 //so that we can be sure the filtering and type converting are not invalidating
 //documents that should be valid
-  doc = ss.clean(doc);
   var context = ss.newContext();
   context.validate(doc, {modifier: isModifier, upsert: isUpsert});
   return context;
@@ -790,7 +789,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   var sc2 = ss.newContext();
   sc2.validate({
     string: true
-  });
+  }, {filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 1); //without typeconvert
 
   sc = validate(ss, {
@@ -801,7 +800,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   //number string failure
   sc2.validate({
     string: 1
-  });
+  }, {filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 1); //without typeconvert
 
   sc = validate(ss, {
@@ -812,7 +811,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   //object string failure
   sc2.validate({
     string: {test: "test"}
-  });
+  }, {filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 1); //without filter
 
   sc = validate(ss, {
@@ -829,7 +828,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   //instance string failure
   sc2.validate({
     string: (new Date())
-  });
+  }, {filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 1); //without filter
 
   sc = validate(ss, {
@@ -854,7 +853,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   //object bool failure
   sc2.validate({
     boolean: {test: "test"}
-  });
+  }, {filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 1); //without filter
 
   sc = validate(ss, {
@@ -891,7 +890,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   //object number failure
   sc2.validate({
     number: {test: "test"}
-  });
+  }, {filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 1); //without filter
 
   sc = validate(ss, {
@@ -934,7 +933,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   //object date failure
   sc2.validate({
     date: {test: "test"}
-  });
+  }, {filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 1); //without filter
 
   sc = validate(ss, {
@@ -986,7 +985,7 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
   var sc2 = ss.newContext();
   sc2.validate({$setOnInsert: {
       string: true
-    }}, {modifier: true, upsert: true});
+    }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 1); //without typeconvert
 
   sc = validate(ss, {$setOnInsert: {
@@ -997,7 +996,7 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
   //number string failure
   sc2.validate({$setOnInsert: {
       string: 1
-    }}, {modifier: true, upsert: true});
+    }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 1); //without typeconvert
 
   sc = validate(ss, {$setOnInsert: {
@@ -1008,7 +1007,7 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
   //object string failure
   sc2.validate({$setOnInsert: {
       string: {test: "test"}
-    }}, {modifier: true, upsert: true});
+    }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 1); //without filter
 
   //with filter, the doc will become empty and error should
@@ -1031,7 +1030,7 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
   //instance string failure
   sc2.validate({$setOnInsert: {
       string: (new Date())
-    }}, {modifier: true, upsert: true});
+    }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 1); //without typeconvert
 
   sc = validate(ss, {$setOnInsert: {
@@ -1056,7 +1055,7 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
   //object bool failure
   sc2.validate({$setOnInsert: {
       boolean: {test: "test"}
-    }}, {modifier: true, upsert: true});
+    }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 1); //without filter
 
   //with filter, the doc will become empty and error should
@@ -1099,7 +1098,7 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
   //object number failure
   sc2.validate({$setOnInsert: {
       number: {test: "test"}
-    }}, {modifier: true, upsert: true});
+    }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 1); //without filter
 
   //with filter, the doc will become empty and error should
@@ -1148,7 +1147,7 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
   //object date failure
   sc2.validate({$setOnInsert: {
       date: {test: "test"}
-    }}, {modifier: true, upsert: true});
+    }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 1); //without filter
 
   //with filter, the doc will become empty and error should
@@ -1204,7 +1203,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
   var sc2 = ss.newContext();
   sc2.validate({$set: {
       string: true
-    }}, {modifier: true});
+    }}, {modifier: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 1); //without typeconvert
 
   sc = validate(ss, {$set: {
@@ -1215,7 +1214,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
   //number string failure
   sc2.validate({$set: {
       string: 1
-    }}, {modifier: true});
+    }}, {modifier: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 1); //without typeconvert
 
   sc = validate(ss, {$set: {
@@ -1226,7 +1225,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
   //object string failure
   sc2.validate({$set: {
       string: {test: "test"}
-    }}, {modifier: true});
+    }}, {modifier: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 1); //without filter
 
   //with filter, the doc will become empty and error should
@@ -1249,7 +1248,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
   //instance string failure
   sc2.validate({$set: {
       string: (new Date())
-    }}, {modifier: true});
+    }}, {modifier: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 1); //without typeconvert
 
   sc = validate(ss, {$set: {
@@ -1274,7 +1273,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
   //object bool failure
   sc2.validate({$set: {
       boolean: {test: "test"}
-    }}, {modifier: true});
+    }}, {modifier: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 1); //without filter
 
   //with filter, the doc will become empty and error should
@@ -1317,7 +1316,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
   //object number failure
   sc2.validate({$set: {
       number: {test: "test"}
-    }}, {modifier: true});
+    }}, {modifier: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 1); //without filter
 
   //with filter, the doc will become empty and error should
@@ -1381,7 +1380,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
   //object date failure
   sc2.validate({$set: {
       date: {test: "test"}
-    }}, {modifier: true});
+    }}, {modifier: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 1); //without filter
 
   //with filter, the doc will become empty and error should

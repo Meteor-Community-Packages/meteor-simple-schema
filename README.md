@@ -146,13 +146,16 @@ as the value for the `regEx` key in the schema. Currently `SchemaRegEx.Email` an
 
 ## Cleaning Data
 
-Use the `clean()` method on an instance of SimpleSchema to clean an object prior to validating it. This
-is highly recommended if security is a concern because it will ensure that any keys
-not explicitly or implicitly allowed by the schema are removed. It will also automatically
-typeconvert some values when possible to avoid needless validation errors.
-For example, non-string values can be converted to a String if the
-schema expects a String, and strings that are numbers can be converted to Numbers
-if the schema expects a Number.
+When you call the validation methods, they automatically filter and convert
+the document being validated. Filtering ensures that any keys not explicitly or
+implicitly allowed by the schema are removed, which prevents errors being thrown
+for those keys during validation. Conversion helps eliminate unnecessary validation
+messages by automatically converting values where possible. For example, non-string
+values can be converted to a String if the schema expects a String, and strings
+that are numbers can be converted to Numbers if the schema expects a Number.
+
+If you need to perform filtering or conversion on a document without validating
+it, use the `clean()` method on an instance of SimpleSchema.
 
 If you want to skip either filtering or type conversion, set the corresponding
 option to false:
@@ -164,6 +167,10 @@ MySchema.clean(obj, {
 });
 ```
 
+You may also set these options to false when calling `validate` or `validateOne`
+if you've already cleaned the document you're validating. This will prevent
+double cleaning.
+
 ## Validating Data
 
 Before you can validate an object against your schema, you need to get a new
@@ -171,7 +178,29 @@ validation context from the SimpleSchema. A validation context provides
 reactive methods for validating and checking the validation status of a particular
 object.
 
-To obtain a validation context, call `newContext()`:
+### Named Validation Contexts
+
+It's usually best to use a named validation context. That way, the context is
+automatically persisted by name, allowing you to easily rely on its reactive
+methods.
+
+To obtain a named validation context, call `namedContext(name)`:
+
+```js
+var ss = new SimpleSchema({
+    requiredString: {
+        type: String
+    }
+});
+var ssContext1 = ss.namedContext("userForm");
+```
+
+The first time you request a context with a certain name, it is created. Calling
+`namedContext()` is equivalent to calling `namedContext("default")`.
+
+### Unnamed Validation Contexts
+
+To obtain an unnamed validation context, call `newContext()`:
 
 ```js
 var ss = new SimpleSchema({
@@ -182,8 +211,15 @@ var ss = new SimpleSchema({
 var ssContext1 = ss.newContext();
 ```
 
+An unnamed validation context is not persisted anywhere. It can be useful when
+you need to see if a document is valid but you don't need any of the reactive
+methods for that context.
+
+### Validating a Document
+
 To validate an object against the schema in a validation context, call
-`myContext.validate(obj, options)`. This method returns undefined, but it also
+`myContext.validate(obj, options)`. This method returns `true` if the object is
+valid according to the schema or `false` if it is not. It also
 stores a list of invalid fields and corresponding error messages in the
 context object and causes the reactive methods to react.
 
@@ -195,6 +231,9 @@ was found to be valid. This is a reactive method that returns true or false.
 You may have the need to validate just one key. For this, use `myContext.validateOne(obj, key, options)`.
 Only the specified schema key will be validated. This may cause all of the
 reactive methods to react.
+
+This method returns `true` if the specified schema key is valid according to
+the schema or `false` if it is not.
 
 ### Other Validation Context Methods
 
