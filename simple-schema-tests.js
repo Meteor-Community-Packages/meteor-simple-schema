@@ -50,7 +50,8 @@ var ss = new SimpleSchema({
     type: String,
     optional: true,
     min: 10,
-    max: 20
+    max: 20,
+    regEx: /^[a-z0-9_]+$/
   },
   minMaxStringArray: {
     type: [String],

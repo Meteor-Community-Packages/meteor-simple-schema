@@ -5,6 +5,11 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.19
+
+Make sure min/max string length settings are respected when there is also
+a regEx option specified.
+
 ### 0.2.18
 
 * Add support for named contexts. Use `mySimpleSchema.namedContext(name)`

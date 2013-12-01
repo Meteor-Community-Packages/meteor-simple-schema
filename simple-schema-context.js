@@ -484,6 +484,10 @@ var doTypeChecks = function(def, expectedType, keyName, keyValue, ss) {
   if (expectedType === String) {
     if (typeof keyValue !== "string") {
       invalidKeys.push(errorObject("expectedString", keyName, keyValue, def, ss));
+    } else if (max !== null && max < keyValue.length) {
+      invalidKeys.push(errorObject("maxString", keyName, keyValue, def, ss));
+    } else if (min !== null && min > keyValue.length) {
+      invalidKeys.push(errorObject("minString", keyName, keyValue, def, ss));
     } else if (def.regEx) {
       if (def.regEx instanceof RegExp) {
         if (!def.regEx.test(keyValue)) {
@@ -500,10 +504,6 @@ var doTypeChecks = function(def, expectedType, keyName, keyValue, ss) {
           }
         }
       }
-    } else if (max !== null && max < keyValue.length) {
-      invalidKeys.push(errorObject("maxString", keyName, keyValue, def, ss));
-    } else if (min !== null && min > keyValue.length) {
-      invalidKeys.push(errorObject("minString", keyName, keyValue, def, ss));
     }
   } else if (expectedType === Number) {
     if (typeof keyValue !== "number") {
