@@ -13,7 +13,7 @@ Package.on_use(function(api) {
 
   if (typeof api.export !== "undefined") {
     //backwards compatibility with pre-0.6.5 meteor
-    api.export(['SimpleSchema', 'SchemaRegEx'], ['client', 'server']);
+    api.export(['SimpleSchema', 'SchemaRegEx', 'MongoObject'], ['client', 'server']);
   }
 });
 

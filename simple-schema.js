@@ -146,7 +146,7 @@ SimpleSchema.prototype.validator = function(func) {
 
 // Filter and automatically type convert
 SimpleSchema.prototype.clean = function(doc, options) {
-  var newDoc, self = this;
+  var self = this;
 
   // By default, doc will be filtered and autoconverted
   options = _.extend({
@@ -168,7 +168,6 @@ SimpleSchema.prototype.clean = function(doc, options) {
   }
 
   var mDoc = new MongoObject(doc);
-  newDoc = {};
   mDoc.forEachNode(function(val, position, affectedKey, affectedKeyGeneric) {
     // If no key would be affected, or the key that would be affected is allowed
     // by the schema, or if we're not doing any filtering, add the key.
@@ -183,39 +182,16 @@ SimpleSchema.prototype.clean = function(doc, options) {
           if (_.isArray(type)) {
             type = type[0];
           }
-          val = typeconvert(val, type);
+          this.updateValue(typeconvert(val, type));
         }
       }
 
-      // Add the key and set its value
-      expandKey(val, position, newDoc);
+      return;
     }
+    
+    this.remove();
   });
-
-  return newDoc;
-};
-
-//called by clean()
-var typeconvert = function(value, type) {
-  if (type === String) {
-    if (typeof value !== "undefined" && value !== null && typeof value !== "string") {
-      return value.toString();
-    }
-    return value;
-  }
-  if (type === Number) {
-    if (typeof value === "string") {
-      //try to convert numeric strings to numbers
-      var floatVal = parseFloat(value);
-      if (!isNaN(floatVal)) {
-        return floatVal;
-      } else {
-        return value; //leave string; will fail validation
-      }
-    }
-    return value;
-  }
-  return value;
+  return mDoc.getObject();
 };
 
 // Returns the entire schema object or just the definition for one key
@@ -341,74 +317,6 @@ SimpleSchema.prototype.newContext = function() {
   return new SimpleSchemaValidationContext(this);
 };
 
-//XXX This is not used by internal code anymore. Deprecate?
-SimpleSchema.prototype.collapseObj = function(doc) {
-  var res = {};
-  (function recurse(obj, current, currentOperator) {
-    if (_.isArray(obj)) {
-      if (obj.length && _.isObject(obj[0])) {
-        for (var i = 0, ln = obj.length; i < ln; i++) {
-          var value = obj[i];
-          var newKey = (current ? current + "." + i : i);  // joined index with dot
-          recurse(value, newKey, currentOperator);  // it's a nested object or array of objects, so do it again
-        }
-      } else {
-        res[current] = obj;  // it's not an object or array of objects, so set the property
-      }
-    } else {
-      for (var key in obj) {
-        var value = obj[key];
-
-        var newKey = (current ? current + "." + key : key);  // joined key with dot
-        if (isBasicObject(value) && !_.isEmpty(value)) {
-          //nested non-empty object so recurse into it
-          if (key.substring(0, 1) === "$") {
-            //handle mongo operator keys a bit differently
-            recurse(value, current, key);
-          } else {
-            //not a mongo operator key
-            recurse(value, newKey, currentOperator);
-          }
-        } else if (value && _.isArray(value) && value.length) {
-          //nested non-empty array, so recurse into it
-          recurse(value, newKey, currentOperator);
-        } else {
-          // it's not an object or array, or we've said we
-          // want to keep it as an object or array (skip),
-          // or it's an empty object or array,
-          // so set the property now and stop recursing
-          if (currentOperator) {
-            res[newKey] = res[newKey] || {};
-            res[newKey][currentOperator] = value;
-          } else {
-            res[newKey] = value;
-          }
-        }
-      }
-    }
-  })(doc);
-  return res;
-};
-
-//XXX This is not used by internal code anymore. Deprecate?
-SimpleSchema.prototype.expandObj = function(doc) {
-  var newDoc = doc;
-  _.each(newDoc, function(val, key) {
-    delete newDoc[key];
-    if (_.isObject(val) && looksLikeModifier(val)) {
-      for (var operator in val) {
-        if (val.hasOwnProperty(operator)) {
-          newDoc[operator] = newDoc[operator] || {};
-          newDoc[operator][key] = val[operator];
-        }
-      }
-    } else {
-      expandKey(val, key, newDoc);
-    }
-  });
-  return newDoc;
-};
-
 SimpleSchema.prototype.requiredObjectKeys = function(keyPrefix) {
   var self = this;
   if (!keyPrefix) {
@@ -425,47 +333,41 @@ SimpleSchema.prototype.firstLevelSchemaKeys = function() {
   return this._firstLevelSchemaKeys;
 };
 
+//called by clean()
+var typeconvert = function(value, type) {
+  if (type === String) {
+    if (typeof value !== "undefined" && value !== null && typeof value !== "string") {
+      return value.toString();
+    }
+    return value;
+  }
+  if (type === Number) {
+    if (typeof value === "string") {
+      //try to convert numeric strings to numbers
+      var floatVal = parseFloat(value);
+      if (!isNaN(floatVal)) {
+        return floatVal;
+      } else {
+        return value; //leave string; will fail validation
+      }
+    }
+    return value;
+  }
+  return value;
+};
+
 //tests whether it's an Object as opposed to something that inherits from Object
 var isBasicObject = function(obj) {
   return _.isObject(obj) && Object.getPrototypeOf(obj) === Object.prototype;
 };
 
-//called by expandObj and clean
-var expandKey = function(val, key, obj) {
-  var nextPiece;
-  var subkeys = key.split(".");
-  var subkeylen = subkeys.length;
-  var current = obj;
-  for (var i = 0, subkey; i < subkeylen; i++) {
-    subkey = subkeys[i];
-    subkey = subkey.replace(/@!/g, "."); //unescape periods in prop names
-    if (i === subkeylen - 1) {
-      //last iteration; time to set the value; always overwrite
-      current[subkey] = val;
-      //if val is undefined, delete the property
-      if (val === void 0)
-        delete current[subkey];
-    } else {
-      //see if the next piece is a number
-      nextPiece = subkeys[i + 1];
-      nextPiece = parseInt(nextPiece, 10);
-      if (!current[subkey]) {
-        current[subkey] = isNaN(nextPiece) ? {} : [];
-      }
-    }
-    current = current[subkey];
-  }
-};
-
 looksLikeModifier = function(obj) {
-  var ret = false;
   for (var key in obj) {
     if (obj.hasOwnProperty(key) && key.substring(0, 1) === "$") {
-      ret = true;
-      break;
+      return true;
     }
   }
-  return ret;
+  return false;
 };
 
 var dateToDateString = function(date) {

@@ -5,6 +5,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.20
+
+Improve and export `MongoObject` class for use by collection2 and others.
+
 ### 0.2.19
 
 Make sure min/max string length settings are respected when there is also
