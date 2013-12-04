@@ -67,7 +67,7 @@ SimpleSchema = function(schema, options) {
   // This way of extending options is deprecated. TODO Remove this eventually
   if (typeof options.additionalKeyPatterns === "object")
     _.extend(schemaDefinition, options.additionalKeyPatterns);
-  
+
   // Extend schema options
   _.extend(schemaDefinition, extendedOptions);
 
@@ -76,11 +76,11 @@ SimpleSchema = function(schema, options) {
     if (!Match.test(definition, schemaDefinition)) {
       throw new Error('Invalid definition for ' + fieldName + ' field.');
     }
-    
+
     fieldNameRoot = fieldName.split(".")[0];
-    
+
     self._schemaKeys.push(fieldName);
-    
+
     if (!_.contains(firstLevelSchemaKeys, fieldNameRoot))
       firstLevelSchemaKeys.push(fieldNameRoot);
 
@@ -92,14 +92,14 @@ SimpleSchema = function(schema, options) {
   self._requiredSchemaKeys = requiredSchemaKeys; //for speedier checking
   self._firstLevelSchemaKeys = firstLevelSchemaKeys;
   self._requiredObjectKeys = requiredObjectKeys(schema, requiredSchemaKeys);
-  
+
   // We will store named validation contexts here
   self._validationContexts = {};
 };
 
 // This allows other packages to extend the schema definition options that
 // are supported.
-SimpleSchema.extendOptions = function (options) {
+SimpleSchema.extendOptions = function(options) {
   _.extend(extendedOptions, options);
 };
 
@@ -180,6 +180,11 @@ SimpleSchema.prototype.clean = function(doc, options) {
         if (def) {
           var type = def.type;
           if (_.isArray(type)) {
+            if (_.isArray(val) && val.length === 0) {
+              // If the value is an empty array, we don't want to
+              // try to convert that to anything.
+              return;
+            }
             type = type[0];
           }
           this.updateValue(typeconvert(val, type));
@@ -188,7 +193,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
 
       return;
     }
-    
+
     this.remove();
   });
   return mDoc.getObject();

@@ -5,6 +5,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.21
+
+Fix an issue where cleaning a doc would convert empty arrays to empty strings.
+
 ### 0.2.20
 
 Improve and export `MongoObject` class for use by collection2 and others.
