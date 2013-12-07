@@ -307,9 +307,17 @@ SimpleSchema.prototype.allowsKey = function(key) {
       break;
     }
 
-    // If the schema key implies the test key, i.e., the schema key
+    // If the schema key implies the test key because the schema key
     // starts with the test key followed by a period, it's allowed.
     if (schemaKey.substring(0, key.length + 1) === key + ".") {
+      allowed = true;
+      break;
+    }
+    
+    // If the schema key implies the test key because the schema key
+    // starts with the test key and the test key ends with ".$", it's allowed.
+    var lastTwo = key.slice(-2);
+    if (lastTwo === ".$" && key.slice(0, -2) === schemaKey) {
       allowed = true;
       break;
     }
@@ -415,7 +423,7 @@ var expandSchema = function(schema) {
 var addImplicitKeys = function(schema) {
   //if schema contains key like "foo.$.bar" but not "foo", add "foo"
   var arrayKeysToAdd = [], objectKeysToAdd = [], newKey, key, nextThree;
-
+  
   _.each(schema, function(def, existingKey) {
     var pos = existingKey.indexOf(".");
 

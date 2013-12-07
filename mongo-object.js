@@ -5,13 +5,13 @@ MongoObject = function(objOrModifier) {
   self._affectedKeys = {};
   self._genericAffectedKeys = {};
 
-  (function recurse(obj, currentPosition, affectedKey, isEachObject, isEachArray, isArrayType, isUnderSlice) {
-    var value, newPosition, newAffectedKey, newIsArrayType, newIsUnderSlice;
+  (function recurse(obj, currentPosition, affectedKey, isUnderOperator, isUnderEachOrPullAll, isUnderArrayOperator, isUnderSlice) {
+    var newAffectedKey;
     var objIsArray = isArray(obj);
     var objIsObject = isBasicObject(obj);
 
     //store values, affectedKeys, and genericAffectedKeys
-    if (currentPosition && (!objIsArray || !obj.length) && (!objIsObject || _.isEmpty(obj))) {
+    if (currentPosition && (!objIsObject || _.isEmpty(obj)) && (!objIsArray || _.isEmpty(obj))) {
       if (isUnderSlice) {
         self._values[currentPosition] = obj;
         self._affectedKeys[currentPosition] = null;
@@ -24,16 +24,20 @@ MongoObject = function(objOrModifier) {
     }
 
     //loop through array items
-    if (objIsArray) {
+    else if (objIsArray) {
       for (var i = 0, ln = obj.length; i < ln; i++) {
-        value = obj[i];
-        newPosition = (currentPosition ? currentPosition + "[" + i + "]" : i); // joined index
-        if (!isEachObject && !isEachArray && isObject(value)) {
-          newAffectedKey = (affectedKey ? affectedKey + "." + i : i);
-        } else {
+        if (isUnderEachOrPullAll) {
           newAffectedKey = affectedKey;
+        } else {
+          newAffectedKey = (affectedKey ? affectedKey + "." + i : i);
         }
-        recurse(value, newPosition, newAffectedKey, null, isEachObject, isArrayType, isUnderSlice);
+        recurse(obj[i],
+                (currentPosition ? currentPosition + "[" + i + "]" : i),
+                newAffectedKey,
+                isUnderOperator,
+                null, // Only the first array needs to be treated differently
+                isUnderArrayOperator,
+                isUnderSlice);
       }
     }
 
@@ -41,22 +45,22 @@ MongoObject = function(objOrModifier) {
     else if (objIsObject) {
       for (var key in obj) {
         if (obj.hasOwnProperty(key)) {
-          value = obj[key];
-          newPosition = (currentPosition ? currentPosition + "[" + key + "]" : key); // joined property
-          if (isArrayType) {
-            if (key.substring(0, 1) === "$") {
-              newAffectedKey = affectedKey;
-            } else {
-              newAffectedKey = (affectedKey ? affectedKey + ".$." + key : key);
-            }
-          } else if (key.substring(0, 1) === "$") {
+          if (key.substring(0, 1) === "$") {
             newAffectedKey = affectedKey;
+          } else if (isUnderArrayOperator) {
+            newAffectedKey = (affectedKey ? affectedKey + ".$." + key : key);
           } else {
             newAffectedKey = (affectedKey ? affectedKey + "." + key : key);
           }
-          newIsArrayType = isArrayType || key === "$push" || key === "$addToSet" || key === "$pull" || key === "$pop";
-          newIsUnderSlice = isUnderSlice || key === "$slice";
-          recurse(value, newPosition, newAffectedKey, (key === "$each"), null, newIsArrayType, newIsUnderSlice);
+          recurse(obj[key], //value
+                  (currentPosition ? currentPosition + "[" + key + "]" : key), //position
+                  newAffectedKey,
+                  (isUnderOperator || key.substring(0, 1) === "$"),
+                  // For $each and $pullAll, the first array we come to after
+                  // the operator needs to be treated differently
+                  (isUnderEachOrPullAll || key === "$each" || key === "$pullAll"),
+                  (isUnderArrayOperator || key === "$push" || key === "$addToSet" || key === "$pull" || key === "$pop"),
+                  (isUnderSlice || key === "$slice"));
         }
       }
     }
@@ -140,7 +144,7 @@ MongoObject = function(objOrModifier) {
     self._affectedKeys[position] = key;
     self._genericAffectedKeys[position] = makeGeneric(key);
   };
-  
+
   // Removes the requested non-generic key
   self.removeKey = function(key) {
     for (var position in self._affectedKeys) {
@@ -181,6 +185,21 @@ MongoObject = function(objOrModifier) {
     var newObj = {};
     _.each(self._values, function(val, position) {
       MongoObject.expandKey(val, position, newObj);
+    });
+    return newObj;
+  };
+
+  // Gets a flat object based on the MongoObject instance.
+  // In a flat object, the key is the name of the non-generic affectedKey,
+  // with mongo dot notation if necessary, and the value is the value for
+  // that key.
+  self.getFlatObject = function() {
+    var newObj = {};
+    _.each(self._values, function(val, position) {
+      var affectedKey = self._affectedKeys[position];
+      if (typeof affectedKey === "string") {
+        newObj[affectedKey] = val;
+      }
     });
     return newObj;
   };
