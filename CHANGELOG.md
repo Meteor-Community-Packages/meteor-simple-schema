@@ -5,6 +5,11 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.23
+
+Fix an issue, introduced in 0.2.21, that prevented autoconversion of values
+in arrays.
+
 ### 0.2.22
 
 Add tests for MongoObject and fix some issues found by the tests.

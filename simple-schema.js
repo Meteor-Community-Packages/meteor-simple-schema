@@ -172,11 +172,13 @@ SimpleSchema.prototype.clean = function(doc, options) {
     // If no key would be affected, or the key that would be affected is allowed
     // by the schema, or if we're not doing any filtering, add the key.
     if (options.filter !== true || !affectedKey || self.allowsKey(affectedKeyGeneric)) {
-
       // Before adding the key's value, autoconvert it if requested
       // and if possible.
-      if (options.autoConvert === true) {
-        var def = affectedKeyGeneric && self._schema[affectedKeyGeneric];
+      if (options.autoConvert === true && affectedKeyGeneric) {
+        var def = self._schema[affectedKeyGeneric];
+        if (!def && affectedKeyGeneric.slice(-2) === ".$") {
+          def = self._schema[affectedKeyGeneric.slice(0, -2)];
+        }
         if (def) {
           var type = def.type;
           if (_.isArray(type)) {
