@@ -2829,6 +2829,63 @@ Tinytest.add("SimpleSchema - Issue 30", function(test) {
 
 });
 
+Tinytest.add("SimpleSchema - Merged Schemas", function(test) {
+  
+  var s1 = new SimpleSchema({
+    a: {
+      type: String
+    },
+    b: {
+      type: String
+    }
+  });
+
+  var s2 = new SimpleSchema({
+    c: {
+      type: String
+    },
+    d: {
+      type: String
+    }
+  });
+  
+  var s3 = new SimpleSchema([s1, s2, {
+    e: {
+      type: String
+    },
+    f: {
+      type: String
+    }
+  }]);
+
+  test.equal(s3._schema, {
+    a: {
+      type: String,
+      label: "A"
+    },
+    b: {
+      type: String,
+      label: "B"
+    },
+    c: {
+      type: String,
+      label: "C"
+    },
+    d: {
+      type: String,
+      label: "D"
+    },
+    e: {
+      type: String,
+      label: "E"
+    },
+    f: {
+      type: String,
+      label: "F"
+    }
+  }, "schema was not merged correctly");
+});
+
 /*
  * END TESTS
  */

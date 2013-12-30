@@ -315,7 +315,7 @@ SimpleSchema.prototype.allowsKey = function(key) {
       allowed = true;
       break;
     }
-    
+
     // If the schema key implies the test key because the schema key
     // starts with the test key and the test key ends with ".$", it's allowed.
     var lastTwo = key.slice(-2);
@@ -397,8 +397,18 @@ var dateToDateString = function(date) {
   return date.getUTCFullYear() + '-' + m + '-' + d;
 };
 
-//flatten schema by inserting nested definitions
 var expandSchema = function(schema) {
+  // If schema is an array of schemas, merge them first
+  if (_.isArray(schema)) {
+    var mergedSchema = {};
+    _.each(schema, function(ss) {
+      ss = Match.test(ss, SimpleSchema) ? ss._schema : ss;
+      isBasicObject(ss) && _.extend(mergedSchema, ss);
+    });
+    schema = mergedSchema;
+  }
+
+  // Now flatten schema by inserting nested definitions
   _.each(schema, function(val, key) {
     var dot, type;
     if (Match.test(val.type, SimpleSchema)) {
@@ -425,7 +435,7 @@ var expandSchema = function(schema) {
 var addImplicitKeys = function(schema) {
   //if schema contains key like "foo.$.bar" but not "foo", add "foo"
   var arrayKeysToAdd = [], objectKeysToAdd = [], newKey, key, nextThree;
-  
+
   _.each(schema, function(def, existingKey) {
     var pos = existingKey.indexOf(".");
 
