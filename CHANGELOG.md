@@ -5,6 +5,12 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.24
+
+* Correctly validate $inc operator
+* Allow passing an array of schemas to SimpleSchema constructor, which merges
+them to create the actual schema definition.
+
 ### 0.2.23
 
 Fix an issue, introduced in 0.2.21, that prevented autoconversion of values

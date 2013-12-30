@@ -53,6 +53,8 @@ of that type.
 * `[Object]`
 * `[Date]`
 
+### Sub-Schemas
+
 If you have schemas that share one or more subproperties, you can define them in a sub-schema
 to make your code cleaner and more concise. Here's an example:
 
@@ -85,6 +87,17 @@ CustomerSchema = new SimpleSchema({
     minCount: 1
   }
 });
+```
+
+### Combining Schemas
+
+If you want to reuse mini-schemas in multiple places but you don't want a
+subdocument like you get with sub-schemas, you can pass multiple schemas to
+the SimpleSchema constructor, and they will be combined.
+
+```js
+cmsBaseSchema = new SimpleSchema({ ... });
+cmsPageSchema = new SimpleSchema([cmsBaseSchema, {additionalField: {type: String} }]);
 ```
 
 ### Keys
