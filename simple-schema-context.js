@@ -163,7 +163,7 @@ var recursivelyValidate = function(operator, def, keyName, arrayPos, keyValue, s
     // or for certain operators,
     // regardless of whether the key is required or not.
     if (isSet(keyValue) && !_.contains(noCheckOps, operator)) {
-      invalidKeys = _.union(invalidKeys, doTypeChecks(def, expectedType, keyName, keyValue, ss));
+      invalidKeys = _.union(invalidKeys, doTypeChecks(def, expectedType, keyName, keyValue, ss, operator));
     }
 
     // Call custom validation
@@ -468,7 +468,7 @@ var doValidation = function(doc, isModifier, isUpsert, keyToValidate, ss, schema
   return invalidKeys;
 };
 
-var doTypeChecks = function(def, expectedType, keyName, keyValue, ss) {
+var doTypeChecks = function(def, expectedType, keyName, keyValue, ss, op) {
   var invalidKeys = [];
   //If min/max are functions, call them
   var min = def.min;
@@ -508,9 +508,9 @@ var doTypeChecks = function(def, expectedType, keyName, keyValue, ss) {
   } else if (expectedType === Number) {
     if (typeof keyValue !== "number") {
       invalidKeys.push(errorObject("expectedNumber", keyName, keyValue, def, ss));
-    } else if (max !== null && max < keyValue) {
+    } else if (op !== "$inc" && max !== null && max < keyValue) {
       invalidKeys.push(errorObject("maxNumber", keyName, keyValue, def, ss));
-    } else if (min !== null && min > keyValue) {
+    } else if (op !== "$inc" && min !== null && min > keyValue) {
       invalidKeys.push(errorObject("minNumber", keyName, keyValue, def, ss));
     } else if (!def.decimal && keyValue.toString().indexOf(".") > -1) {
       invalidKeys.push(errorObject("noDecimal", keyName, keyValue, def, ss));

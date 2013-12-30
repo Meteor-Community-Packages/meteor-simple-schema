@@ -100,6 +100,16 @@ var ss = new SimpleSchema({
     min: 10,
     max: 20
   },
+  minZero: {
+    type: Number,
+    optional: true,
+    min: 0
+  },
+  maxZero: {
+    type: Number,
+    optional: true,
+    max: 0
+  },
   minMaxNumberCalculated: {
     type: Number,
     optional: true,
@@ -1583,6 +1593,12 @@ Tinytest.add("SimpleSchema - Minimum Checks - Insert", function(test) {
     minMaxNumberCalculated: 9
   });
   test.length(sc.invalidKeys(), 1);
+
+  sc = validate(ss, {
+    minZero: -1
+  });
+  test.length(sc.invalidKeys(), 1);
+
   /* DATE */
   sc = validate(ss, {
     minMaxDate: (new Date(Date.UTC(2013, 0, 1)))
@@ -1646,6 +1662,12 @@ Tinytest.add("SimpleSchema - Minimum Checks - Upsert", function(test) {
       minMaxNumberCalculated: 9
     }}, true, true);
   test.length(sc.invalidKeys(), 1);
+
+  sc = validate(ss, {$setOnInsert: {
+      minZero: -1
+    }}, true, true);
+  test.length(sc.invalidKeys(), 1);
+
   /* DATE */
   sc = validate(ss, {$setOnInsert: {
       minMaxDate: (new Date(Date.UTC(2013, 0, 1)))
@@ -1705,6 +1727,18 @@ Tinytest.add("SimpleSchema - Minimum Checks - Update", function(test) {
       minMaxNumberCalculated: 9
     }}, true);
   test.length(sc.invalidKeys(), 1);
+
+  sc = validate(ss, {$set: {
+      minZero: -1
+    }}, true);
+  test.length(sc.invalidKeys(), 1);
+
+  sc = validate(ss, {$inc: {
+      minZero: -5
+    }}, true);
+  // Should not be invalid because we don't know what we're starting from
+  test.length(sc.invalidKeys(), 0);
+
   /* DATE */
   sc = validate(ss, {$set: {
       minMaxDate: (new Date(Date.UTC(2013, 0, 1)))
@@ -1882,6 +1916,18 @@ Tinytest.add("SimpleSchema - Maximum Checks - Update", function(test) {
       minMaxNumberCalculated: 21
     }}, true);
   test.length(sc.invalidKeys(), 1);
+
+  sc = validate(ss, {$set: {
+      maxZero: 1
+    }}, true);
+  test.length(sc.invalidKeys(), 1);
+
+  sc = validate(ss, {$inc: {
+      maxZero: 5
+    }}, true);
+  // Should not be invalid because we don't know what we're starting from
+  test.length(sc.invalidKeys(), 0);
+
   /* DATE */
   sc = validate(ss, {$set: {
       minMaxDate: (new Date(Date.UTC(2013, 11, 31)))
