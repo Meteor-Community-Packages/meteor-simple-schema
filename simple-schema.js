@@ -239,18 +239,13 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
     genType = type.substring(0, firstTypePeriod);
     genTypePlusKey = genType + " " + key;
   }
-  var message = self._messages[typePlusKey];
-  if (!message)
-    message = self._messages[type];
+  var message = self._messages[typePlusKey] || self._messages[type];
   if (!message && genType) {
-    message = self._messages[genTypePlusKey];
-    if (!message)
-      message = self._messages[genType];
+    message = self._messages[genTypePlusKey] || self._messages[genType];
   }
   if (!message)
     return "Unknown validation error";
-  if (!def)
-    def = self._schema[key] || {};
+  def = def || self._schema[key] || {};
   message = message.replace("[label]", def.label || key);
   if (typeof def.minCount !== "undefined") {
     message = message.replace("[minCount]", def.minCount);
