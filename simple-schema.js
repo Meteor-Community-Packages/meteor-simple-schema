@@ -251,7 +251,7 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
     return "Unknown validation error";
   if (!def)
     def = self._schema[key] || {};
-  message = message.replace("[label]", def.label);
+  message = message.replace("[label]", def.label || key);
   if (typeof def.minCount !== "undefined") {
     message = message.replace("[minCount]", def.minCount);
   }
