@@ -1,5 +1,6 @@
-var pullOps = ["$pull", "$pullAll", "$pop"];
-var noCheckOps = ["$unset", "$rename", "$pull", "$pullAll", "$pop"];
+/*
+ * PUBLIC API
+ */
 
 SimpleSchemaValidationContext = function(ss) {
   var self = this;
@@ -22,11 +23,11 @@ SimpleSchemaValidationContext.prototype.validate = function(doc, options) {
     modifier: false,
     upsert: false
   }, options || {});
-  
+
   //clean doc
   doc = self._simpleSchema.clean(doc, options);
 
-  var invalidKeys = doValidation(doc, options.modifier, options.upsert, null, self._simpleSchema, self._schema);
+  var invalidKeys = doValidation(doc, options.modifier, options.upsert, null, self._simpleSchema);
 
   //now update self._invalidKeys and dependencies
 
@@ -51,7 +52,7 @@ SimpleSchemaValidationContext.prototype.validate = function(doc, options) {
   if (changedKeys.length) {
     self._depsAny.changed();
   }
-  
+
   // Return true if it was valid; otherwise, return false
   return self._invalidKeys.length === 0;
 };
@@ -62,11 +63,11 @@ SimpleSchemaValidationContext.prototype.validateOne = function(doc, keyName, opt
   options = _.extend({
     modifier: false
   }, options || {});
-  
+
   //clean doc
   doc = self._simpleSchema.clean(doc, options);
 
-  var invalidKeys = doValidation(doc, options.modifier, options.upsert, keyName, self._simpleSchema, self._schema);
+  var invalidKeys = doValidation(doc, options.modifier, options.upsert, keyName, self._simpleSchema);
 
   //now update self._invalidKeys and dependencies
 
@@ -92,154 +93,9 @@ SimpleSchemaValidationContext.prototype.validateOne = function(doc, keyName, opt
     self._deps[genericName].changed();
   }
   self._depsAny.changed();
-  
+
   // Return true if it was valid; otherwise, return false
   return !self._keyIsInvalid(keyName);
-};
-
-//this is where all the validation happens for a particular key for a single operator
-var recursivelyValidate = function(operator, def, keyName, arrayPos, keyValue, ss, fullDoc, allKeys, keyToValidate, isUpsert) {
-  var invalidKeys = [], requiredError;
-  var schemaKeyName = makeGeneric(keyName); //replace .Number. with .$. in key
-  var recurseOnly = (keyToValidate && keyToValidate !== keyName);
-  
-  if (operator === "$pushAll")
-    throw new Error("$pushAll is not supported; use $push + $each");
-
-  def = def || ss.schema(schemaKeyName);
-
-  if (!def) {
-    !recurseOnly && invalidKeys.push(errorObject("keyNotInSchema", keyName, keyValue, def, ss));
-    return invalidKeys;
-  }
-
-  var expectedType = def.type;
-  var expectsArray = _.isArray(expectedType);
-
-  // Adjust keyValue for $each
-  var isEach = false;
-  if (_.isObject(keyValue) && "$each" in keyValue) {
-    keyValue = keyValue.$each;
-    isEach = true;
-  }
-
-  // Adjust expectedType for $push and $addToSet
-  if (expectsArray && !isEach && (operator === "$push" || operator === "$addToSet")) {
-    expectedType = expectedType[0];
-    expectsArray = false;
-    arrayPos = "$";
-  }
-
-  if (!recurseOnly) {
-    // We did most "required" validation previously, but it is easier to check
-    // required keys in subobjects now.
-    var dollarPos = keyName.indexOf(".");
-    if (dollarPos !== -1) {
-      if (!operator || operator === "$push" || operator === "$addToSet") {
-        requiredError = validateRequired(keyName, keyValue, def, ss);
-      } else if (operator === "$set") {
-        if (keyValue !== void 0 || isUpsert) {
-          requiredError = validateRequired(keyName, keyValue, def, ss);
-        }
-      } else if (!def.optional && (operator === "$unset" || operator === "$rename")) {
-        requiredError = errorObject("required", keyName, null, def, ss);
-      }
-
-      if (requiredError) {
-        invalidKeys.push(requiredError);
-        return invalidKeys; //once we've logged a required error for the key, no further checking is necessary
-      }
-    }
-
-    // For $rename, make sure that the new name is allowed by the schema
-    if (operator === "$rename") {
-      if (keyValue && typeof keyValue === "string" && !ss.allowsKey(keyValue)) {
-        invalidKeys.push(errorObject("keyNotInSchema", keyValue, null, null, ss));
-        return invalidKeys;
-      }
-    }
-
-    // Type checks are not necessary for null or undefined values,
-    // or for certain operators,
-    // regardless of whether the key is required or not.
-    if (isSet(keyValue) && !_.contains(noCheckOps, operator)) {
-      invalidKeys = _.union(invalidKeys, doTypeChecks(def, expectedType, keyName, keyValue, ss, operator));
-    }
-
-    // Call custom validation
-    var validatorCount = ss._validators.length;
-    if (validatorCount) {
-      for (var i = 0, validator, result; i < validatorCount; i++) {
-        validator = ss._validators[i];
-        result = validator(schemaKeyName, keyValue, def, operator);
-        if (result !== true && typeof result === "string") {
-          invalidKeys.push(errorObject(result, keyName, keyValue, def, ss));
-          break;
-        }
-      }
-    }
-
-    // Check to make sure the value is allowed.
-    // This is the last thing we want to do for all data types.
-    if (isSet(keyValue) && !expectsArray && def.allowedValues && !_.contains(noCheckOps, operator)) {
-      if (!_.contains(def.allowedValues, keyValue)) {
-        invalidKeys.push(errorObject("notAllowed", keyName, keyValue, def, ss));
-      }
-    }
-
-    if (typeof def.valueIsAllowed === "function" && operator !== "$unset" && operator !== "$rename") {
-      if (!def.valueIsAllowed(keyValue, fullDoc, operator)) {
-        invalidKeys.push(errorObject("notAllowed", keyName, keyValue, def, ss));
-      }
-    }
-  }
-
-  // Recurse into objects if necessary
-  if (operator !== "$unset" && operator !== "$rename" && expectedType === Object) {
-    var keysToCheck, additionalKeys, checkObj;
-    var keyPrefix = schemaKeyName + ".";
-    var isArrayItem = false;
-    if (arrayPos !== void 0 && arrayPos !== null) {
-      keyPrefix += arrayPos + ".";
-      isArrayItem = true;
-    }
-
-    checkObj = isBasicObject(keyValue) ? keyValue : {};
-    additionalKeys = ((isArrayItem && isSet(keyValue)) || !isArrayItem) ? ss.requiredObjectKeys(makeGeneric(keyPrefix)) : [];
-    keysToCheck = _.union(_.keys(checkObj), additionalKeys);
-
-    //recursive calls
-    var childVal;
-    _.each(keysToCheck, function(k) {
-      //recurse only if the key wasn't checked at the first level, due to being passed in under a modifier operator
-      if (_.contains(allKeys, keyPrefix + k))
-        return;
-
-      childVal = checkObj[k];
-
-      if (isArrayItem && childVal === void 0)
-        childVal = null; //within arrays, use null instead of undefined so that $set knows to consider required fields invalid
-
-      invalidKeys = _.union(invalidKeys, recursivelyValidate(operator, null, keyPrefix + k, null, childVal, ss, fullDoc, allKeys, keyToValidate, isUpsert));
-    });
-  }
-
-  // Recurse into arrays if necessary
-  if (isSet(keyValue) && expectsArray && !_.contains(pullOps, operator)) {
-    // If it's an array, loop through it and validate each value in the array
-    if (_.isArray(keyValue)) {
-      var childDef = _.clone(def), loopVal;
-      childDef.type = def.type[0]; //strip array off of type
-      for (var i = 0, ln = keyValue.length; i < ln; i++) {
-        loopVal = keyValue[i];
-        invalidKeys = _.union(invalidKeys, recursivelyValidate(operator, childDef, schemaKeyName, i, loopVal, ss, fullDoc, allKeys, keyToValidate, isUpsert));
-      }
-    } else {
-      invalidKeys.push(errorObject("expectedArray", keyName, keyValue, def, ss));
-    }
-  }
-
-  return invalidKeys;
 };
 
 //reset the invalidKeys array
@@ -291,6 +147,340 @@ SimpleSchemaValidationContext.prototype.keyErrorMessage = function(name) {
   return errorObj ? errorObj.message : "";
 };
 
+/*
+ * PRIVATE
+ */
+
+var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
+  
+  // First do some basic checks of the object, and throw errors if necessary
+  if (!_.isObject(obj)) {
+    throw new Error("The first argument of validate() or validateOne() must be an object");
+  }
+  
+  if (isModifier) {
+    if (_.isEmpty(obj)) {
+      throw new Error("When the modifier option is true, validation object must have at least one operator");
+    } else {
+      var allKeysAreOperators = _.every(obj, function (v, k) {
+        return (k.substring(0, 1) === "$");
+      });
+      if (!allKeysAreOperators) {
+        throw new Error("When the modifier option is true, all validation object keys must be operators");
+      }
+    }
+  } else if (looksLikeModifier(obj)) {
+    throw new Error("When the validation object contains mongo operators, you must set the modifier option to true");
+  }
+
+  // If this is an upsert, add all the $setOnInsert keys to $set;
+  // since we don't know whether it will be an insert or update, we'll
+  // validate upserts as if they will be an insert.
+  // TODO It would be more secure to validate twice, once as
+  // an update and once as an insert, because $set validation does not
+  // consider missing required keys to be an issue.
+  if ("$setOnInsert" in obj) {
+    if (isUpsert) {
+      obj.$set = obj.$set || {};
+      obj.$set = _.extend(obj.$set, obj.$setOnInsert);
+    }
+    delete obj.$setOnInsert;
+  }
+  
+  var invalidKeys = [];
+
+  // Validation function called for each affected key
+  function validate(val, affectedKey, affectedKeyGeneric, def, op) {
+
+    // Get the schema for this key, marking invalid if there isn't one.
+    if (!def) {
+      invalidKeys.push(errorObject("keyNotInSchema", affectedKey, val, def, ss));
+      return;
+    }
+
+    // Check for missing required values. The general logic is this:
+    // * If there's no operator, or if the operator is $set and it's an upsert,
+    //   val must not be undefined, null, or an empty string.
+    // * If there is an operator other than $unset or $rename, val must
+    //   not be null or an empty string, but undefined is OK.
+    // * If the operator is $unset or $rename, it's invalid.
+    if (!def.optional) {
+      if (op === "$unset" || op === "$rename" || isBlankNullOrUndefined(val)) {
+        invalidKeys.push(errorObject("required", affectedKey, null, def, ss));
+        return;
+      }
+    }
+
+    // For $rename, make sure that the new name is allowed by the schema
+    if (op === "$rename" && typeof val === "string" && !ss.allowsKey(val)) {
+      invalidKeys.push(errorObject("keyNotInSchema", val, null, null, ss));
+      return;
+    }
+
+    // Value checks are not necessary for null or undefined values,
+    // or for certain operators.
+    if (!_.contains(["$unset", "$rename", "$pull", "$pullAll", "$pop"], op)) {
+      
+      if (isSet(val)) {
+
+        // Check that value is of the correct type
+        var typeError = doTypeChecks(def, val, op);
+        if (typeError) {
+          invalidKeys.push(errorObject(typeError, affectedKey, val, def, ss));
+          return;
+        }
+
+        // Check value against allowedValues array
+        if (def.allowedValues && !_.contains(def.allowedValues, val)) {
+          invalidKeys.push(errorObject("notAllowed", affectedKey, val, def, ss));
+          return;
+        }
+      
+      }
+
+      // Check value using valusIsAllowed function
+      if (def.valueIsAllowed && !def.valueIsAllowed(val, obj, op)) {
+        invalidKeys.push(errorObject("notAllowed", affectedKey, val, def, ss));
+        return;
+      }
+
+    }
+
+    // Perform custom validation
+    _.every(ss._validators, function(validator) {
+      var errorType = validator(affectedKeyGeneric, val, def, op);
+      if (typeof errorType === "string") {
+        invalidKeys.push(errorObject(errorType, affectedKey, val, def, ss));
+        return false;
+      }
+      return true;
+    });
+  }
+
+  // The recursive function
+  function checkObj(val, affectedKey, operator, adjusted) {
+    var affectedKeyGeneric, def;
+    
+    // Adjust for first-level modifier operators
+    if (!operator && affectedKey && affectedKey.substring(0, 1) === "$") {
+      operator = affectedKey;
+      affectedKey = null;
+    }
+
+    if (affectedKey) {
+
+      // Adjust for $push and $addToSet
+      if (! adjusted && (operator === "$push" || operator === "$addToSet")) {
+        // Adjust for $each
+        // We can simply jump forward and pretend like the $each array
+        // is the array for the field. This has the added benefit of
+        // skipping past any $slice, which we also don't care about.
+        if (isBasicObject(val) && "$each" in val) {
+          val = val.$each;
+        } else {
+          affectedKey = affectedKey + ".0";
+        }
+        adjusted = true;
+      }
+
+      // Make a generic version of the affected key, and use that
+      // to get the schema for this key.
+      affectedKeyGeneric = makeGeneric(affectedKey);
+      def = ss.schema(affectedKeyGeneric);
+
+      // Perform validation for this key
+      if (!keyToValidate || keyToValidate === affectedKey || keyToValidate === affectedKeyGeneric) {
+        validate(val, affectedKey, affectedKeyGeneric, def, operator);
+      }
+    }
+
+    // Temporarily convert missing objects to empty objects
+    // so that the looping code will be called and required
+    // descendent keys can be validated.
+    if (!val && (!def || def.type === Object)) {
+      val = {};
+    }
+
+    // Loop through arrays
+    if (_.isArray(val)) {
+      _.each(val, function(v, i) {
+        checkObj(v, affectedKey + '.' + i, operator, adjusted);
+      });
+    }
+    
+    // Loop through object keys
+    else if (isBasicObject(val)) {
+      
+      // Get list of present keys
+      var presentKeys = _.keys(val);
+      
+      // For required checks, we want to also loop through all keys expected
+      // based on the schema, in case any are missing.
+      var requiredKeys, valueIsAllowedKeys;
+      if (!isModifier || (isUpsert && operator === "$set") || (affectedKeyGeneric && affectedKeyGeneric.slice(-2) === ".$")) {
+        requiredKeys = ss.requiredObjectKeys(affectedKeyGeneric);
+        
+        // Filter out required keys that are ancestors
+        // of those in $set
+        requiredKeys = _.filter(requiredKeys, function (k) {
+          return !_.some(presentKeys, function (pk) {
+            return (pk.slice(0, k.length + 1) === k + ".");
+          });
+        });
+      }
+      
+      if (!isModifier || (operator === "$set") || (affectedKeyGeneric && affectedKeyGeneric.slice(-2) === ".$")) {
+      
+        // We want to be sure to call any present valueIsAllowed functions
+        // even if the value isn't set, so they can be used for custom
+        // required errors, such as basing it on another field's value.
+        valueIsAllowedKeys = ss.valueIsAllowedObjectKeys(affectedKeyGeneric);
+
+      }
+      
+      // Merge the lists
+      var keysToCheck = _.union(presentKeys, requiredKeys || [], valueIsAllowedKeys || []);
+      
+      // Check all keys in the merged list
+      _.each(keysToCheck, function(key) {
+        if (shouldCheck(key)) {
+          checkObj(val[key], appendAffectedKey(affectedKey, key), operator, adjusted);
+        }
+      });
+    }
+    
+  }
+  
+  // Kick off the validation
+  checkObj(obj);
+
+  // Make sure there is only one error per fieldName
+  var addedFieldNames = [];
+  invalidKeys = _.filter(invalidKeys, function(errObj) {
+    if (!_.contains(addedFieldNames, errObj.name)) {
+      addedFieldNames.push(errObj.name);
+      return true;
+    }
+    return false;
+  });
+
+  return invalidKeys;
+};
+
+var doTypeChecks = function(def, keyValue, op) {
+  var expectedType = def.type;
+
+  // If min/max are functions, call them
+  var min = def.min;
+  var max = def.max;
+  if (typeof min === "function") {
+    min = min();
+  }
+  if (typeof max === "function") {
+    max = max();
+  }
+
+  // String checks
+  if (expectedType === String) {
+    if (typeof keyValue !== "string") {
+      return "expectedString";
+    } else if (max !== null && max < keyValue.length) {
+      return "maxString";
+    } else if (min !== null && min > keyValue.length) {
+      return "minString";
+    } else if (def.regEx instanceof RegExp && !def.regEx.test(keyValue)) {
+      return "regEx";
+    } else if (_.isArray(def.regEx)) {
+      var regExError;
+      _.every(def.regEx, function(re, i) {
+        if (!re.test(keyValue)) {
+          regExError = "regEx." + i;
+          return false;
+        }
+        return true;
+      });
+      if (regExError)
+        return regExError;
+    }
+  }
+
+  // Number checks
+  else if (expectedType === Number) {
+    if (typeof keyValue !== "number") {
+      return "expectedNumber";
+    } else if (op !== "$inc" && max !== null && max < keyValue) {
+      return "maxNumber";
+    } else if (op !== "$inc" && min !== null && min > keyValue) {
+      return "minNumber";
+    } else if (!def.decimal && keyValue.toString().indexOf(".") > -1) {
+      return "noDecimal";
+    }
+  }
+
+  // Boolean checks
+  else if (expectedType === Boolean) {
+    if (typeof keyValue !== "boolean") {
+      return "expectedBoolean";
+    }
+  }
+
+  // Object checks
+  else if (expectedType === Object) {
+    if (!isBasicObject(keyValue)) {
+      return "expectedObject";
+    }
+  }
+
+  // Array checks
+  else if (expectedType === Array) {
+    if (!_.isArray(keyValue)) {
+      return "expectedArray";
+    } else if (def.minCount !== null && keyValue.length < def.minCount) {
+      return "minCount";
+    } else if (def.maxCount !== null && keyValue.length > def.maxCount) {
+      return "maxCount";
+    }
+  }
+
+  // Constructor function checks
+  else if (expectedType instanceof Function || safariBugFix(expectedType)) {
+
+    // Generic constructor checks
+    if (!(keyValue instanceof expectedType)) {
+      return "expectedConstructor";
+    }
+
+    // Date checks
+    else if (expectedType === Date) {
+      if (_.isDate(min) && min.getTime() > keyValue.getTime()) {
+        return "minDate";
+      } else if (_.isDate(max) && max.getTime() < keyValue.getTime()) {
+        return "maxDate";
+      }
+    }
+  }
+
+};
+
+/*
+ * HELPERS
+ */
+
+var appendAffectedKey = function(affectedKey, key) {
+  if (key === "$each") {
+    return affectedKey;
+  } else {
+    return (affectedKey ? affectedKey + "." + key : key);
+  }
+};
+
+var shouldCheck = function(key) {
+  if (key === "$pushAll") {
+    throw new Error("$pushAll is not supported; use $push + $each");
+  }
+  return !_.contains(["$pull", "$pullAll", "$pop", "$slice"], key);
+};
+
 var isBlank = function(str) {
   if (typeof str !== "string") {
     return false;
@@ -306,239 +496,7 @@ var errorObject = function(errorType, keyName, keyValue, def, ss) {
   return {name: keyName, type: errorType, message: ss.messageForError(errorType, keyName, def, keyValue)};
 };
 
-var validateRequired = function(keyName, keyValue, def, ss) {
-  if (!def.optional && isBlankNullOrUndefined(keyValue)) {
-    return errorObject("required", keyName, null, def, ss);
-  }
-};
-
-var validateArray = function(keyName, keyValue, def, ss) {
-  if (_.isArray(def.type) && !isBlankNullOrUndefined(keyValue)) {
-    if (!_.isArray(keyValue)) {
-      return errorObject("expectedArray", keyName, null, def, ss);
-    } else if (def.minCount !== null && keyValue.length < def.minCount) {
-      return errorObject("minCount", keyName, null, def, ss);
-    } else if (def.maxCount !== null && keyValue.length > def.maxCount) {
-      return errorObject("maxCount", keyName, null, def, ss);
-    }
-  }
-};
-
-var getRequiredAndArrayErrors = function(doc, keyName, def, ss, hasModifiers, isUpsert, hasSet, hasUnset, hasRename) {
-  var keyValue, requiredError;
-
-  if (hasModifiers) {
-    //Do required checks for modifiers. The general logic is this:
-    //if required, then:
-    //-in $set with isUpsert=false, val must not be null or empty string (undefined is OK), AND
-    //-in $set with isUpsert=true, val must not be undefined, null, or empty string, AND
-    //-in $unset, key must not be present, AND
-    //-in $rename, key must not be present
-    //But make sure only one required error is logged per keyName, and we'll validate
-    //subkeys later
-    if (hasSet) {
-      keyValue = doc.$set[keyName];
-
-      //check for missing required, unless undefined,
-      //except validate required keys in objects in arrays later, when looping through doc ("foo.$.bar")
-      if ((keyValue !== void 0 || isUpsert) && keyName.indexOf(".") === -1) {
-        requiredError = validateRequired(keyName, keyValue, def, ss);
-      }
-    }
-
-    if (!requiredError && hasUnset && !def.optional && (keyName in doc.$unset)) {
-      requiredError = errorObject("required", keyName, null, def, ss);
-    }
-
-    if (!requiredError && hasRename && !def.optional && (keyName in doc.$rename)) {
-      requiredError = errorObject("required", keyName, null, def, ss);
-    }
-  } else {
-
-    //Do required checks for normal objects. The general logic is this:
-    //if required, then the key must be present and it's value
-    //must not be undefined, null, or an empty string
-    keyValue = doc[keyName];
-
-    //check for missing required,
-    //except validate required keys in objects in arrays later, when looping through doc ("foo.$.bar")
-    if (keyName.indexOf(".") === -1) {
-      requiredError = validateRequired(keyName, keyValue, def, ss);
-    }
-  }
-
-  if (requiredError) {
-    return requiredError; //once we've logged a required error for the key, no further checking is necessary
-  }
-
-  //Second do array checks
-  return validateArray(keyName, keyValue, def, ss);
-};
-
-var validateObj = function(obj, fullDoc, keyToValidate, invalidKeys, ss, operator, isUpsert) {
-  var allKeys = _.keys(obj);
-  //for required checks, we want to loop through all keys in the object
-  //plus all keys expected based on the schema, in case any are missing
-  var keysToCheck = _.union(allKeys, ss.firstLevelSchemaKeys());
-  _.each(keysToCheck, function(key) {
-    invalidKeys = _.union(invalidKeys, recursivelyValidate(operator, null, key, null, obj[key], ss, fullDoc, allKeys, keyToValidate, isUpsert));
-  });
-
-  //make sure there is only one error per fieldName
-  var uniqueInvalidKeys = [];
-  _.each(invalidKeys, function(errObj) {
-    if (!_.findWhere(uniqueInvalidKeys, {name: errObj.name})) {
-      uniqueInvalidKeys.push(errObj);
-    }
-  });
-
-  return uniqueInvalidKeys;
-};
-
-var doValidation = function(doc, isModifier, isUpsert, keyToValidate, ss, schema) {
-  //check arguments
-  if (!_.isObject(doc)) {
-    throw new Error("The first argument of validate() or validateOne() must be an object");
-  }
-
-  if (!isModifier && looksLikeModifier(doc)) {
-    throw new Error("When the validation object contains mongo operators, you must set the modifier option to true");
-  }
-
-  // If this is an upsert, just add all the $setOnInsert keys to $set;
-  // since we don't know whether it will be an insert or update, we'll
-  // validate upserts as if they will be an insert.
-  // TODO It would be more secure to validate twice, once as
-  // an update and once as an insert, because $set validation does not
-  // consider missing required keys to be an issue.
-  if ("$setOnInsert" in doc) {
-    if (isUpsert) {
-      doc.$set = doc.$set || {};
-      doc.$set = _.extend(doc.$set, doc.$setOnInsert);
-    }
-    delete doc.$setOnInsert;
-  }
-
-  var invalidKeys = [];
-  var hasSet = ("$set" in doc);
-  var hasUnset = ("$unset" in doc);
-  var hasRename = ("$rename" in doc);
-
-  var genericKeyToValidate;
-  if (keyToValidate) {
-    genericKeyToValidate = makeGeneric(keyToValidate);
-  }
-
-  //first, loop through schema to do required and array checks
-  var found = false, validationError;
-  _.each(schema, function(def, keyName) {
-    if (genericKeyToValidate) {
-      if (genericKeyToValidate === keyName) {
-        found = true;
-      } else {
-        return;
-      }
-    }
-    validationError = getRequiredAndArrayErrors(doc, keyName, def, ss, isModifier, isUpsert, hasSet, hasUnset, hasRename);
-    validationError && invalidKeys.push(validationError);
-  });
-
-  if (genericKeyToValidate && !found) {
-    throw new Error("The schema contains no key named " + genericKeyToValidate);
-  }
-
-  if (isModifier) {
-    if (_.isEmpty(doc)) {
-      throw new Error("When the modifier option is true, validation object must have at least one operator");
-    }
-    //second, loop through present modifiers
-    _.each(doc, function(modObj, operator) {
-      if (operator.substring(0, 1) !== "$") {
-        throw new Error("When the modifier option is true, all validation object keys must be operators");
-      }
-      if (!isUpsert && operator === "$set" && _.isObject(modObj) && _.isEmpty(modObj))
-        return; //special rare case; $set obj with no keys shouldn't cause errors unless it's an upsert
-      invalidKeys = _.union(invalidKeys, validateObj(modObj, doc, keyToValidate, invalidKeys, ss, operator, isUpsert));
-    });
-  } else {
-    //second, loop through doc and validate all keys that are present
-    invalidKeys = _.union(invalidKeys, validateObj(doc, doc, keyToValidate, invalidKeys, ss, null, isUpsert));
-  }
-
-  return invalidKeys;
-};
-
-var doTypeChecks = function(def, expectedType, keyName, keyValue, ss, op) {
-  var invalidKeys = [];
-  //If min/max are functions, call them
-  var min = def.min;
-  var max = def.max;
-  if (typeof min === "function") {
-    min = min();
-  }
-  if (typeof max === "function") {
-    max = max();
-  }
-
-  //Type Checking
-  if (expectedType === String) {
-    if (typeof keyValue !== "string") {
-      invalidKeys.push(errorObject("expectedString", keyName, keyValue, def, ss));
-    } else if (max !== null && max < keyValue.length) {
-      invalidKeys.push(errorObject("maxString", keyName, keyValue, def, ss));
-    } else if (min !== null && min > keyValue.length) {
-      invalidKeys.push(errorObject("minString", keyName, keyValue, def, ss));
-    } else if (def.regEx) {
-      if (def.regEx instanceof RegExp) {
-        if (!def.regEx.test(keyValue)) {
-          invalidKeys.push(errorObject("regEx", keyName, keyValue, def, ss));
-        }
-      } else {
-        //it's an array with multiple regEx
-        var re;
-        for (var i = 0, ln = def.regEx.length; i < ln; i++) {
-          re = def.regEx[i];
-          if (!re.test(keyValue)) {
-            invalidKeys.push(errorObject("regEx." + i, keyName, keyValue, def, ss));
-            break;
-          }
-        }
-      }
-    }
-  } else if (expectedType === Number) {
-    if (typeof keyValue !== "number") {
-      invalidKeys.push(errorObject("expectedNumber", keyName, keyValue, def, ss));
-    } else if (op !== "$inc" && max !== null && max < keyValue) {
-      invalidKeys.push(errorObject("maxNumber", keyName, keyValue, def, ss));
-    } else if (op !== "$inc" && min !== null && min > keyValue) {
-      invalidKeys.push(errorObject("minNumber", keyName, keyValue, def, ss));
-    } else if (!def.decimal && keyValue.toString().indexOf(".") > -1) {
-      invalidKeys.push(errorObject("noDecimal", keyName, keyValue, def, ss));
-    }
-  } else if (expectedType === Boolean) {
-    if (typeof keyValue !== "boolean") {
-      invalidKeys.push(errorObject("expectedBoolean", keyName, keyValue, def, ss));
-    }
-  } else if (expectedType === Object) {
-    if (!isBasicObject(keyValue)) {
-      invalidKeys.push(errorObject("expectedObject", keyName, keyValue, def, ss));
-    }
-  } else if (expectedType instanceof Function || safariBugFix(expectedType)) {
-    if (!(keyValue instanceof expectedType)) {
-      invalidKeys.push(errorObject("expectedConstructor", keyName, keyValue, def, ss));
-    } else if (expectedType === Date) {
-      if (_.isDate(min) && min.getTime() > keyValue.getTime()) {
-        invalidKeys.push(errorObject("minDate", keyName, keyValue, def, ss));
-      } else if (_.isDate(max) && max.getTime() < keyValue.getTime()) {
-        invalidKeys.push(errorObject("maxDate", keyName, keyValue, def, ss));
-      }
-    }
-  }
-
-  return invalidKeys;
-};
-
-//tests whether it's an Object as opposed to something that inherits from Object
+// Tests whether it's an Object as opposed to something that inherits from Object
 var isBasicObject = function(obj) {
   return _.isObject(obj) && Object.getPrototypeOf(obj) === Object.prototype;
 };

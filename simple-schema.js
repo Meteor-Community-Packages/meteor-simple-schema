@@ -40,7 +40,9 @@ var extendedOptions = {};
 
 //exported
 SimpleSchema = function(schema, options) {
-  var self = this, requiredSchemaKeys = [], firstLevelSchemaKeys = [], fieldNameRoot;
+  var self = this, requiredSchemaKeys = [], firstLevelSchemaKeys = [],
+          firstLevelRequiredSchemaKeys = [], valueIsAllowedSchemaKeys = [],
+          firstLevelValueIsAllowedSchemaKeys = [], fieldNameRoot;
   options = options || {};
   schema = inflectLabels(addImplicitKeys(expandSchema(schema)));
   self._schema = schema || {};
@@ -81,17 +83,34 @@ SimpleSchema = function(schema, options) {
 
     self._schemaKeys.push(fieldName);
 
-    if (!_.contains(firstLevelSchemaKeys, fieldNameRoot))
+    if (!_.contains(firstLevelSchemaKeys, fieldNameRoot)) {
       firstLevelSchemaKeys.push(fieldNameRoot);
+      if (!definition.optional) {
+        firstLevelRequiredSchemaKeys.push(fieldNameRoot);
+      }
+      
+      if (definition.valueIsAllowed) {
+        firstLevelValueIsAllowedSchemaKeys.push(fieldNameRoot);
+      }
+    }
 
     if (!definition.optional) {
       requiredSchemaKeys.push(fieldName);
     }
+    
+    if (definition.valueIsAllowed) {
+      valueIsAllowedSchemaKeys.push(fieldName);
+    }
   });
 
-  self._requiredSchemaKeys = requiredSchemaKeys; //for speedier checking
+  // Cache these lists
+  self._requiredSchemaKeys = requiredSchemaKeys;
   self._firstLevelSchemaKeys = firstLevelSchemaKeys;
-  self._requiredObjectKeys = requiredObjectKeys(schema, requiredSchemaKeys);
+  self._firstLevelRequiredSchemaKeys = firstLevelRequiredSchemaKeys;
+  self._requiredObjectKeys = getObjectKeys(schema, requiredSchemaKeys);
+  self._valueIsAllowedSchemaKeys = valueIsAllowedSchemaKeys;
+  self._firstLevelValueIsAllowedSchemaKeys = firstLevelValueIsAllowedSchemaKeys;
+  self._valueIsAllowedObjectKeys = getObjectKeys(schema, valueIsAllowedSchemaKeys);
 
   // We will store named validation contexts here
   self._validationContexts = {};
@@ -112,7 +131,7 @@ SimpleSchema.prototype = new Match.Where();
 // the function named `condition` and will pass it the document to validate
 SimpleSchema.prototype.condition = function(obj) {
   var self = this;
-
+  
   //determine whether obj is a modifier
   var isModifier, isNotModifier;
   _.each(obj, function(val, key) {
@@ -120,7 +139,7 @@ SimpleSchema.prototype.condition = function(obj) {
       isModifier = true;
     } else {
       isNotModifier = true;
-    }
+  }
   });
 
   if (isModifier && isNotModifier)
@@ -128,6 +147,7 @@ SimpleSchema.prototype.condition = function(obj) {
 
   if (!self.newContext().validate(obj, {modifier: isModifier, filter: false, autoConvert: false}))
     throw new Match.Error("One or more properties do not match the schema.");
+  
   return true;
 };
 
@@ -168,36 +188,21 @@ SimpleSchema.prototype.clean = function(doc, options) {
   }
 
   var mDoc = new MongoObject(doc);
-  mDoc.forEachNode(function(val, position, affectedKey, affectedKeyGeneric) {
-    // If no key would be affected, or the key that would be affected is allowed
-    // by the schema, or if we're not doing any filtering, add the key.
-    if (options.filter !== true || !affectedKey || self.allowsKey(affectedKeyGeneric)) {
-      // Before adding the key's value, autoconvert it if requested
-      // and if possible.
-      if (options.autoConvert === true && affectedKeyGeneric) {
-        var def = self._schema[affectedKeyGeneric];
-        if (!def && affectedKeyGeneric.slice(-2) === ".$") {
-          def = self._schema[affectedKeyGeneric.slice(0, -2)];
-        }
-        if (def) {
-          var type = def.type;
-          if (_.isArray(type)) {
-            if (_.isArray(val) && val.length === 0) {
-              // If the value is an empty array, we don't want to
-              // try to convert that to anything.
-              return;
-            }
-            type = type[0];
-          }
-          this.updateValue(typeconvert(val, type));
-        }
-      }
 
-      return;
-    }
-
-    this.remove();
+  // Filter out anything that would affect keys not defined
+  // or implied by the schema
+  options.filter && mDoc.filterGenericKeys(function(genericKey) {
+    return self.allowsKey(genericKey);
   });
+
+  // Autoconvert values if requested and if possible
+  options.autoConvert && mDoc.forEachNode(function(val, position, affectedKey, affectedKeyGeneric) {
+    if (affectedKeyGeneric) {
+      var def = self._schema[affectedKeyGeneric];
+      def && this.updateValue(typeconvert(val, def.type));
+    }
+  });
+  
   return mDoc.getObject();
 };
 
@@ -330,9 +335,9 @@ SimpleSchema.prototype.newContext = function() {
 SimpleSchema.prototype.requiredObjectKeys = function(keyPrefix) {
   var self = this;
   if (!keyPrefix) {
-    return self._requiredObjectKeys;
+    return self._firstLevelRequiredSchemaKeys;
   }
-  return self._requiredObjectKeys[keyPrefix] || [];
+  return self._requiredObjectKeys[keyPrefix + "."] || [];
 };
 
 SimpleSchema.prototype.requiredSchemaKeys = function() {
@@ -341,6 +346,18 @@ SimpleSchema.prototype.requiredSchemaKeys = function() {
 
 SimpleSchema.prototype.firstLevelSchemaKeys = function() {
   return this._firstLevelSchemaKeys;
+};
+
+SimpleSchema.prototype.valueIsAllowedObjectKeys = function(keyPrefix) {
+  var self = this;
+  if (!keyPrefix) {
+    return self._firstLevelValueIsAllowedSchemaKeys;
+  }
+  return self._valueIsAllowedObjectKeys[keyPrefix + "."] || [];
+};
+
+SimpleSchema.prototype.valueIsAllowedSchemaKeys = function() {
+  return this._valueIsAllowedSchemaKeys;
 };
 
 //called by clean()
@@ -427,10 +444,17 @@ var expandSchema = function(schema) {
   return schema;
 };
 
+/**
+ * Adds implied keys.
+ * * If schema contains a key like "foo.$.bar" but not "foo", adds "foo".
+ * * If schema contains a key like "foo" with an array type, adds "foo.$".
+ * @param {Object} schema
+ * @returns {Object} modified schema
+ */
 var addImplicitKeys = function(schema) {
-  //if schema contains key like "foo.$.bar" but not "foo", add "foo"
   var arrayKeysToAdd = [], objectKeysToAdd = [], newKey, key, nextThree;
 
+  // Pass 1 (objects)
   _.each(schema, function(def, existingKey) {
     var pos = existingKey.indexOf(".");
 
@@ -462,17 +486,69 @@ var addImplicitKeys = function(schema) {
     }
   }
 
+  // Pass 2 (arrays)
+  _.each(schema, function(def, existingKey) {
+    if (_.isArray(def.type)) {
+      // Copy some options to array-item definition
+      var itemKey = existingKey + ".$";
+      if (!(itemKey in schema)) {
+        schema[itemKey] = {};
+      }
+      //var itemDef = schema[itemKey];
+      schema[itemKey].type = def.type[0];
+      if (def.label) {
+        schema[itemKey].label = def.label;
+      }
+      schema[itemKey].optional = true;
+      if (typeof def.min !== "undefined") {
+        schema[itemKey].min = def.min;
+      }
+      if (typeof def.max !== "undefined") {
+        schema[itemKey].max = def.max;
+      }
+      if (typeof def.allowedValues !== "undefined") {
+        schema[itemKey].allowedValues = def.allowedValues;
+      }
+      if (typeof def.valueIsAllowed !== "undefined") {
+        schema[itemKey].valueIsAllowed = def.valueIsAllowed;
+      }
+      if (typeof def.decimal !== "undefined") {
+        schema[itemKey].decimal = def.decimal;
+      }
+      if (typeof def.regEx !== "undefined") {
+        schema[itemKey].regEx = def.regEx;
+      }
+      // Remove copied options and adjust type
+      def.type = Array;
+      _.each(['min', 'max', 'allowedValues', 'valueIsAllowed', 'decimal', 'regEx'], function(k) {
+        deleteIfPresent(def, k);
+      });
+    }
+  });
+
+  for (var i = 0, ln = arrayKeysToAdd.length; i < ln; i++) {
+    key = arrayKeysToAdd[i];
+    if (!(key in schema)) {
+      schema[key] = {type: [Object], optional: true};
+    }
+  }
+
+  for (var i = 0, ln = objectKeysToAdd.length; i < ln; i++) {
+    key = objectKeysToAdd[i];
+    if (!(key in schema)) {
+      schema[key] = {type: Object, optional: true};
+    }
+  }
+
   return schema;
 };
 
-//gets an object that lists all of the required keys for each object parent key
-var requiredObjectKeys = function(schema, requiredSchemaKeys) {
+// Returns an object relating the keys in the list
+// to their parent object.
+var getObjectKeys = function(schema, schemaKeyList) {
   var keyPrefix, remainingText, rKeys = {}, loopArray;
   _.each(schema, function(definition, fieldName) {
-    if (_.isArray(definition.type) && definition.type[0] === Object) {
-      //array of objects
-      keyPrefix = fieldName + ".$.";
-    } else if (definition.type === Object) {
+    if (definition.type === Object) {
       //object
       keyPrefix = fieldName + ".";
     } else {
@@ -480,7 +556,7 @@ var requiredObjectKeys = function(schema, requiredSchemaKeys) {
     }
 
     loopArray = [];
-    _.each(requiredSchemaKeys, function(fieldName2) {
+    _.each(schemaKeyList, function(fieldName2) {
       if (S(fieldName2).startsWith(keyPrefix)) {
         remainingText = fieldName2.substring(keyPrefix.length);
         if (remainingText.indexOf(".") === -1) {
@@ -508,10 +584,20 @@ var inflectLabels = function(schema) {
     var label = fieldName, lastPeriod = label.lastIndexOf(".");
     if (lastPeriod !== -1) {
       label = label.substring(lastPeriod + 1);
+      if (label === "$") {
+        var pcs = fieldName.split(".");
+        label = pcs[pcs.length - 2];
+      }
     }
     definition.label = S(label).humanize().s;
     editedSchema[fieldName] = definition;
   });
 
   return editedSchema;
+};
+
+var deleteIfPresent = function (obj, key) {
+  if (key in obj) {
+    delete obj[key];
+  }
 };
