@@ -5,61 +5,73 @@ A simple, reactive schema validation smart package for Meteor. It's used by the 
 
 ## Basic Usage
 
-If you're using the `autoform` or `collection2` package, you define your schema as part of constructing those objects. Otherwise,
-set up a SimpleSchema instance like so:
+If you're using the `autoform` or `collection2` package, you define your schema
+as part of constructing those objects. Otherwise, create one or more SimpleSchema
+instances and then use them to validate objects.
+
+### Example
 
 ```js
-MySchema = new SimpleSchema({
-    key: {
-        type: type, //allow only this data type
-        label: "Name", //how to refer to this key in the error messages;
-                       //default is an inflected (humanized) derivation of the key name itself
-        optional: true, //default is false, meaning the key must be present
-        min: min, //minimum numeric value, or minimum string length,
-                  //or minimum date, inclusive; or a function that takes
-                  //no arguments and returns one of these
-        max: max, //maximum numeric value, or maximum string length,
-                  //or maximum date, inclusive; or a function that takes
-                  //no arguments and returns one of these
-        minCount: minCount, //minimum array length, used only if type is an array
-        maxCount: maxCount, //maximum array length, used only if type is an array
-        allowedValues: [], //an array of allowed values; the key's value
-                           //must match one of these
-        valueIsAllowed: function, //see the Defining Allowed Values section
-        decimal: true, //default is false; set to true if type=Number
-                       //and you want to allow non-integers
-        regEx: /[0-255]/, //any regular expression that must be matched
-                          //for the key to be valid, or an array of regular expressions
-                          //that will be tested in order
-    }
+// Define the schema
+BookSchema = new SimpleSchema({
+  title: {
+    type: String,
+    label: "Title",
+    max: 200
+  },
+  author: {
+    type: String,
+    label: "Author"
+  },
+  copies: {
+    type: Number,
+    label: "Number of copies",
+    min: 0
+  },
+  lastCheckedOut: {
+    type: Date,
+    label: "Last date this book was checked out",
+    optional: true
+  },
+  summary: {
+    type: String,
+    label: "Brief summary",
+    optional: true,
+    max: 1000
+  }
 });
+
+// Validate an object against the schema
+obj = {title: "Ulysses", author: "James Joyce"};
+
+isValid = mySchema.namedContext("myContext").validate(obj);
+// OR
+isValid = mySchema.namedContext("myContext").validateOne(obj, "keyToValidate");
+// OR
+isValid = Match.test(obj, mySchema);
+// OR
+check(obj, mySchema);
+
+// Validation errors are available through reactive methods
+if (Meteor.isClient) {
+  Meteor.startup(function() {
+    Deps.autorun(function() {
+      var context = BookSchema.namedContext("myContext");
+      if (!context.isValid()) {
+        console.log(context.invalidKeys());
+      }
+    });
+  });
+}
 ```
 
-### Types
-
-Type can be a standard Javascript object like:
-* `String`
-* `Number`
-* `Boolean`
-* `Object`
-
-Or it can be a constructor function like `Date`.
-
-Or it can be any of those wrapped in array brackets, to indicate that you're expecting an array of values
-of that type.
-* `[String]`
-* `[Number]`
-* `[Boolean]`
-* `[Object]`
-* `[Date]`
-
-### Sub-Schemas
+### Combining SimpleSchemas
 
 If you have schemas that share one or more subproperties, you can define them in a sub-schema
 to make your code cleaner and more concise. Here's an example:
 
-```javascript
-AdressSchema = new SimpleSchema({
+```js
+AddressSchema = new SimpleSchema({
   street: {
     type: String,
     max: 100
@@ -89,9 +101,7 @@ CustomerSchema = new SimpleSchema({
 });
 ```
 
-### Combining Schemas
-
-If you want to reuse mini-schemas in multiple places but you don't want a
+Alternatively, if you want to reuse mini-schemas in multiple places but you don't want a
 subdocument like you get with sub-schemas, you can pass multiple schemas to
 the SimpleSchema constructor, and they will be combined.
 
@@ -100,11 +110,11 @@ cmsBaseSchema = new SimpleSchema({ ... });
 cmsPageSchema = new SimpleSchema([cmsBaseSchema, {additionalField: {type: String} }]);
 ```
 
-### Keys
+## Schema Keys
 
-A basic schema key is just the name of the key to expect in the objects that will be validated.
-If necessary, though, you can use string keys with mongo-style dot notation to validate
-nested arrays and objects.
+A basic schema key is just the name of the key (property) to expect in the
+objects that will be validated. If necessary, though, you can use string
+keys with mongo-style dot notation to validate nested arrays and objects.
 
 For example:
 
@@ -151,11 +161,117 @@ MySchema = new SimpleSchema({
 });
 ```
 
-### Provided RegEx Patterns
+## Schema Rules
 
-A global object, `SchemaRegEx`, is exported. It defines standard regular expressions you can use
-as the value for the `regEx` key in the schema. Currently `SchemaRegEx.Email` and
-`SchemaRegEx.Url` are the only values. Feel free to add more with a pull request.
+Here are some specifics about the various rules you can define in your schema.
+
+### type
+
+Type can be a standard Javascript object like:
+* `String`
+* `Number`
+* `Boolean`
+* `Object`
+
+Or it can be a constructor function like `Date` or any custom object.
+
+Or it can be any of those wrapped in array brackets, to indicate that you're expecting an array of values
+of that type.
+* `[String]`
+* `[Number]`
+* `[Boolean]`
+* `[Object]`
+* `[Date]`
+
+Note that "black box" `Object`s are not allowed. All non-custom `Object`s are
+traversed. This means that if you use `type: Object`, you must define all of
+that object's allowed properties in your schema, too. If you want to accept
+a "black box" object, create a custom object type and use `type: MyCustomObject`.
+
+### label
+
+A string that will be used to refer to this field in validation error messages.
+The default is an inflected (humanized) derivation of the key name itself. For
+example, the key "firstName" will have a default label of "First name".
+
+If you need to alter labels on the fly, such as to support user-selectable
+languages, you can do so using the `labels` method.
+
+```js
+MySchema.labels({
+    password: "Enter your password"
+});
+```
+
+This is not currently reactive but should be. (Pull request welcome.)
+
+### optional
+
+By default, all keys are required. Set `optional: true` to change that.
+
+### min/max
+
+* If `type` is `Number` or `[Number]`, these rules define the minimum or
+maximum numeric value.
+* If `type` is `String` or `[String]`, these rules define the minimum or
+maximum string length.
+* If `type` is `Date` or `[Date]`, these rules define the minimum or
+maximum date, inclusive.
+
+You can alternatively provide a function that takes no arguments and returns
+the appropriate minimum or maximum value. This is useful, for example, if
+the minimum Date for a field should be "today".
+
+### decimal
+
+Set to `true` if `type` is `Number` or `[Number]` and you want to allow
+non-integers. The default is `false`.
+
+### minCount/maxCount
+
+Define the minimum or maximum array length. Used only when type is an array
+or is `Array`.
+
+### allowedValues
+
+An array of values that are allowed. A key will be invalid if its value
+is not one of these.
+
+### valueIsAllowed
+
+A function that must return true to allow the value.
+
+The function is passed three arguments:
+
+* `value`: The value to be validated
+* `obj`: The entire object (document or modifier) being validated
+* `operator`: A string identifying which operator is currently being validated if `obj` is a modifier. For non-modifier objects, this will be null.
+
+The valueIsAllowed function may be called multiple times with different `operator` arguments
+for a single validation run. If you are unsure what operators might be used, your
+code must handle all possible operators or return false for operators you don't want to allow.
+
+The valueIsAllowed function is called for undefined or null values, too. If the
+field is `optional: true`, be sure to return true from your valueIsAllowed
+function whenever `value` is null or undefined, unless you want to override the
+`optional` setting and make it required in certain circumstances.
+
+### regEx
+
+Any regular expression that must be matched for the key to be valid, or
+an array of regular expressions that will be tested in order.
+
+A global object, `SchemaRegEx`, is exported. It defines standard regular
+expressions you can use as the value for the `regEx` key.
+Currently `SchemaRegEx.Email` and `SchemaRegEx.Url` are the only values.
+Feel free to add more with a pull request.
+
+## The Object
+
+The object you pass in when validating can be a normal object, or it can be
+a mongo modifier object (with `$set`, etc. keys). In other words, you can pass
+in the exact object that you are going to pass to `Collection.insert()` or
+`Collection.update()`. This is what the collection2 smart package does for you.
 
 ## Cleaning Data
 
@@ -228,7 +344,7 @@ An unnamed validation context is not persisted anywhere. It can be useful when
 you need to see if a document is valid but you don't need any of the reactive
 methods for that context.
 
-### Validating a Document
+### Validating an Object
 
 To validate an object against the schema in a validation context, call
 `myContext.validate(obj, options)`. This method returns `true` if the object is
@@ -239,7 +355,13 @@ context object and causes the reactive methods to react.
 Now you can call `myContext.isValid()` to see if the object passed into `validate()`
 was found to be valid. This is a reactive method that returns true or false.
 
-### Validating Only One Key
+Note: When you are passing in a mongo modifier object, set the `modifier` option to true:
+
+```js
+myContext.validate({$set: { age: 29 }}, { modifier: true });
+```
+
+### Validating Only One Key in an Object
 
 You may have the need to validate just one key. For this, use `myContext.validateOne(obj, key, options)`.
 Only the specified schema key will be validated. This may cause all of the
@@ -247,6 +369,54 @@ reactive methods to react.
 
 This method returns `true` if the specified schema key is valid according to
 the schema or `false` if it is not.
+
+### Validating Using check() or Match.test()
+
+A schema can be passed as the second argument of the built-in `check()` 
+or ``Match.test()` methods. This will throw a Match.Error if the object
+specified in the first argument is not valid according to the schema.
+
+```js
+var mySchema = new SimpleSchema({name: {type: String}});
+
+Match.test({name: 'Steve'}, mySchema); // Return true
+Match.test({admin: true}, mySchema); // Return false
+check({admin: true}, mySchema); // throw a Match.Error
+```
+
+### Validating One Key Against Another
+
+The second argument of the `valueIsAllowed` function is the full document or
+mongo modifier object that's being validated. This allows you to declare one value
+valid or invalid based on another value. Here's an example:
+
+```js
+MySchema = new SimpleSchema({
+    password: {
+        type: String,
+        label: "Enter a password",
+        min: 8
+    },
+    confirmPassword: {
+        type: String,
+        label: "Enter the password again",
+        min: 8,
+        valueIsAllowed: function (val, doc, op) {
+            if (!op) { //insert
+              return doc.password === val;
+            }
+            if (op === "$set") { //update
+              return doc.$set.password === val;
+            }
+            return false; //allow only inserts and $set
+        }
+    }
+});
+
+MySchema.messages({
+    "notAllowed confirmPassword": "Passwords do not match"
+});
+```
 
 ### Other Validation Context Methods
 
@@ -288,36 +458,12 @@ clearing out any invalid field messages and making it valid.
 
 ### Other SimpleSchema Methods
 
-Call `MySchema.schema(key)` to get the original schema object that you passed in
-as the first argument to the SimpleSchema constructor function. If you specify a
-key, then only that schema key's value (the schema definition for that key) 
-is returned.
+Call `MySchema.schema(key)` to get the schema definition object. If you specify a
+key, then only the schema definition for that key is returned.
 
-### check()
-
-A schema can be passed as the second argument of the built-in `check()` function. 
-This will throw a Match.Error if the object specified in the first argument is not
-valid according to the schema. It works with `Match.test` as well:
-```js
-var mySchema = new SimpleSchema({name: {type: String}});
-
-Match.test({name: 'Steve'}, mySchema); // Return true
-Match.test({admin: true}, mySchema); // Return false
-check({admin: true}, mySchema); // throw a Match.Error
-```
-
-### The Object
-
-The object you pass in when validating can be a normal object, or it can be
-a mongo modifier object (with `$set`, etc. keys). In other words, you can pass
-in the exact object that you are going to pass to `Collection.insert()` or
-`Collection.update()`. This is what the collection2 smart package does for you.
-
-When you are passing in a mongo modifier object, set the `modifier` option to true:
-
-```js
-myContext.validate({$set: { age: 29 }}, { modifier: true });
-```
+Note that this may not match exactly what you passed into the SimpleSchema
+constructor. The schema definition object is normalized internally, and this
+method returns the normalized copy.
 
 ## Customizing Validation Messages
 
@@ -388,86 +534,24 @@ If you are interested in supporting multiple languages, you should be able to re
 to change the messages at any time, for example, in an autorun function based on a language value stored in session
 that loads the message object from static json files.
 
-## Changing Labels
-
-If you need to alter labels on the fly, such as to support user-selectable
-languages, you can do so using the `labels` method.
-
-```js
-MySchema.labels({
-    password: "Enter your password"
-});
-```
-
-This is not currently reactive but should be. (Pull request welcome.)
-
-## Defining Allowed Values
-
-To define which values are allowed for a schema key, use the `allowedValues` option
-or the `valueIsAllowed` option.
-
-`allowedValues` is simply an array of values that are allowed. A key will be
-invalid if it's value is not one of these.
-
-`valueIsAllowed` can be set to a function that must return true to allow the value.
-The function is passed three arguments:
-
-* `value`: The value to be validated
-* `obj`: The entire object (document or modifier) being validated
-* `operator`: A string identifying which operator is currently being validated if `obj` is a modifier. For non-modifier objects, this will be null.
-
-The valueIsAllowed function may be called multiple times with different `operator` arguments
-for a single validation run. If you are unsure what operators might be used, your
-code must handle all possible operators or return false for operators you don't want to allow.
-
-The valueIsAllowed function is called for undefined or null values, too. If the
-field is `optional: true`, be sure to return true from your valueIsAllowed
-function whenever `value` is null or undefined, unless you want to override the
-`optional` setting and make it required in certain circumstances.
-
-### Validating One Key Against Another
-
-The second argument of the `valueIsAllowed` function is the full document or
-mongo modifier object that's being validated. This allows you to declare one value
-valid or invalid based on another value. Here's an example:
-
-```js
-MySchema = new SimpleSchema({
-    password: {
-        type: String,
-        label: "Enter a password",
-        min: 8
-    },
-    confirmPassword: {
-        type: String,
-        label: "Enter the password again",
-        min: 8,
-        valueIsAllowed: function (val, doc, op) {
-            if (!op) { //insert
-              return doc.password === val;
-            }
-            if (op === "$set") { //update
-              return doc.$set.password === val;
-            }
-            return false; //allow only inserts and $set
-        }
-    }
-});
-
-MySchema.messages({
-    "notAllowed confirmPassword": "Passwords do not match"
-});
-```
-
 ## Collection2 and AutoForm
 
-This all becomes pretty great when put to use in the [collection2](https://github.com/aldeed/meteor-collection2) and [autoform](https://github.com/aldeed/meteor-autoform) packages. Take a look at their documentation.
+This all becomes pretty great when put to use in the
+[collection2](https://github.com/aldeed/meteor-collection2)
+and [autoform](https://github.com/aldeed/meteor-autoform) packages.
+Take a look at their documentation.
+
+## License
+
+MIT
 
 ## Contributing
 
-Anyone is welcome to contribute. Fork, make and test your changes (`meteor test-packages ./`),
-and then submit a pull request.
+Anyone is welcome to contribute. Fork, make and test your changes
+(`meteor test-packages ./`), and then submit a pull request.
 
-### Major Contributors
+### Thanks
+
+(Add your name if it's missing.)
 
 @mquandalle
