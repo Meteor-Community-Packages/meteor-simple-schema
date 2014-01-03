@@ -5,6 +5,39 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.25
+
+Complete rewrite of the internal validation logic. This solves some sticky
+issues with array validation in more complex objects. It should not affect
+the API or validation results, but you may notice some additional or slightly
+different validation errors. Also, if you make use of the internally cached
+copy of the schema definitions (`ss._schema or ss.schema()`), you may notice
+some differences there.
+
+The main change internally is that an array definition is now split into two
+definitions. For example, if your schema is:
+
+```js
+{
+  myArray: {
+    type: [String]
+  }
+}
+```
+
+It is internally split and stored as:
+
+```js
+{
+  myArray: {
+    type: Array
+  },
+  'myArray.$': {
+    type: String
+  }
+}
+```
+
 ### 0.2.24
 
 * Correctly validate $inc operator
