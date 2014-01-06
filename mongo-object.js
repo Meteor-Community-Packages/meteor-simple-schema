@@ -497,6 +497,20 @@ var isObject = function(obj) {
   return obj === Object(obj);
 };
 
+// getPrototypeOf polyfill
+if (typeof Object.getPrototypeOf !== "function") {
+  if (typeof "".__proto__ === "object") {
+    Object.getPrototypeOf = function(object) {
+      return object.__proto__;
+    };
+  } else {
+    Object.getPrototypeOf = function(object) {
+      // May break if the constructor has been tampered with
+      return object.constructor.prototype;
+    };
+  }
+}
+
 /* Tests whether "obj" is an Object as opposed to
  * something that inherits from Object
  * 

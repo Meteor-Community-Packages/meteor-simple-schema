@@ -5,6 +5,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.26
+
+Fix basic object checking for IE 8
+
 ### 0.2.25
 
 Complete rewrite of the internal validation logic. This solves some sticky
