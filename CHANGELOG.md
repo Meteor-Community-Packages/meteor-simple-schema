@@ -5,6 +5,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.27
+
+Clone schema argument before modifying it
+
 ### 0.2.26
 
 Fix basic object checking for IE 8
