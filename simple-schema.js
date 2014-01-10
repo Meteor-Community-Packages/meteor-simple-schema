@@ -44,8 +44,10 @@ SimpleSchema = function(schema, options) {
           firstLevelRequiredSchemaKeys = [], valueIsAllowedSchemaKeys = [],
           firstLevelValueIsAllowedSchemaKeys = [], fieldNameRoot;
   options = options || {};
-  schema = inflectLabels(addImplicitKeys(expandSchema(schema)));
-  self._schema = schema || {};
+  schema = schema || {};
+  // Clone schema and then adjust the clone; we don't want to mess up the
+  // user's object
+  self._schema = inflectLabels(addImplicitKeys(expandSchema(_.clone(schema))));
   self._schemaKeys = []; //for speedier checking
   self._validators = [];
   //set up default message for each error type
@@ -73,7 +75,7 @@ SimpleSchema = function(schema, options) {
   // Extend schema options
   _.extend(schemaDefinition, extendedOptions);
 
-  _.each(schema, function(definition, fieldName) {
+  _.each(self._schema, function(definition, fieldName) {
     // Validate the field definition
     if (!Match.test(definition, schemaDefinition)) {
       throw new Error('Invalid definition for ' + fieldName + ' field.');
@@ -107,10 +109,10 @@ SimpleSchema = function(schema, options) {
   self._requiredSchemaKeys = requiredSchemaKeys;
   self._firstLevelSchemaKeys = firstLevelSchemaKeys;
   self._firstLevelRequiredSchemaKeys = firstLevelRequiredSchemaKeys;
-  self._requiredObjectKeys = getObjectKeys(schema, requiredSchemaKeys);
+  self._requiredObjectKeys = getObjectKeys(self._schema, requiredSchemaKeys);
   self._valueIsAllowedSchemaKeys = valueIsAllowedSchemaKeys;
   self._firstLevelValueIsAllowedSchemaKeys = firstLevelValueIsAllowedSchemaKeys;
-  self._valueIsAllowedObjectKeys = getObjectKeys(schema, valueIsAllowedSchemaKeys);
+  self._valueIsAllowedObjectKeys = getObjectKeys(self._schema, valueIsAllowedSchemaKeys);
 
   // We will store named validation contexts here
   self._validationContexts = {};
