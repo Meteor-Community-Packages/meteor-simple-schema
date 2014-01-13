@@ -5,6 +5,13 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.28
+
+Remove automatic call to `clean` when validating. This has no effect on 
+validation done through a collection with the `collection2` package. However,
+validation done directly with a SimpleSchema instance will now catch more
+schema issues than it previously did (since 0.2.18).
+
 ### 0.2.27
 
 Clone schema argument before modifying it
