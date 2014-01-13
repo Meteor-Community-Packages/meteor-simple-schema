@@ -275,30 +275,29 @@ in the exact object that you are going to pass to `Collection.insert()` or
 
 ## Cleaning Data
 
-When you call the validation methods, they automatically filter and convert
-the document being validated. Filtering ensures that any keys not explicitly or
-implicitly allowed by the schema are removed, which prevents errors being thrown
-for those keys during validation. Conversion helps eliminate unnecessary validation
+SimpleSchema instances provide a `clean` method that you can use to autoConvert
+and/or filter an object before validating it.
+
+* Filtering removes any keys not explicitly or implicitly allowed by the schema,
+which prevents errors being thrown for those keys during validation.
+* Automatic value conversion helps eliminate unnecessary validation
 messages by automatically converting values where possible. For example, non-string
 values can be converted to a String if the schema expects a String, and strings
 that are numbers can be converted to Numbers if the schema expects a Number.
 
-If you need to perform filtering or conversion on a document without validating
-it, use the `clean()` method on an instance of SimpleSchema.
-
-If you want to skip either filtering or type conversion, set the corresponding
-option to false:
+By default, `clean` does both. If you want to skip either filtering or type
+conversion, set the corresponding option to false:
 
 ```js
-MySchema.clean(obj, {
+// This does nothing
+obj = mySchema.clean(obj, {
   filter: false,
   autoConvert: false
 });
 ```
 
-You may also set these options to false when calling `validate` or `validateOne`
-if you've already cleaned the document you're validating. This will prevent
-double cleaning.
+NOTE: The `collection2` package always calls `clean` before every insert, update,
+or upsert.
 
 ## Validating Data
 

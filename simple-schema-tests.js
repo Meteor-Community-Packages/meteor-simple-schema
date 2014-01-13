@@ -235,9 +235,11 @@ var friends = new SimpleSchema({
  */
 
 var validate = function(ss, doc, isModifier, isUpsert) {
-//we will filter, type convert, and validate everything
-//so that we can be sure the filtering and type converting are not invalidating
-//documents that should be valid
+  //we will filter, type convert, and validate everything
+  //so that we can be sure the filtering and type converting are not invalidating
+  //documents that should be valid
+  doc = ss.clean(doc);
+  
   var context = ss.newContext();
   context.validate(doc, {modifier: isModifier, upsert: isUpsert});
   return context;
@@ -534,7 +536,7 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - $setOnInsert",
       'subdoc.requiredString': "   "
     }}, true, true);
   test.length(sc.invalidKeys(), 8);
-  
+
   //array of objects
   sc = validate(friends, {$setOnInsert: {
       friends: [{name: 'Bob'}],
@@ -800,7 +802,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   var sc2 = ss.newContext();
   sc2.validate({
     string: true
-  }, {filter: false, autoConvert: false});
+  });
   test.length(sc2.invalidKeys(), 1); //without typeconvert
 
   sc = validate(ss, {
@@ -811,7 +813,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   //number string failure
   sc2.validate({
     string: 1
-  }, {filter: false, autoConvert: false});
+  });
   test.length(sc2.invalidKeys(), 1); //without typeconvert
 
   sc = validate(ss, {
@@ -822,7 +824,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   //object string failure
   sc2.validate({
     string: {test: "test"}
-  }, {filter: false, autoConvert: false});
+  });
   test.length(sc2.invalidKeys(), 2); //without filter
 
   sc = validate(ss, {
@@ -839,7 +841,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   //instance string failure
   sc2.validate({
     string: (new Date())
-  }, {filter: false, autoConvert: false});
+  });
   test.length(sc2.invalidKeys(), 1); //without filter
 
   sc = validate(ss, {
@@ -864,7 +866,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   //object bool failure
   sc2.validate({
     boolean: {test: "test"}
-  }, {filter: false, autoConvert: false});
+  });
   test.length(sc2.invalidKeys(), 2); //without filter
 
   sc = validate(ss, {
@@ -901,7 +903,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   //object number failure
   sc2.validate({
     number: {test: "test"}
-  }, {filter: false, autoConvert: false});
+  });
   test.length(sc2.invalidKeys(), 2); //without filter
 
   sc = validate(ss, {
@@ -944,7 +946,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   //object date failure
   sc2.validate({
     date: {test: "test"}
-  }, {filter: false, autoConvert: false});
+  });
   test.length(sc2.invalidKeys(), 2); //without filter
 
   sc = validate(ss, {
@@ -1430,7 +1432,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
   test.length(sc.invalidKeys(), 1);
 
   /* ARRAY FAILURES */
-  
+
   sc = validate(ss, {$set: {
       booleanArray: true,
       dateArray: new Date,
@@ -1438,7 +1440,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
       allowedNumbersArray: 2
     }}, true);
   test.length(sc.invalidKeys(), 4);
-  
+
   sc = validate(ss, {$push: {
       booleanArray: "blah",
       dateArray: "blah",
@@ -1463,7 +1465,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
       allowedNumbersArray: [2]
     }}, true);
   test.equal(sc.invalidKeys(), []);
-  
+
   sc = validate(ss, {$push: {
       booleanArray: true,
       dateArray: new Date,
@@ -2847,7 +2849,7 @@ Tinytest.add("SimpleSchema - Issue 30", function(test) {
 });
 
 Tinytest.add("SimpleSchema - Merged Schemas", function(test) {
-  
+
   var s1 = new SimpleSchema({
     a: {
       type: String
@@ -2865,15 +2867,15 @@ Tinytest.add("SimpleSchema - Merged Schemas", function(test) {
       type: String
     }
   });
-  
+
   var s3 = new SimpleSchema([s1, s2, {
-    e: {
-      type: String
-    },
-    f: {
-      type: String
-    }
-  }]);
+      e: {
+        type: String
+      },
+      f: {
+        type: String
+      }
+    }]);
 
   test.equal(s3._schema, {
     a: {
