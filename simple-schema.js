@@ -47,7 +47,7 @@ SimpleSchema = function(schema, options) {
   schema = schema || {};
   // Clone schema and then adjust the clone; we don't want to mess up the
   // user's object
-  self._schema = inflectLabels(addImplicitKeys(expandSchema(_.clone(schema))));
+  self._schema = inflectLabels(addImplicitKeys(expandSchema(schema)));
   self._schemaKeys = []; //for speedier checking
   self._validators = [];
   //set up default message for each error type
@@ -90,7 +90,7 @@ SimpleSchema = function(schema, options) {
       if (!definition.optional) {
         firstLevelRequiredSchemaKeys.push(fieldNameRoot);
       }
-      
+
       if (definition.valueIsAllowed) {
         firstLevelValueIsAllowedSchemaKeys.push(fieldNameRoot);
       }
@@ -99,7 +99,7 @@ SimpleSchema = function(schema, options) {
     if (!definition.optional) {
       requiredSchemaKeys.push(fieldName);
     }
-    
+
     if (definition.valueIsAllowed) {
       valueIsAllowedSchemaKeys.push(fieldName);
     }
@@ -133,7 +133,7 @@ SimpleSchema.prototype = new Match.Where();
 // the function named `condition` and will pass it the document to validate
 SimpleSchema.prototype.condition = function(obj) {
   var self = this;
-  
+
   //determine whether obj is a modifier
   var isModifier, isNotModifier;
   _.each(obj, function(val, key) {
@@ -141,7 +141,7 @@ SimpleSchema.prototype.condition = function(obj) {
       isModifier = true;
     } else {
       isNotModifier = true;
-  }
+    }
   });
 
   if (isModifier && isNotModifier)
@@ -149,7 +149,7 @@ SimpleSchema.prototype.condition = function(obj) {
 
   if (!self.newContext().validate(obj, {modifier: isModifier, filter: false, autoConvert: false}))
     throw new Match.Error("One or more properties do not match the schema.");
-  
+
   return true;
 };
 
@@ -204,7 +204,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
       def && this.updateValue(typeconvert(val, def.type));
     }
   });
-  
+
   return mDoc.getObject();
 };
 
@@ -412,15 +412,19 @@ var dateToDateString = function(date) {
 };
 
 var expandSchema = function(schema) {
-  // If schema is an array of schemas, merge them first
-  if (_.isArray(schema)) {
-    var mergedSchema = {};
-    _.each(schema, function(ss) {
-      ss = Match.test(ss, SimpleSchema) ? ss._schema : ss;
-      isBasicObject(ss) && _.extend(mergedSchema, ss);
-    });
-    schema = mergedSchema;
+  if (! _.isArray(schema)) {
+    schema = [schema];
   }
+
+  // Merge all provided schema definitions.
+  // This is effectively a shallow clone of each object, too,
+  // which is what we want since we are going to manipulate it.
+  var mergedSchema = {};
+  _.each(schema, function(ss) {
+    ss = Match.test(ss, SimpleSchema) ? ss._schema : ss;
+    isBasicObject(ss) && _.extend(mergedSchema, ss);
+  });
+  schema = mergedSchema;
 
   // Now flatten schema by inserting nested definitions
   _.each(schema, function(val, key) {
@@ -598,7 +602,7 @@ var inflectLabels = function(schema) {
   return editedSchema;
 };
 
-var deleteIfPresent = function (obj, key) {
+var deleteIfPresent = function(obj, key) {
   if (key in obj) {
     delete obj[key];
   }

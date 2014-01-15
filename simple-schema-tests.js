@@ -239,7 +239,7 @@ var validate = function(ss, doc, isModifier, isUpsert) {
   //so that we can be sure the filtering and type converting are not invalidating
   //documents that should be valid
   doc = ss.clean(doc);
-  
+
   var context = ss.newContext();
   context.validate(doc, {modifier: isModifier, upsert: isUpsert});
   return context;
@@ -2852,7 +2852,7 @@ Tinytest.add("SimpleSchema - Merged Schemas", function(test) {
 
   var s1 = new SimpleSchema({
     a: {
-      type: String
+      type: Boolean
     },
     b: {
       type: String
@@ -2879,7 +2879,7 @@ Tinytest.add("SimpleSchema - Merged Schemas", function(test) {
 
   test.equal(s3._schema, {
     a: {
-      type: String,
+      type: Boolean,
       label: "A"
     },
     b: {
@@ -2903,6 +2903,12 @@ Tinytest.add("SimpleSchema - Merged Schemas", function(test) {
       label: "F"
     }
   }, "schema was not merged correctly");
+  
+  // test validation
+  var ctx = s3.namedContext();
+  var isValid = ctx.validate({a: "Wrong"});
+  test.length(ctx.invalidKeys(), 6);
+
 });
 
 /*
