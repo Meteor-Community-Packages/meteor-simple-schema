@@ -209,6 +209,34 @@ This is not currently reactive but should be. (Pull request welcome.)
 
 By default, all keys are required. Set `optional: true` to change that.
 
+With complex keys, it might be difficult to understand what "required" means.
+Here's a brief explanation of how requiredness is interpreted:
+
+* If `type` is `Array` or is an array (any type surrounded by array brackets),
+then "required" means that key must have a value, but an empty array is fine.
+(If an empty array is *not* fine, add `minCount: 1` option.)
+* For items within an array, or when the key name ends with ".$", the `optional`
+option has no effect. That is, something cannot be "required" to be in an array.
+* If a key is required at a deeper level, the key must have a value *only if*
+the object it belongs to is present.
+* When the object being validated is a Mongo modifier object, changes that
+would unset or `null` a required key result in validation errors.
+
+That last point can be confusing, so let's look at a couple examples:
+
+* Say you have a required key "friends.address.city" but "friends.address" is
+optional. If "friends.address" is set in the object you're validating, but
+"friends.address.city" is not, there is a validation error. However, if
+"friends.address" is *not* set, then there is no validation error for 
+"friends.address.city" because the object it belongs to is not present.
+* If you have a required key "friends.$.name", but the `friends` array has
+no objects in the object you are validating, there is no validation error
+for "friends.$.name". When the `friends` array *does* have objects,
+every present object is validated, and each object could potentially have a
+validation error if it is missing the `name` property. For example, when there
+are two objects in the friends array and both are missing the `name` property,
+there will be a validation error for both "friends.0.name" and "friends.1.name".
+
 ### min/max
 
 * If `type` is `Number` or `[Number]`, these rules define the minimum or
@@ -532,6 +560,20 @@ You should call this method on both the client and the server to make sure that 
 If you are interested in supporting multiple languages, you should be able to rerun this method
 to change the messages at any time, for example, in an autorun function based on a language value stored in session
 that loads the message object from static json files.
+
+## Dates
+
+For consistency, you should generally validate and store Dates set to the UTC
+time zone. If you care only about the date, then use a `Date` object set to the
+desired date at midnight UTC. If you need the time, too, then use a `Date`
+object set to the desired date and time UTC.
+
+This goes for `min` and `max` dates, too. If you care only about the date
+portion and you want to specify a minimum date, `min` should be set to midnight
+UTC on the minimum date (inclusive).
+
+Following these rules ensures maximum interoperability with HTML5 date inputs
+and usually just makes sense. 
 
 ## Collection2 and AutoForm
 
