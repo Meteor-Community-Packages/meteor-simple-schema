@@ -371,11 +371,11 @@ var typeconvert = function(value, type) {
     return value;
   }
   if (type === Number) {
-    if (typeof value === "string") {
+    if (typeof value === "string" && !S(value).isEmpty()) {
       //try to convert numeric strings to numbers
-      var floatVal = parseFloat(value);
-      if (!isNaN(floatVal)) {
-        return floatVal;
+      var numberVal = Number(value);
+      if (!isNaN(numberVal)) {
+        return numberVal;
       } else {
         return value; //leave string; will fail validation
       }
