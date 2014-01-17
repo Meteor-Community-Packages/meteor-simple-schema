@@ -261,7 +261,7 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
     message = message.replace("[maxCount]", def.maxCount);
   }
   if (value !== void 0 && value !== null) {
-    message = message.replace("[value]", value.toString());
+    message = message.replace("[value]", S(value.toString()).escapeHTML().s);
   }
   var min = def.min;
   var max = def.max;
