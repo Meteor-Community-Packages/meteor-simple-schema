@@ -5,6 +5,12 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.29
+
+* Autoconvert to numbers from strings using `Number()` instead of `parseFloat()`.
+* Minor improvements to validation logic.
+* README additions
+
 ### 0.2.28
 
 Remove automatic call to `clean` when validating. This has no effect on 
