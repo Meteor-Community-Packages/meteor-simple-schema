@@ -146,12 +146,12 @@ SimpleSchemaValidationContext.prototype.keyErrorMessage = function(name) {
  */
 
 var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
-  
+
   // First do some basic checks of the object, and throw errors if necessary
   if (!_.isObject(obj)) {
     throw new Error("The first argument of validate() or validateOne() must be an object");
   }
-  
+
   if (isModifier) {
     if (_.isEmpty(obj)) {
       throw new Error("When the modifier option is true, validation object must have at least one operator");
@@ -180,7 +180,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
     }
     delete obj.$setOnInsert;
   }
-  
+
   var invalidKeys = [];
 
   // Validation function called for each affected key
@@ -214,7 +214,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
     // Value checks are not necessary for null or undefined values,
     // or for certain operators.
     if (!_.contains(["$unset", "$rename", "$pull", "$pullAll", "$pop"], op)) {
-      
+
       if (isSet(val)) {
 
         // Check that value is of the correct type
@@ -229,7 +229,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
           invalidKeys.push(errorObject("notAllowed", affectedKey, val, def, ss));
           return;
         }
-      
+
       }
 
       // Check value using valusIsAllowed function
@@ -254,7 +254,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
   // The recursive function
   function checkObj(val, affectedKey, operator, adjusted) {
     var affectedKeyGeneric, def;
-    
+
     // Adjust for first-level modifier operators
     if (!operator && affectedKey && affectedKey.substring(0, 1) === "$") {
       operator = affectedKey;
@@ -291,7 +291,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
     // Temporarily convert missing objects to empty objects
     // so that the looping code will be called and required
     // descendent keys can be validated.
-    if (!val && (!def || def.type === Object)) {
+    if ((val === void 0 || val === null) && (!def || (def.type === Object && !def.optional))) {
       val = {};
     }
 
@@ -301,19 +301,19 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
         checkObj(v, affectedKey + '.' + i, operator, adjusted);
       });
     }
-    
+
     // Loop through object keys
     else if (isBasicObject(val)) {
-      
+
       // Get list of present keys
       var presentKeys = _.keys(val);
-      
+
       // For required checks, we want to also loop through all keys expected
       // based on the schema, in case any are missing.
       var requiredKeys, valueIsAllowedKeys;
       if (!isModifier || (isUpsert && operator === "$set") || (affectedKeyGeneric && affectedKeyGeneric.slice(-2) === ".$")) {
         requiredKeys = ss.requiredObjectKeys(affectedKeyGeneric);
-        
+
         // Filter out required keys that are ancestors
         // of those in $set
         requiredKeys = _.filter(requiredKeys, function (k) {
@@ -322,19 +322,19 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
           });
         });
       }
-      
+
       if (!isModifier || (operator === "$set") || (affectedKeyGeneric && affectedKeyGeneric.slice(-2) === ".$")) {
-      
+
         // We want to be sure to call any present valueIsAllowed functions
         // even if the value isn't set, so they can be used for custom
         // required errors, such as basing it on another field's value.
         valueIsAllowedKeys = ss.valueIsAllowedObjectKeys(affectedKeyGeneric);
 
       }
-      
+
       // Merge the lists
       var keysToCheck = _.union(presentKeys, requiredKeys || [], valueIsAllowedKeys || []);
-      
+
       // Check all keys in the merged list
       _.each(keysToCheck, function(key) {
         if (shouldCheck(key)) {
@@ -342,9 +342,9 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
         }
       });
     }
-    
+
   }
-  
+
   // Kick off the validation
   checkObj(obj);
 
