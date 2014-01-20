@@ -194,8 +194,12 @@ A string that will be used to refer to this field in validation error messages.
 The default is an inflected (humanized) derivation of the key name itself. For
 example, the key "firstName" will have a default label of "First name".
 
-If you require realtime translation or a field that changes it's meaning in some
-circumstances you can provide a callback function as a label.
+If you require reactive translations or a field that changes it's meaning in some
+circumstances you can provide a callback function as a label. Note that the generated
+validation messages aren't reactive afterwards.
+
+To access the labels again use `schema.label(fieldName)` which will generate you
+a usable string. If this is done inside `Meteor.render()` the label will be reactive.
 
 If you need to alter labels on the fly you can do so using the `labels` method.
 
@@ -204,9 +208,6 @@ MySchema.labels({
     password: "Enter your password"
 });
 ```
-
-To access the labels again use `schema.label(fieldName)` which will generate you
-a usable string. If this is done inside a `Meteor.render()` the label will be reactive.
 
 ### optional
 
