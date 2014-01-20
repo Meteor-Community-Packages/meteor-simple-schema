@@ -5,6 +5,14 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.30
+
+Made a change that fixes an issue with the autoform package. When you specified
+a `doc` attribute for an autoform and that document was retrieved from a
+collection that had helpers attached using the `collection-helpers` package,
+the autoform fields were not populated with the values from the document. Now
+they are.
+
 ### 0.2.29
 
 * Autoconvert to numbers from strings using `Number()` instead of `parseFloat()`.

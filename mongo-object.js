@@ -47,8 +47,10 @@ MongoObject = function(objOrModifier) {
       });
     }
 
-    // Loop through object keys
-    else if (isBasicObject(val)) {
+    // Loop through object keys, only for basic objects,
+    // but always for the passed-in object, even if it
+    // is a custom object.
+    else if (isBasicObject(val) || ! currentPosition) {
       _.each(val, function(v, k) {
         if (k !== "$slice") {
           parseObj(v, (currentPosition ? currentPosition + "[" + k + "]" : k), appendAffectedKey(affectedKey, k), operator, adjusted);
@@ -58,62 +60,6 @@ MongoObject = function(objOrModifier) {
 
   }
   parseObj(objOrModifier);
-
-//  (function recurse(obj, currentPosition, affectedKey, isUnderOperator, isUnderEachOrPullAll, isUnderArrayOperator) {
-//    var newAffectedKey;
-//    var objIsArray = isArray(obj);
-//    var objIsObject = isBasicObject(obj);
-//
-//    //store values, affectedKeys, and genericAffectedKeys
-//    if (currentPosition && (!objIsObject || _.isEmpty(obj)) && (!objIsArray || _.isEmpty(obj))) {
-//      self._affectedKeys[currentPosition] = affectedKey;
-//      self._genericAffectedKeys[currentPosition] = makeGeneric(affectedKey);
-//    }
-//
-//    //loop through array items
-//    else if (objIsArray) {
-//      for (var i = 0, ln = obj.length; i < ln; i++) {
-//        if (isUnderEachOrPullAll) {
-//          newAffectedKey = affectedKey;
-//        } else {
-//          newAffectedKey = (affectedKey ? affectedKey + "." + i : i);
-//        }
-//        recurse(obj[i],
-//                (currentPosition ? currentPosition + "[" + i + "]" : i),
-//                newAffectedKey,
-//                isUnderOperator,
-//                null, // Only the first array needs to be treated differently
-//                isUnderArrayOperator
-//                );
-//      }
-//    }
-//
-//    //recurse into objects
-//    else if (objIsObject) {
-//      for (var key in obj) {
-//        if (obj.hasOwnProperty(key)) {
-//          if (key.substring(0, 1) === "$") {
-//            newAffectedKey = affectedKey;
-//          } else if (isUnderArrayOperator) {
-//            newAffectedKey = (affectedKey ? affectedKey + ".$." + key : key);
-//          } else {
-//            newAffectedKey = (affectedKey ? affectedKey + "." + key : key);
-//          }
-//          if (key !== "$slice") {
-//            recurse(obj[key], //value
-//                    (currentPosition ? currentPosition + "[" + key + "]" : key), //position
-//                    newAffectedKey,
-//                    (isUnderOperator || key.substring(0, 1) === "$"),
-//                    // For $each and $pullAll, the first array we come to after
-//                    // the operator needs to be treated differently
-//                    (isUnderEachOrPullAll || key === "$each" || key === "$pullAll"),
-//                    (isUnderArrayOperator || key === "$push" || key === "$addToSet" || key === "$pull" || key === "$pop")
-//                    );
-//          }
-//      }
-//    }
-//  }
-//})(objOrModifier);
 
   // Runs a function for each endpoint node in the object tree, including all items in every array.
   // The function arguments are
@@ -181,22 +127,6 @@ MongoObject = function(objOrModifier) {
   };
 
   self.removeValueForPosition = function(position) {
-//    var subkey, subkeys = position.split("["), current = self._obj;
-//    for (var i = 0, ln = subkeys.length; i < ln; i++) {
-//      subkey = subkeys[i];
-//      // If the subkey ends in "]", remove the ending
-//      if (subkey.slice(-1) === "]") {
-//        subkey = subkey.slice(0, -1);
-//      }
-//      if (i === ln - 1) {
-//        delete current[subkey];
-//      } else {
-//        current = current[subkey];
-//        if (!isArray(current) && !isBasicObject(current) && i < ln - 1) {
-//          return;
-//        }
-//      }
-//    }
 
     // Update affected key caches
     for (var p in self._genericAffectedKeys) {
