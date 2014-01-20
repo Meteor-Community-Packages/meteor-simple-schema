@@ -198,7 +198,19 @@ If you require reactive translations or a field that changes it's meaning in som
 circumstances you can provide a callback function as a label. Note that the generated
 validation messages aren't reactive afterwards.
 
-To access the labels again use `schema.label(fieldName)` which will generate you
+```js
+MySchema = new SimpleSchema({
+  firstName: {
+    type: String,
+    label: function () {
+      return Session.get("lang") == "de"
+            ? "Vorname" : "first name";
+    }
+  }
+});
+```
+
+To access the labels again use `MySchema.label(fieldName)` which will generate you
 a usable string. If this is done inside `Meteor.render()` the label will be reactive.
 
 If you need to alter labels on the fly you can do so using the `labels` method.
@@ -599,5 +611,5 @@ Anyone is welcome to contribute. Fork, make and test your changes
 
 (Add your name if it's missing.)
 
-@mquandalle
-@Nemo64
+- @mquandalle
+- @Nemo64
