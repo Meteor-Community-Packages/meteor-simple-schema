@@ -56,7 +56,7 @@ SimpleSchema = function(schema, options) {
   //set schemaDefinition validator
   var schemaDefinition = {
     type: Match.Any,
-    label: Match.Optional(String),
+    label: Match.Optional(Match.OneOf(String, Function)),
     optional: Match.Optional(Boolean),
     min: Match.Optional(Match.OneOf(Number, Date, Function)),
     max: Match.Optional(Match.OneOf(Number, Date, Function)),
@@ -212,7 +212,8 @@ SimpleSchema.prototype.clean = function(doc, options) {
 // in the schema.
 SimpleSchema.prototype.schema = function(key) {
   var self = this;
-  if (key) {
+  // if not null or undefined (more specific)
+  if (key != null) {
     return self._schema[key];
   } else {
     return self._schema;
@@ -228,7 +229,7 @@ SimpleSchema.prototype.messages = function(messages) {
 SimpleSchema.prototype.labels = function(labels) {
   var self = this;
   _.each(labels, function(label, fieldName) {
-    if (typeof label !== "string")
+    if (!_.isString(label) && !_.isFunction(label))
       return;
 
     if (!(fieldName in self._schema))
@@ -237,6 +238,21 @@ SimpleSchema.prototype.labels = function(labels) {
     self._schema[fieldName]["label"] = label;
   });
 };
+
+// should be used to safely get a label as string
+SimpleSchema.prototype.label = function(key) {
+  var def = this.schema(key);
+  if (key == null) {
+    var result = {};
+    _.each(def, function (def, fieldName) {
+      result[fieldName] = this.label(fieldName);
+    }, this);
+    return result;
+  } else {
+    var label = def != null ? def.label : undefined;
+    return _.isFunction(label) ? label.call(def) : label;
+  }
+}
 
 // Returns a string message for the given error type and key. Uses the
 // def and value arguments to fill in placeholders in the error messages.
@@ -253,7 +269,7 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
   if (!message)
     return "Unknown validation error";
   def = def || self._schema[key] || {};
-  message = message.replace("[label]", def.label || key);
+  message = message.replace("[label]", self.label(key));
   if (typeof def.minCount !== "undefined") {
     message = message.replace("[minCount]", def.minCount);
   }
@@ -582,7 +598,7 @@ var inflectLabels = function(schema) {
 
   var editedSchema = {};
   _.each(schema, function(definition, fieldName) {
-    if (typeof definition.label === "string") {
+    if (_.isString(definition.label) || _.isFunction(definition.label)) {
       editedSchema[fieldName] = definition;
       return;
     }
