@@ -243,7 +243,7 @@ SimpleSchema.prototype.labels = function(labels) {
 
 // should be used to safely get a label as string
 SimpleSchema.prototype.label = function(key) {
-  var def = this.schema(key);
+  var def = this.schema(key) || {};
   if (key == null) {
     var result = {};
     _.each(def, function (def, fieldName) {
@@ -251,7 +251,7 @@ SimpleSchema.prototype.label = function(key) {
     }, this);
     return result;
   } else {
-    var label = def != null ? def.label : undefined;
+    var label = def.label;
     return _.isFunction(label) ? label.call(def) : label;
   }
 }
