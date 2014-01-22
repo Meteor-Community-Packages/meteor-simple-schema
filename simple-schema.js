@@ -33,15 +33,16 @@ var defaultMessages = {
 var extendedOptions = {};
 
 //exported
-SimpleSchema = function(schema, options) {
+SimpleSchema = function(schemas, options) {
   var self = this, requiredSchemaKeys = [], firstLevelSchemaKeys = [],
           firstLevelRequiredSchemaKeys = [], valueIsAllowedSchemaKeys = [],
           firstLevelValueIsAllowedSchemaKeys = [], fieldNameRoot;
   options = options || {};
-  schema = schema || {};
-  // Clone schema and then adjust the clone; we don't want to mess up the
-  // user's object
-  self._schema = inflectLabels(addImplicitKeys(expandSchema(schema)));
+  schemas = schemas || {};
+  if (!_.isArray(schemas)) {
+    schemas = [schemas];
+  }
+  self._schema = mergeSchemas(schemas);
   self._schemaKeys = []; //for speedier checking
   self._validators = [];
   //set up default message for each error type
@@ -413,22 +414,42 @@ var dateToDateString = function(date) {
   return date.getUTCFullYear() + '-' + m + '-' + d;
 };
 
-var expandSchema = function(schema) {
-  if (! _.isArray(schema)) {
-    schema = [schema];
-  }
+var mergeSchemas = function(schemas) {
 
   // Merge all provided schema definitions.
   // This is effectively a shallow clone of each object, too,
   // which is what we want since we are going to manipulate it.
   var mergedSchema = {};
-  _.each(schema, function(ss) {
-    ss = Match.test(ss, SimpleSchema) ? ss._schema : ss;
-    isBasicObject(ss) && _.extend(mergedSchema, ss);
-  });
-  schema = mergedSchema;
+  _.each(schemas, function(schema) {
 
-  // Now flatten schema by inserting nested definitions
+    // Create a temporary SS instance so that the internal object
+    // we use for merging/extending will be fully expanded
+    if (Match.test(schema, SimpleSchema)) {
+      schema = schema._schema;
+    } else {
+      schema = inflectLabels(addImplicitKeys(expandSchema(schema)));
+    }
+
+    // Loop through and extend each individual field
+    // definition. That way you can extend and overwrite
+    // base field definitions.
+    _.each(schema, function(def, field) {
+      mergedSchema[field] = mergedSchema[field] || {};
+      _.extend(mergedSchema[field], def);
+    });
+
+  });
+  
+  // If we merged some schemas, do this again to make sure
+  // extended definitions are pushed into array item field
+  // definitions properly.
+  schemas.length && adjustArrayFields(mergedSchema);
+  
+  return mergedSchema;
+};
+
+var expandSchema = function(schema) {
+  // Flatten schema by inserting nested definitions
   _.each(schema, function(val, key) {
     var dot, type;
     if (Match.test(val.type, SimpleSchema)) {
@@ -450,6 +471,48 @@ var expandSchema = function(schema) {
     });
   });
   return schema;
+};
+
+var adjustArrayFields = function(schema) {
+  _.each(schema, function(def, existingKey) {
+    if (_.isArray(def.type) || def.type === Array) {
+      // Copy some options to array-item definition
+      var itemKey = existingKey + ".$";
+      if (!(itemKey in schema)) {
+        schema[itemKey] = {};
+      }
+      if (_.isArray(def.type)) {
+        schema[itemKey].type = def.type[0];
+      }
+      if (def.label) {
+        schema[itemKey].label = def.label;
+      }
+      schema[itemKey].optional = true;
+      if (typeof def.min !== "undefined") {
+        schema[itemKey].min = def.min;
+      }
+      if (typeof def.max !== "undefined") {
+        schema[itemKey].max = def.max;
+      }
+      if (typeof def.allowedValues !== "undefined") {
+        schema[itemKey].allowedValues = def.allowedValues;
+      }
+      if (typeof def.valueIsAllowed !== "undefined") {
+        schema[itemKey].valueIsAllowed = def.valueIsAllowed;
+      }
+      if (typeof def.decimal !== "undefined") {
+        schema[itemKey].decimal = def.decimal;
+      }
+      if (typeof def.regEx !== "undefined") {
+        schema[itemKey].regEx = def.regEx;
+      }
+      // Remove copied options and adjust type
+      def.type = Array;
+      _.each(['min', 'max', 'allowedValues', 'valueIsAllowed', 'decimal', 'regEx'], function(k) {
+        deleteIfPresent(def, k);
+      });
+    }
+  });
 };
 
 /**
@@ -495,58 +558,7 @@ var addImplicitKeys = function(schema) {
   }
 
   // Pass 2 (arrays)
-  _.each(schema, function(def, existingKey) {
-    if (_.isArray(def.type)) {
-      // Copy some options to array-item definition
-      var itemKey = existingKey + ".$";
-      if (!(itemKey in schema)) {
-        schema[itemKey] = {};
-      }
-      //var itemDef = schema[itemKey];
-      schema[itemKey].type = def.type[0];
-      if (def.label) {
-        schema[itemKey].label = def.label;
-      }
-      schema[itemKey].optional = true;
-      if (typeof def.min !== "undefined") {
-        schema[itemKey].min = def.min;
-      }
-      if (typeof def.max !== "undefined") {
-        schema[itemKey].max = def.max;
-      }
-      if (typeof def.allowedValues !== "undefined") {
-        schema[itemKey].allowedValues = def.allowedValues;
-      }
-      if (typeof def.valueIsAllowed !== "undefined") {
-        schema[itemKey].valueIsAllowed = def.valueIsAllowed;
-      }
-      if (typeof def.decimal !== "undefined") {
-        schema[itemKey].decimal = def.decimal;
-      }
-      if (typeof def.regEx !== "undefined") {
-        schema[itemKey].regEx = def.regEx;
-      }
-      // Remove copied options and adjust type
-      def.type = Array;
-      _.each(['min', 'max', 'allowedValues', 'valueIsAllowed', 'decimal', 'regEx'], function(k) {
-        deleteIfPresent(def, k);
-      });
-    }
-  });
-
-  for (var i = 0, ln = arrayKeysToAdd.length; i < ln; i++) {
-    key = arrayKeysToAdd[i];
-    if (!(key in schema)) {
-      schema[key] = {type: [Object], optional: true};
-    }
-  }
-
-  for (var i = 0, ln = objectKeysToAdd.length; i < ln; i++) {
-    key = objectKeysToAdd[i];
-    if (!(key in schema)) {
-      schema[key] = {type: Object, optional: true};
-    }
-  }
+  adjustArrayFields(schema);
 
   return schema;
 };

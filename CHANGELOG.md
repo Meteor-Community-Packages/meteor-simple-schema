@@ -5,6 +5,12 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.31
+
+When combining and extending SimpleSchema instances, the individual field
+definitions are now extended, meaning that you can add or override the
+schema options for an already-defined schema key.
+
 ### 0.2.30
 
 Made a change that fixes an issue with the autoform package. When you specified

@@ -2962,36 +2962,28 @@ Tinytest.add("SimpleSchema - Issue 30", function(test) {
 
 });
 
-Tinytest.add("SimpleSchema - Merged Schemas", function(test) {
+Tinytest.add("SimpleSchema - Basic Schema Merge", function(test) {
 
-  var s1 = new SimpleSchema({
+  var s1 = new SimpleSchema([
+  {
     a: {
       type: Boolean
     },
     b: {
       type: String
     }
-  });
-
-  var s2 = new SimpleSchema({
+  },
+  {
     c: {
       type: String
     },
     d: {
       type: String
     }
-  });
+  }
+  ]);
 
-  var s3 = new SimpleSchema([s1, s2, {
-      e: {
-        type: String
-      },
-      f: {
-        type: String
-      }
-    }]);
-
-  test.equal(s3._schema, {
+  test.equal(s1._schema, {
     a: {
       type: Boolean,
       label: "A"
@@ -3007,21 +2999,121 @@ Tinytest.add("SimpleSchema - Merged Schemas", function(test) {
     d: {
       type: String,
       label: "D"
-    },
-    e: {
-      type: String,
-      label: "E"
-    },
-    f: {
-      type: String,
-      label: "F"
     }
   }, "schema was not merged correctly");
 
   // test validation
-  var ctx = s3.namedContext();
+  var ctx = s1.namedContext();
   var isValid = ctx.validate({a: "Wrong"});
-  test.length(ctx.invalidKeys(), 6);
+  test.length(ctx.invalidKeys(), 4);
+
+});
+
+Tinytest.add("SimpleSchema - Mixed Schema Merge", function(test) {
+
+  var s1 = new SimpleSchema({
+    a: {
+      type: Boolean
+    },
+    b: {
+      type: [String]
+    }
+  });
+
+  var s2 = new SimpleSchema([s1, {
+      c: {
+        type: String
+      },
+      d: {
+        type: String
+      }
+    }]);
+
+  test.equal(s2._schema, {
+    a: {
+      type: Boolean,
+      label: "A"
+    },
+    b: {
+      type: Array,
+      label: "B"
+    },
+    'b.$': {
+      type: String,
+      optional: true,
+      label: "B"
+    },
+    c: {
+      type: String,
+      label: "C"
+    },
+    d: {
+      type: String,
+      label: "D"
+    }
+  }, "schema was not merged correctly");
+
+  // test validation
+  var ctx = s2.namedContext();
+  var isValid = ctx.validate({a: "Wrong"});
+  test.length(ctx.invalidKeys(), 4);
+
+});
+
+Tinytest.add("SimpleSchema - Mixed Schema Merge With Base Extend and Override", function(test) {
+
+  var s1 = new SimpleSchema({
+    a: {
+      type: Boolean
+    },
+    b: {
+      type: [String]
+    }
+  });
+
+  var s2 = new SimpleSchema([s1, {
+      a: {
+        type: Number
+      },
+      b: {
+        label: "Bacon"
+      },
+      c: {
+        type: String
+      },
+      d: {
+        type: String
+      }
+    }]);
+
+  test.equal(s2._schema, {
+    a: {
+      type: Number,
+      label: "A"
+    },
+    b: {
+      type: Array,
+      label: "Bacon"
+    },
+    'b.$': {
+      type: String,
+      optional: true,
+      label: "Bacon"
+    },
+    c: {
+      type: String,
+      label: "C"
+    },
+    d: {
+      type: String,
+      label: "D"
+    }
+  }, "schema was not merged correctly");
+  
+  // test validation
+  var ctx = s2.namedContext();
+  var isValid = ctx.validate({a: "Wrong"});
+  test.length(ctx.invalidKeys(), 4);
 
 });
 
