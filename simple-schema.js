@@ -30,7 +30,19 @@ var defaultMessages = {
   keyNotInSchema: "[label] is not allowed by the schema"
 };
 
-var extendedOptions = {};
+var schemaDefinition = {
+  type: Match.Any,
+  label: Match.Optional(String),
+  optional: Match.Optional(Boolean),
+  min: Match.Optional(Match.OneOf(Number, Date, Function)),
+  max: Match.Optional(Match.OneOf(Number, Date, Function)),
+  minCount: Match.Optional(Number),
+  maxCount: Match.Optional(Number),
+  allowedValues: Match.Optional([Match.Any]),
+  valueIsAllowed: Match.Optional(Function),
+  decimal: Match.Optional(Boolean),
+  regEx: Match.Optional(Match.OneOf(RegExp, [RegExp]))
+};
 
 //exported
 SimpleSchema = function(schemas, options) {
@@ -39,36 +51,22 @@ SimpleSchema = function(schemas, options) {
           firstLevelValueIsAllowedSchemaKeys = [], fieldNameRoot;
   options = options || {};
   schemas = schemas || {};
+  
   if (!_.isArray(schemas)) {
     schemas = [schemas];
   }
+  
+  // adjust and store a copy of the schema definitions
   self._schema = mergeSchemas(schemas);
-  self._schemaKeys = []; //for speedier checking
+  
+  // store the list of defined keys for speedier checking
+  self._schemaKeys = [];
+  
+  // a place to store custom validators for this instance
   self._validators = [];
-  //set up default message for each error type
+  
+  // set up default message for each error type
   self._messages = defaultMessages;
-
-  //set schemaDefinition validator
-  var schemaDefinition = {
-    type: Match.Any,
-    label: Match.Optional(String),
-    optional: Match.Optional(Boolean),
-    min: Match.Optional(Match.OneOf(Number, Date, Function)),
-    max: Match.Optional(Match.OneOf(Number, Date, Function)),
-    minCount: Match.Optional(Number),
-    maxCount: Match.Optional(Number),
-    allowedValues: Match.Optional([Match.Any]),
-    valueIsAllowed: Match.Optional(Function),
-    decimal: Match.Optional(Boolean),
-    regEx: Match.Optional(Match.OneOf(RegExp, [RegExp]))
-  };
-
-  // This way of extending options is deprecated. TODO Remove this eventually
-  if (typeof options.additionalKeyPatterns === "object")
-    _.extend(schemaDefinition, options.additionalKeyPatterns);
-
-  // Extend schema options
-  _.extend(schemaDefinition, extendedOptions);
 
   _.each(self._schema, function(definition, fieldName) {
     // Validate the field definition
@@ -113,10 +111,10 @@ SimpleSchema = function(schemas, options) {
   self._validationContexts = {};
 };
 
-// This allows other packages to extend the schema definition options that
-// are supported.
+// This allows other packages or users to extend the schema
+// definition options that are supported.
 SimpleSchema.extendOptions = function(options) {
-  _.extend(extendedOptions, options);
+  _.extend(schemaDefinition, options);
 };
 
 SimpleSchema.RegEx = {
@@ -439,12 +437,12 @@ var mergeSchemas = function(schemas) {
     });
 
   });
-  
+
   // If we merged some schemas, do this again to make sure
   // extended definitions are pushed into array item field
   // definitions properly.
   schemas.length && adjustArrayFields(mergedSchema);
-  
+
   return mergedSchema;
 };
 

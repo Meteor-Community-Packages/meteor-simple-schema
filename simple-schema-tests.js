@@ -2424,22 +2424,22 @@ Tinytest.add("SimpleSchema - Validate with the Match API", function(test) {
   }
 });
 
-Tinytest.add("SimpleSchema - additionalKeyPatterns", function(test) {
+Tinytest.add("SimpleSchema - Extend Schema Definition", function(test) {
   try {
     var ssWithUnique = new SimpleSchema({
       name: {
         type: String,
         unique: true
       }
-    }, {
-      additionalKeyPatterns: {
-        unique: Match.Optional(Boolean)
-      }
     });
   } catch (exception) {
-    test.fail({type: 'exception', message: 'define a schema with a unique option in field definition'});
+    test.instanceOf(exception, Error);
   }
-
+  
+  SimpleSchema.extendOptions({
+    unique: Match.Optional(Boolean)
+  });
+  
   try {
     ssWithUnique = new SimpleSchema({
       name: {
@@ -2448,7 +2448,7 @@ Tinytest.add("SimpleSchema - additionalKeyPatterns", function(test) {
       }
     });
   } catch (exception) {
-    test.instanceOf(exception, Error);
+    test.fail({type: 'exception', message: 'define a schema with a unique option in field definition'});
   }
 });
 
