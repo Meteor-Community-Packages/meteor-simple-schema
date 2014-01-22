@@ -44,8 +44,20 @@ SimpleSchema = function(schemas, options) {
   // a place to store custom validators for this instance
   self._validators = [];
 
-  // a place to store custom error messages for this schema
-  self._messages = {};
+  //set schemaDefinition validator
+  var schemaDefinition = {
+    type: Match.Any,
+    label: Match.Optional(Match.OneOf(String, Function)),
+    optional: Match.Optional(Boolean),
+    min: Match.Optional(Match.OneOf(Number, Date, Function)),
+    max: Match.Optional(Match.OneOf(Number, Date, Function)),
+    minCount: Match.Optional(Number),
+    maxCount: Match.Optional(Number),
+    allowedValues: Match.Optional([Match.Any]),
+    valueIsAllowed: Match.Optional(Function),
+    decimal: Match.Optional(Boolean),
+    regEx: Match.Optional(Match.OneOf(RegExp, [RegExp]))
+  };
 
   var overrideMessages = {};
   _.each(self._schema, function(definition, fieldName) {
@@ -246,6 +258,21 @@ SimpleSchema.prototype.labels = function(labels) {
     self._schema[fieldName]["label"] = label;
   });
 };
+
+// should be used to safely get a label as string
+SimpleSchema.prototype.label = function(key) {
+  var def = this.schema(key);
+  if (key == null) {
+    var result = {};
+    _.each(def, function (def, fieldName) {
+      result[fieldName] = this.label(fieldName);
+    }, this);
+    return result;
+  } else {
+    var label = def != null ? def.label : undefined;
+    return _.isFunction(label) ? label.call(def) : label;
+  }
+}
 
 // should be used to safely get a label as string
 SimpleSchema.prototype.label = function(key) {
