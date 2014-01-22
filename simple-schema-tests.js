@@ -2836,7 +2836,15 @@ Tinytest.add("SimpleSchema - Labels", function(test) {
   test.equal(ss.label("sub.number"), "A callback label", '"sub.number" label should be "A callback label" through the callback function');
 });
 
-Tinytest.add("SimpleSchema - RegEx", function(test) {
+Tinytest.add("SimpleSchema - RegEx and Messages", function(test) {
+  
+  // global
+  SimpleSchema.messages({
+    'regEx': 'Global Message One',
+    'regEx one': 'Global Message Two',
+    'regEx.0 one': 'Global Message Three',
+    'regEx.1 one': 'Global Message Four'
+  });
 
   var testSchema = new SimpleSchema({
     one: {
@@ -2847,7 +2855,30 @@ Tinytest.add("SimpleSchema - RegEx", function(test) {
       ]
     }
   });
+  
+  var c1 = testSchema.newContext();
+  c1.validate({one: "BBB"});
+  test.length(c1.invalidKeys(), 1);
 
+  var err = c1.invalidKeys()[0] || {};
+  test.equal(err.message, 'Global Message Three');
+
+  c1.validate({one: "AAA"});
+  test.length(c1.invalidKeys(), 1);
+
+  err = c1.invalidKeys()[0] || {};
+  test.equal(err.message, 'Global Message Four');
+
+  c1.validate({one: "CCC"});
+  test.length(c1.invalidKeys(), 1);
+
+  err = c1.invalidKeys()[0] || {};
+  test.equal(err.message, 'Global Message Three');
+
+  c1.validate({one: "ACB"});
+  test.length(c1.invalidKeys(), 0);
+
+  // schema-specific messages
   testSchema.messages({
     'regEx': 'Message One',
     'regEx one': 'Message Two',
@@ -2855,11 +2886,11 @@ Tinytest.add("SimpleSchema - RegEx", function(test) {
     'regEx.1 one': 'Message Four'
   });
 
-  var c1 = testSchema.newContext();
+  c1 = testSchema.newContext();
   c1.validate({one: "BBB"});
   test.length(c1.invalidKeys(), 1);
 
-  var err = c1.invalidKeys()[0] || {};
+  err = c1.invalidKeys()[0] || {};
   test.equal(err.message, 'Message Three');
 
   c1.validate({one: "AAA"});

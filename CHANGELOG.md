@@ -7,9 +7,14 @@ A simple, reactive schema validation smart package for Meteor.
 
 ### 0.2.31
 
-When combining and extending SimpleSchema instances, the individual field
+* When combining and extending SimpleSchema instances, the individual field
 definitions are now extended, meaning that you can add or override the
 schema options for an already-defined schema key.
+* Error messages can now be defined globally using `SimpleSchema.messages()`.
+Instance-specific messages are still supported and are given precedence over
+global messages.
+* The `label` option can now be a function that returns a string. Whenever you
+need a schema key's label, use the new `mySchema.label(key)` method to get it.
 
 ### 0.2.30
 

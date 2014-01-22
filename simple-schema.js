@@ -8,28 +8,6 @@ if (Meteor.isClient) {
   S = window.S;
 }
 
-var defaultMessages = {
-  required: "[label] is required",
-  minString: "[label] must be at least [min] characters",
-  maxString: "[label] cannot exceed [max] characters",
-  minNumber: "[label] must be at least [min]",
-  maxNumber: "[label] cannot exceed [max]",
-  minDate: "[label] must be on or before [min]",
-  maxDate: "[label] cannot be after [max]",
-  minCount: "You must specify at least [minCount] values",
-  maxCount: "You cannot specify more than [maxCount] values",
-  noDecimal: "[label] must be an integer",
-  notAllowed: "[value] is not an allowed value",
-  expectedString: "[label] must be a string",
-  expectedNumber: "[label] must be a number",
-  expectedBoolean: "[label] must be a boolean",
-  expectedArray: "[label] must be an array",
-  expectedObject: "[label] must be an object",
-  expectedConstructor: "[label] must be a [type]",
-  regEx: "[label] failed regular expression validation",
-  keyNotInSchema: "[label] is not allowed by the schema"
-};
-
 var schemaDefinition = {
   type: Match.Any,
   label: Match.Optional(String),
@@ -51,23 +29,24 @@ SimpleSchema = function(schemas, options) {
           firstLevelValueIsAllowedSchemaKeys = [], fieldNameRoot;
   options = options || {};
   schemas = schemas || {};
-  
+
   if (!_.isArray(schemas)) {
     schemas = [schemas];
   }
-  
+
   // adjust and store a copy of the schema definitions
   self._schema = mergeSchemas(schemas);
-  
+
   // store the list of defined keys for speedier checking
   self._schemaKeys = [];
-  
+
   // a place to store custom validators for this instance
   self._validators = [];
-  
-  // set up default message for each error type
-  self._messages = defaultMessages;
 
+  // a place to store custom error messages for this schema
+  self._messages = {};
+
+  var overrideMessages = {};
   _.each(self._schema, function(definition, fieldName) {
     // Validate the field definition
     if (!Match.test(definition, schemaDefinition)) {
@@ -96,7 +75,31 @@ SimpleSchema = function(schemas, options) {
     if (definition.valueIsAllowed) {
       valueIsAllowedSchemaKeys.push(fieldName);
     }
+
+    // Set up nicer error messages for the built-in regEx.
+    // Users will need to override these at the schema-specific level,
+    // which could be undesirable, so we provide an option to
+    // skip this.
+    if (options.defineBuiltInRegExMessages !== false) {
+      if (definition.regEx === SimpleSchema.RegEx.Email) {
+        overrideMessages['regEx ' + fieldName] = "[label] must be a valid e-mail address";
+      } else if (definition.regEx === SimpleSchema.RegEx.Url) {
+        overrideMessages['regEx ' + fieldName] = "[label] must be a valid URL";
+      } else if (_.isArray(definition.regEx)) {
+        _.each(definition.regEx, function(re, i) {
+          if (re === SimpleSchema.RegEx.Email) {
+            overrideMessages['regEx.' + i + ' ' + fieldName] = "[label] must be a valid e-mail address";
+          } else if (re === SimpleSchema.RegEx.Url) {
+            overrideMessages['regEx.' + i + ' ' + fieldName] = "[label] must be a valid URL";
+          }
+        });
+      }
+    }
+
   });
+
+  // Set override messages
+  self.messages(overrideMessages);
 
   // Cache these lists
   self._requiredSchemaKeys = requiredSchemaKeys;
@@ -222,11 +225,6 @@ SimpleSchema.prototype.schema = function(key) {
   }
 };
 
-SimpleSchema.prototype.messages = function(messages) {
-  this._messages = defaultMessages; //make sure we're always extending the defaults, even if called more than once
-  _.extend(this._messages, messages);
-};
-
 // Use to dynamically change the schema labels.
 SimpleSchema.prototype.labels = function(labels) {
   var self = this;
@@ -246,7 +244,7 @@ SimpleSchema.prototype.label = function(key) {
   var def = this.schema(key) || {};
   if (key == null) {
     var result = {};
-    _.each(def, function (def, fieldName) {
+    _.each(def, function(def, fieldName) {
       result[fieldName] = this.label(fieldName);
     }, this);
     return result;
@@ -254,19 +252,72 @@ SimpleSchema.prototype.label = function(key) {
     var label = def.label;
     return _.isFunction(label) ? label.call(def) : label;
   }
-}
+};
+
+// Global messages
+
+SimpleSchema._globalMessages = {
+  required: "[label] is required",
+  minString: "[label] must be at least [min] characters",
+  maxString: "[label] cannot exceed [max] characters",
+  minNumber: "[label] must be at least [min]",
+  maxNumber: "[label] cannot exceed [max]",
+  minDate: "[label] must be on or before [min]",
+  maxDate: "[label] cannot be after [max]",
+  minCount: "You must specify at least [minCount] values",
+  maxCount: "You cannot specify more than [maxCount] values",
+  noDecimal: "[label] must be an integer",
+  notAllowed: "[value] is not an allowed value",
+  expectedString: "[label] must be a string",
+  expectedNumber: "[label] must be a number",
+  expectedBoolean: "[label] must be a boolean",
+  expectedArray: "[label] must be an array",
+  expectedObject: "[label] must be an object",
+  expectedConstructor: "[label] must be a [type]",
+  regEx: "[label] failed regular expression validation",
+  keyNotInSchema: "[label] is not allowed by the schema"
+};
+
+SimpleSchema.messages = function(messages) {
+  _.extend(SimpleSchema._globalMessages, messages);
+};
+
+// Schema-specific messages
+
+SimpleSchema.prototype.messages = function(messages) {
+  _.extend(this._messages, messages);
+};
 
 // Returns a string message for the given error type and key. Uses the
 // def and value arguments to fill in placeholders in the error messages.
 SimpleSchema.prototype.messageForError = function(type, key, def, value) {
-  var self = this, typePlusKey = type + " " + key, genType, genTypePlusKey, firstTypePeriod = type.indexOf(".");
+  var self = this, typePlusKey = type + " " + key, genType,
+          genTypePlusKey, firstTypePeriod = type.indexOf(".");
   if (firstTypePeriod !== -1) {
     genType = type.substring(0, firstTypePeriod);
     genTypePlusKey = genType + " " + key;
   }
+
+  // Try finding the correct message to use at various levels, from most
+  // specific to least specific.
+  // 
+  // (1) Use message for specific key, specific type, schema-specific
+  // (2) Use message for specific type, schema-specific
   var message = self._messages[typePlusKey] || self._messages[type];
+  // (3) Use message for specific key, general type, schema-specific
+  // (4) Use message for general type, schema-specific
   if (!message && genType) {
     message = self._messages[genTypePlusKey] || self._messages[genType];
+  }
+  // (5) Use global message for specific key, specific type
+  // (6) Use global message for specific type
+  if (!message) {
+    message = SimpleSchema._globalMessages[typePlusKey] || SimpleSchema._globalMessages[type];
+  }
+  // (7) Use global message for specific key, general type
+  // (8) Use global message for general type
+  if (!message && genType) {
+    message = SimpleSchema._globalMessages[genTypePlusKey] || SimpleSchema._globalMessages[genType];
   }
   if (!message)
     return "Unknown validation error";
