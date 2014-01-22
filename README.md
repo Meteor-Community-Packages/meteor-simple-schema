@@ -305,10 +305,12 @@ function whenever `value` is null or undefined, unless you want to override the
 Any regular expression that must be matched for the key to be valid, or
 an array of regular expressions that will be tested in order.
 
-A global object, `SchemaRegEx`, is exported. It defines standard regular
+The `SimpleSchema.RegEx` object defines standard regular
 expressions you can use as the value for the `regEx` key.
-Currently `SchemaRegEx.Email` and `SchemaRegEx.Url` are the only values.
-Feel free to add more with a pull request.
+Currently `SimpleSchema.RegEx.Email` and `SimpleSchema.RegEx.Url`
+are the only values. Feel free to add more with a pull request. If
+you use the built-in e-mail or url validation with an AutoForm, the
+form input will be of type `email` or `url`, respectively, by default.
 
 ### custom
 
