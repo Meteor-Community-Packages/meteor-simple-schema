@@ -194,16 +194,32 @@ A string that will be used to refer to this field in validation error messages.
 The default is an inflected (humanized) derivation of the key name itself. For
 example, the key "firstName" will have a default label of "First name".
 
-If you need to alter labels on the fly, such as to support user-selectable
-languages, you can do so using the `labels` method.
+If you require reactive translations or a field that changes it's meaning in some
+circumstances you can provide a callback function as a label. Note that the generated
+validation messages aren't reactive afterwards.
+
+```js
+MySchema = new SimpleSchema({
+  firstName: {
+    type: String,
+    label: function () {
+      return Session.get("lang") == "de"
+            ? "Vorname" : "first name";
+    }
+  }
+});
+```
+
+To access the labels again use `MySchema.label(fieldName)` which will generate you
+a usable string. If this is done inside `Meteor.render()` the label will be reactive.
+
+If you need to alter labels on the fly you can do so using the `labels` method.
 
 ```js
 MySchema.labels({
     password: "Enter your password"
 });
 ```
-
-This is not currently reactive but should be. (Pull request welcome.)
 
 ### optional
 
@@ -595,4 +611,5 @@ Anyone is welcome to contribute. Fork, make and test your changes
 
 (Add your name if it's missing.)
 
-@mquandalle
+- @mquandalle
+- @Nemo64

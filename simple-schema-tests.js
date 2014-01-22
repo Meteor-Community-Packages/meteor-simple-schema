@@ -2825,11 +2825,15 @@ Tinytest.add("SimpleSchema - Nested Schemas", function(test) {
 
 Tinytest.add("SimpleSchema - Labels", function(test) {
   //inflection
-  test.equal(ss.schema("minMaxNumber").label, "Min max number", '"minMaxNumber" should have inflected to "Min max number" label');
+  test.equal(ss.label("minMaxNumber"), "Min max number", '"minMaxNumber" should have inflected to "Min max number" label');
 
   //dynamic
   ss.labels({"sub.number": "A different label"});
-  test.equal(ss.schema("sub.number").label, "A different label", '"sub.number" label should have been changed to "A different label"');
+  test.equal(ss.label("sub.number"), "A different label", '"sub.number" label should have been changed to "A different label"');
+  
+  //callback
+  ss.labels({"sub.number": function () { return "A callback label" }});
+  test.equal(ss.label("sub.number"), "A callback label", '"sub.number" label should be "A callback label" through the callback function');
 });
 
 Tinytest.add("SimpleSchema - RegEx", function(test) {
