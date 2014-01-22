@@ -17,9 +17,10 @@ var schemaDefinition = {
   minCount: Match.Optional(Number),
   maxCount: Match.Optional(Number),
   allowedValues: Match.Optional([Match.Any]),
-  valueIsAllowed: Match.Optional(Function),
+  valueIsAllowed: Match.Optional(Function), //TODO deprecate this in favor of custom?
   decimal: Match.Optional(Boolean),
-  regEx: Match.Optional(Match.OneOf(RegExp, [RegExp]))
+  regEx: Match.Optional(Match.OneOf(RegExp, [RegExp])),
+  custom: Match.Optional(Function)
 };
 
 //exported
@@ -166,6 +167,13 @@ SimpleSchema.prototype.namedContext = function(name) {
   return self._validationContexts[name];
 };
 
+// Global custom validators
+SimpleSchema._validators = [];
+SimpleSchema.addValidator = function(func) {
+  SimpleSchema._validators.push(func);
+};
+
+// Instance custom validators
 // validator is deprecated; use addValidator
 SimpleSchema.prototype.addValidator = SimpleSchema.prototype.validator = function(func) {
   this._validators.push(func);

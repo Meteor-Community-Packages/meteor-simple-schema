@@ -197,9 +197,10 @@ var pss = new SimpleSchema({
   },
   confirmPassword: {
     type: String,
-    valueIsAllowed: function(val, doc) {
-      var pass = ("$set" in doc) ? doc.$set.password : doc.password;
-      return pass === val;
+    custom: function () {
+      if (this.value !== this.field('password').value) {
+        return "passwordMismatch";
+      }
     }
   }
 });
@@ -2394,6 +2395,7 @@ Tinytest.add("SimpleSchema - Validation Against Another Key - Insert - Invalid",
     confirmPassword: "password1"
   });
   test.length(sc.invalidKeys(), 1);
+  test.equal(sc.invalidKeys()[0].type, "passwordMismatch");
 });
 
 Tinytest.add("SimpleSchema - Validation Against Another Key - Upsert - Invalid - $setOnInsert", function(test) {
@@ -2402,6 +2404,7 @@ Tinytest.add("SimpleSchema - Validation Against Another Key - Upsert - Invalid -
       confirmPassword: "password1"
     }}, true, true);
   test.length(sc.invalidKeys(), 1);
+  test.equal(sc.invalidKeys()[0].type, "passwordMismatch");
 });
 
 Tinytest.add("SimpleSchema - Validation Against Another Key - Update - Invalid - $set", function(test) {
@@ -2410,6 +2413,7 @@ Tinytest.add("SimpleSchema - Validation Against Another Key - Update - Invalid -
       confirmPassword: "password1"
     }}, true);
   test.length(sc.invalidKeys(), 1);
+  test.equal(sc.invalidKeys()[0].type, "passwordMismatch");
 });
 
 Tinytest.add("SimpleSchema - Validate with the Match API", function(test) {

@@ -310,6 +310,10 @@ expressions you can use as the value for the `regEx` key.
 Currently `SchemaRegEx.Email` and `SchemaRegEx.Url` are the only values.
 Feel free to add more with a pull request.
 
+### custom
+
+Refer to the "Custom Validation" section.
+
 ## The Object
 
 The object you pass in when validating can be a normal object, or it can be
@@ -427,37 +431,59 @@ Match.test({admin: true}, mySchema); // Return false
 check({admin: true}, mySchema); // throw a Match.Error
 ```
 
+### Custom Validation
+
+There are three ways to attach custom validation methods:
+
+* To add a custom validation function that is called for all keys in all 
+defined schemas, use `SimpleSchema.addValidator(myFunction)`.
+* To add a custom validation function that is called for all keys for a
+specific SimpleSchema instance, use `mySimpleSchema.addValidator(myFunction)`.
+* To add a custom validation function that is called for a specific key in
+a specific schema, use the `custom` option in the schema definition for that key.
+
+All custom validation functions are similar:
+
+* Do any necessary custom validation, and return an error type string if you
+determine that the value is invalid. Any non-string return value means the value is valid.
+* The error type string can be one of the built-in strings or any string you want.
+If you return a custom string, you'll usually want to define a message for it.
+* Within the function, `this` provides the following properties:
+    * `key`: The generic name of the schema key. (Not set for `custom` because you already know.)
+    * `definition`: The schema definition object. (Not set for `custom` because you already know.)
+    * `isSet`: Does the object being validated have this key set?
+    * `value`: The value to validate
+    * `operator`: The mongo operator for which we're doing validation. Might be `null`.
+    * `field()`: Use this method to get information about other fields. Pass a field
+name (schema key) as the only argument. The return object will have `isSet`, `value`,
+and `operator` properties for that field.
+
 ### Validating One Key Against Another
 
-The second argument of the `valueIsAllowed` function is the full document or
-mongo modifier object that's being validated. This allows you to declare one value
-valid or invalid based on another value. Here's an example:
+Here's an example of declaring one value valid or invalid based on another
+value using a custom validation function.
 
 ```js
-MySchema = new SimpleSchema({
-    password: {
-        type: String,
-        label: "Enter a password",
-        min: 8
-    },
-    confirmPassword: {
-        type: String,
-        label: "Enter the password again",
-        min: 8,
-        valueIsAllowed: function (val, doc, op) {
-            if (!op) { //insert
-              return doc.password === val;
-            }
-            if (op === "$set") { //update
-              return doc.$set.password === val;
-            }
-            return false; //allow only inserts and $set
-        }
-    }
+SimpleSchema.messages({
+  "passwordMismatch": "Passwords do not match"
 });
 
-MySchema.messages({
-    "notAllowed confirmPassword": "Passwords do not match"
+MySchema = new SimpleSchema({
+  password: {
+    type: String,
+    label: "Enter a password",
+    min: 8
+  },
+  confirmPassword: {
+    type: String,
+    label: "Enter the password again",
+    min: 8,
+    custom: function () {
+      if (this.value !== this.field('password').value) {
+        return "passwordMismatch";
+      }
+    }
+  }
 });
 ```
 

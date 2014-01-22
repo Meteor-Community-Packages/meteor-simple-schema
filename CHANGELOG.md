@@ -15,6 +15,9 @@ Instance-specific messages are still supported and are given precedence over
 global messages.
 * The `label` option can now be a function that returns a string. Whenever you
 need a schema key's label, use the new `mySchema.label(key)` method to get it.
+* Support `custom` option. This will likely replace `valueIsAllowed` eventually.
+Refer to "Custom Validation" and "Validating One Key Against Another" sections
+in the README.
 
 ### 0.2.30
 

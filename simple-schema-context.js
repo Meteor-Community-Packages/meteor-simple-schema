@@ -156,7 +156,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
     if (_.isEmpty(obj)) {
       throw new Error("When the modifier option is true, validation object must have at least one operator");
     } else {
-      var allKeysAreOperators = _.every(obj, function (v, k) {
+      var allKeysAreOperators = _.every(obj, function(v, k) {
         return (k.substring(0, 1) === "$");
       });
       if (!allKeysAreOperators) {
@@ -182,6 +182,8 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
   }
 
   var invalidKeys = [];
+  
+  var mDoc; // for caching the MongoObject if necessary
 
   // Validation function called for each affected key
   function validate(val, affectedKey, affectedKeyGeneric, def, op) {
@@ -241,8 +243,44 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
     }
 
     // Perform custom validation
-    _.every(ss._validators, function(validator) {
-      var errorType = validator(affectedKeyGeneric, val, def, op);
+    if (def.custom) {
+      var errorType = def.custom.call({
+        isSet: (val !== void 0),
+        value: val,
+        operator: op,
+        field: function(fName) {
+          mDoc = mDoc || new MongoObject(obj); //create if necessary, cache for speed
+          var keyInfo = mDoc.getArrayInfoForKey(fName) || mDoc.getInfoForKey(fName) || {};
+          return {
+            isSet: (keyInfo.value !== void 0),
+            value: keyInfo.value,
+            operator: keyInfo.operator
+          };
+        }
+      });
+      if (typeof errorType === "string") {
+        invalidKeys.push(errorObject(errorType, affectedKey, val, def, ss));
+        return;
+      }
+    }
+
+    _.every(ss._validators.concat(SimpleSchema._validators), function(validator) {
+      var errorType = validator.call({
+        key: affectedKeyGeneric,
+        definition: def,
+        isSet: (val !== void 0),
+        value: val,
+        operator: op,
+        field: function(fName) {
+          mDoc = mDoc || new MongoObject(obj); //create if necessary, cache for speed
+          var keyInfo = mDoc.getArrayInfoForKey(fName) || mDoc.getInfoForKey(fName) || {};
+          return {
+            isSet: (keyInfo.value !== void 0),
+            value: keyInfo.value,
+            operator: keyInfo.operator
+          };
+        }
+      }, affectedKeyGeneric, val, def, op); //pass args for backwards compatibility; don't use them
       if (typeof errorType === "string") {
         invalidKeys.push(errorObject(errorType, affectedKey, val, def, ss));
         return false;
@@ -264,7 +302,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
     if (affectedKey) {
 
       // Adjust for $push and $addToSet
-      if (! adjusted && (operator === "$push" || operator === "$addToSet")) {
+      if (!adjusted && (operator === "$push" || operator === "$addToSet")) {
         // Adjust for $each
         // We can simply jump forward and pretend like the $each array
         // is the array for the field. This has the added benefit of
@@ -316,8 +354,8 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
 
         // Filter out required keys that are ancestors
         // of those in $set
-        requiredKeys = _.filter(requiredKeys, function (k) {
-          return !_.some(presentKeys, function (pk) {
+        requiredKeys = _.filter(requiredKeys, function(k) {
+          return !_.some(presentKeys, function(pk) {
             return (pk.slice(0, k.length + 1) === k + ".");
           });
         });
