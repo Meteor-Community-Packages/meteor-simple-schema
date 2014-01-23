@@ -252,7 +252,7 @@ SimpleSchema.prototype.label = function(key) {
   var def = this.schema(key);
   if (key == null) {
     var result = {};
-    _.each(def, function (def, fieldName) {
+    _.each(def, function(def, fieldName) {
       result[fieldName] = this.label(fieldName);
     }, this);
     return result;
@@ -267,7 +267,7 @@ SimpleSchema.prototype.label = function(key) {
   var def = this.schema(key);
   if (key == null) {
     var result = {};
-    _.each(def, function (def, fieldName) {
+    _.each(def, function(def, fieldName) {
       result[fieldName] = this.label(fieldName);
     }, this);
     return result;
@@ -282,7 +282,7 @@ SimpleSchema.prototype.label = function(key) {
   var def = this.schema(key);
   if (key == null) {
     var result = {};
-    _.each(def, function (def, fieldName) {
+    _.each(def, function(def, fieldName) {
       result[fieldName] = this.label(fieldName);
     }, this);
     return result;
@@ -571,6 +571,8 @@ var expandSchema = function(schema) {
   // Flatten schema by inserting nested definitions
   _.each(schema, function(val, key) {
     var dot, type;
+    if (!val)
+      return;
     if (Match.test(val.type, SimpleSchema)) {
       dot = '.';
       type = val.type;
