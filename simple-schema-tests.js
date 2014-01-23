@@ -2765,7 +2765,13 @@ Tinytest.add("SimpleSchema - Custom Types", function(test) {
     file: new Uint8Array([104, 101, 108, 108, 111]),
     address: new Address("San Francisco", "CA")
   };
-  c1.validate(person);
+  
+  // without cleaning first
+  c1 = validate(peopleSchema, person, false, false, true);
+  test.length(c1.invalidKeys(), 0);
+  
+  // with cleaning first
+  c1 = validate(peopleSchema, person);
   test.length(c1.invalidKeys(), 0);
 
   var person2 = {
@@ -2774,7 +2780,13 @@ Tinytest.add("SimpleSchema - Custom Types", function(test) {
     file: {},
     address: {}
   };
-  c1.validate(person2);
+  
+  // without cleaning first
+  c1 = validate(peopleSchema, person2, false, false, true);
+  test.length(c1.invalidKeys(), 3);
+  
+  // with cleaning first
+  c1 = validate(peopleSchema, person2);
   test.length(c1.invalidKeys(), 3);
 
   peopleSchema = new SimpleSchema({
@@ -2791,8 +2803,13 @@ Tinytest.add("SimpleSchema - Custom Types", function(test) {
       type: Object
     }
   });
-  c1 = peopleSchema.newContext();
-  c1.validate(person);
+  
+  // without cleaning first
+  c1 = validate(peopleSchema, person, false, false, true);
+  test.length(c1.invalidKeys(), 4);
+  
+  // with cleaning first
+  c1 = validate(peopleSchema, person);
   test.length(c1.invalidKeys(), 4);
 });
 
