@@ -5,6 +5,11 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.32
+
+* Add support for `blackbox` option. See README
+* Ensure that NaN isn't considered a valid number
+
 ### 0.2.31
 
 * When combining and extending SimpleSchema instances, the individual field
