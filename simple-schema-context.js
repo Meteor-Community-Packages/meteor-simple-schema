@@ -249,7 +249,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
         value: val,
         operator: op,
         field: function(fName) {
-          mDoc = mDoc || new MongoObject(obj); //create if necessary, cache for speed
+          mDoc = mDoc || new MongoObject(obj, ss._blackboxKeys); //create if necessary, cache for speed
           var keyInfo = mDoc.getArrayInfoForKey(fName) || mDoc.getInfoForKey(fName) || {};
           return {
             isSet: (keyInfo.value !== void 0),
@@ -272,7 +272,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
         value: val,
         operator: op,
         field: function(fName) {
-          mDoc = mDoc || new MongoObject(obj); //create if necessary, cache for speed
+          mDoc = mDoc || new MongoObject(obj, ss._blackboxKeys); //create if necessary, cache for speed
           var keyInfo = mDoc.getArrayInfoForKey(fName) || mDoc.getInfoForKey(fName) || {};
           return {
             isSet: (keyInfo.value !== void 0),

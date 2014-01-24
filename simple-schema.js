@@ -20,7 +20,8 @@ var schemaDefinition = {
   valueIsAllowed: Match.Optional(Function), //TODO deprecate this in favor of custom?
   decimal: Match.Optional(Boolean),
   regEx: Match.Optional(Match.OneOf(RegExp, [RegExp])),
-  custom: Match.Optional(Function)
+  custom: Match.Optional(Function),
+  blackbox: Match.Optional(Boolean)
 };
 
 //exported
@@ -40,6 +41,9 @@ SimpleSchema = function(schemas, options) {
 
   // store the list of defined keys for speedier checking
   self._schemaKeys = [];
+  
+  // store the list of blackbox keys for passing to MongoObject constructor
+  self._blackboxKeys = [];
 
   // a place to store custom validators for this instance
   self._validators = [];
@@ -57,6 +61,10 @@ SimpleSchema = function(schemas, options) {
     fieldNameRoot = fieldName.split(".")[0];
 
     self._schemaKeys.push(fieldName);
+    
+    if (definition.blackbox === true) {
+      self._blackboxKeys.push(fieldName);
+    }
 
     if (!_.contains(firstLevelSchemaKeys, fieldNameRoot)) {
       firstLevelSchemaKeys.push(fieldNameRoot);
@@ -98,7 +106,7 @@ SimpleSchema = function(schemas, options) {
     }
 
   });
-
+  
   // Set override messages
   self.messages(overrideMessages);
 
@@ -202,7 +210,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
     }
   }
 
-  var mDoc = new MongoObject(doc);
+  var mDoc = new MongoObject(doc, self._blackboxKeys);
 
   // Filter out anything that would affect keys not defined
   // or implied by the schema
@@ -418,38 +426,38 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
 // by other explicitly allowed keys.
 // The key string should have $ in place of any numeric array positions.
 SimpleSchema.prototype.allowsKey = function(key) {
-  var self = this, schemaKeys = self._schemaKeys;
-
-  // Begin by assuming it's not allowed.
-  var allowed = false;
-
+  var self = this;
+  
   // Loop through all keys in the schema
-  for (var i = 0, ln = schemaKeys.length, schemaKey; i < ln; i++) {
-    schemaKey = schemaKeys[i];
-
+  return _.any(self._schemaKeys, function (schemaKey) {
+    
     // If the schema key is the test key, it's allowed.
     if (schemaKey === key) {
-      allowed = true;
-      break;
+      return true;
     }
 
     // If the schema key implies the test key because the schema key
     // starts with the test key followed by a period, it's allowed.
     if (schemaKey.substring(0, key.length + 1) === key + ".") {
-      allowed = true;
-      break;
+      return true;
     }
 
     // If the schema key implies the test key because the schema key
     // starts with the test key and the test key ends with ".$", it's allowed.
     var lastTwo = key.slice(-2);
     if (lastTwo === ".$" && key.slice(0, -2) === schemaKey) {
-      allowed = true;
-      break;
+      return true;
     }
-  }
-
-  return allowed;
+    
+    // If the schema key is an ancestor of the test key and the 
+    // schema key is a black box, it's allowed
+    if (self.schema(schemaKey).blackbox === true && 
+            key.slice(0, schemaKey.length + 1) === schemaKey + ".") {
+      return true;
+    }
+    
+    return false;
+  });
 };
 
 SimpleSchema.prototype.newContext = function() {

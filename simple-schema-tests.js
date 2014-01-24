@@ -2,6 +2,36 @@
  * BEGIN SETUP FOR TESTS
  */
 
+// Custom type for custom type checking
+Address = function(city, state) {
+  this.city = city;
+  this.state = state;
+};
+
+Address.prototype = {
+  constructor: Address,
+  toString: function() {
+    return this.city + ', ' + this.state;
+  },
+  clone: function() {
+    return new Address(this.city, this.state);
+  },
+  equals: function(other) {
+    if (!(other instanceof Address))
+      return false;
+    return EJSON.stringify(this) === EJSON.stringify(other);
+  },
+  typeName: function() {
+    return "Address";
+  },
+  toJSONValue: function() {
+    return {
+      city: this.city,
+      state: this.state
+    };
+  }
+};
+
 var ssr = new SimpleSchema({
   requiredString: {
     type: String
@@ -182,6 +212,11 @@ var ss = new SimpleSchema({
     type: String,
     regEx: SchemaRegEx.Url,
     optional: true
+  },
+  customObject: {
+    type: Address,
+    optional: true,
+    blackbox: true
   }
 });
 
@@ -2597,6 +2632,12 @@ Tinytest.add("SimpleSchema - Cleanup With Modifier Operators", function(test) {
   doTest({string: "This is a string", admin: true}, {string: "This is a string"});
   //type conversion works
   doTest({string: 1}, {string: "1"});
+  
+  //WITH CUSTOM OBJECT
+
+  //when you clean a good object it's still good
+  var myObj = new Address("New York", "NY");
+  doTest({customObject: myObj}, {customObject: myObj});
 
   //$SET
 
@@ -2712,36 +2753,6 @@ Tinytest.add("SimpleSchema - Cleanup With Modifier Operators", function(test) {
 });
 
 Tinytest.add("SimpleSchema - Custom Types", function(test) {
-
-  Address = function(city, state) {
-    this.city = city;
-    this.state = state;
-  };
-
-  Address.prototype = {
-    constructor: Address,
-    toString: function() {
-      return this.city + ', ' + this.state;
-    },
-    clone: function() {
-      return new Address(this.city, this.state);
-    },
-    equals: function(other) {
-      if (!(other instanceof Address))
-        return false;
-      return EJSON.stringify(this) === EJSON.stringify(other);
-    },
-    typeName: function() {
-      return "Address";
-    },
-    toJSONValue: function() {
-      return {
-        city: this.city,
-        state: this.state
-      };
-    }
-  };
-
   var peopleSchema = new SimpleSchema({
     name: {
       type: String,

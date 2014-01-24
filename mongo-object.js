@@ -1,9 +1,10 @@
 /*
  * @constructor
  * @param {Object} objOrModifier
+ * @param {string[]} blackBoxKeys - A list of the names of keys that shouldn't be traversed
  * @returns {undefined}
  */
-MongoObject = function(objOrModifier) {
+MongoObject = function(objOrModifier, blackBoxKeys) {
   var self = this;
   self._obj = objOrModifier;
   self._affectedKeys = {};
@@ -34,7 +35,7 @@ MongoObject = function(objOrModifier) {
         adjusted = true;
       }
 
-      if (currentPosition && (!isBasicObject(val) || _.isEmpty(val)) && (!_.isArray(val) || _.isEmpty(val))) {
+      if (currentPosition && (!isBasicObject(val) || _.isEmpty(val) || _.contains(blackBoxKeys, makeGeneric(affectedKey))) && (!_.isArray(val) || _.isEmpty(val))) {
         self._affectedKeys[currentPosition] = affectedKey;
         self._genericAffectedKeys[currentPosition] = makeGeneric(affectedKey);
       }
@@ -50,7 +51,7 @@ MongoObject = function(objOrModifier) {
     // Loop through object keys, only for basic objects,
     // but always for the passed-in object, even if it
     // is a custom object.
-    else if (isBasicObject(val) || ! currentPosition) {
+    else if ((isBasicObject(val) && ! _.contains(blackBoxKeys, makeGeneric(affectedKey))) || ! currentPosition) {
       _.each(val, function(v, k) {
         if (k !== "$slice") {
           parseObj(v, (currentPosition ? currentPosition + "[" + k + "]" : k), appendAffectedKey(affectedKey, k), operator, adjusted);
