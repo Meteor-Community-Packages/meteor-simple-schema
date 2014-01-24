@@ -1035,6 +1035,12 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
     number: 1.1
   });
   test.length(sc.invalidKeys(), 1);
+  
+  //isNaN number failure
+  sc = validate(ss, {
+    number: NaN
+  });
+  test.length(sc.invalidKeys(), 1);
 
   /* INSTANCE FAILURES */
 

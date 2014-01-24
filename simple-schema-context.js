@@ -438,7 +438,7 @@ var doTypeChecks = function(def, keyValue, op) {
 
   // Number checks
   else if (expectedType === Number) {
-    if (typeof keyValue !== "number") {
+    if (typeof keyValue !== "number" || isNaN(keyValue)) {
       return "expectedNumber";
     } else if (op !== "$inc" && max !== null && max < keyValue) {
       return "maxNumber";
