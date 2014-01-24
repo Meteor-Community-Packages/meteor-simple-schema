@@ -183,11 +183,6 @@ of that type.
 * `[Object]`
 * `[Date]`
 
-Note that "black box" `Object`s are not allowed. All non-custom `Object`s are
-traversed. This means that if you use `type: Object`, you must define all of
-that object's allowed properties in your schema, too. If you want to accept
-a "black box" object, create a custom object type and use `type: MyCustomObject`.
-
 ### label
 
 A string that will be used to refer to this field in validation error messages.
@@ -311,6 +306,22 @@ Currently `SimpleSchema.RegEx.Email` and `SimpleSchema.RegEx.Url`
 are the only values. Feel free to add more with a pull request. If
 you use the built-in e-mail or url validation with an AutoForm, the
 form input will be of type `email` or `url`, respectively, by default.
+
+### blackbox
+
+If you have a key with type `Object`, the properties of the object will be
+validated as well, so you must define all allowed properties in the schema. If this is
+not possible or you don't care to validate the object's properties, use the
+`blackbox: true` option to skip validation for everything within the object.
+
+Custom object types are treated as blackbox objects by default. However, 
+when using collection2, you must ensure that the custom type is not lost
+between client and server. This can be done with a `transform` function that
+converts the generic Object to the custom object. Without this transformation,
+client-side inserts and updates might succeed on the client but then fail on
+the server. Alternatively, if you don't care about losing the custom type,
+you can explicitly set `blackbox: true` for a custom object type instead of
+using a transformation.
 
 ### custom
 
