@@ -10,7 +10,7 @@ if (Meteor.isClient) {
 
 var schemaDefinition = {
   type: Match.Any,
-  label: Match.Optional(String),
+  label: Match.Optional(Match.OneOf(String, Function)),
   optional: Match.Optional(Boolean),
   min: Match.Optional(Match.OneOf(Number, Date, Function)),
   max: Match.Optional(Match.OneOf(Number, Date, Function)),
@@ -258,60 +258,20 @@ SimpleSchema.prototype.labels = function(labels) {
 // should be used to safely get a label as string
 SimpleSchema.prototype.label = function(key) {
   var def = this.schema(key);
+  // if there is no field defined use all fields
   if (key == null) {
     var result = {};
     _.each(def, function(def, fieldName) {
       result[fieldName] = this.label(fieldName);
     }, this);
     return result;
-  } else {
-    var label = def != null ? def.label : undefined;
-    return _.isFunction(label) ? label.call(def) : label;
-  }
-}
-
-// should be used to safely get a label as string
-SimpleSchema.prototype.label = function(key) {
-  var def = this.schema(key);
-  if (key == null) {
-    var result = {};
-    _.each(def, function(def, fieldName) {
-      result[fieldName] = this.label(fieldName);
-    }, this);
-    return result;
-  } else {
-    var label = def != null ? def.label : undefined;
-    return _.isFunction(label) ? label.call(def) : label;
-  }
-}
-
-// should be used to safely get a label as string
-SimpleSchema.prototype.label = function(key) {
-  var def = this.schema(key);
-  if (key == null) {
-    var result = {};
-    _.each(def, function(def, fieldName) {
-      result[fieldName] = this.label(fieldName);
-    }, this);
-    return result;
-  } else {
-    var label = def != null ? def.label : undefined;
-    return _.isFunction(label) ? label.call(def) : label;
-  }
-}
-
-// should be used to safely get a label as string
-SimpleSchema.prototype.label = function(key) {
-  var def = this.schema(key) || {};
-  if (key == null) {
-    var result = {};
-    _.each(def, function(def, fieldName) {
-      result[fieldName] = this.label(fieldName);
-    }, this);
-    return result;
-  } else {
+  // if a field was defined get that
+  } else if (def != null) {
     var label = def.label;
     return _.isFunction(label) ? label.call(def) : label;
+  // TODO the label generation could be done here instead
+  } else {
+  	return null;
   }
 };
 
