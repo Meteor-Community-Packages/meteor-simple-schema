@@ -2864,6 +2864,7 @@ Tinytest.add("SimpleSchema - Nested Schemas", function(test) {
 Tinytest.add("SimpleSchema - Labels", function(test) {
   //inflection
   test.equal(ss.label("minMaxNumber"), "Min max number", '"minMaxNumber" should have inflected to "Min max number" label');
+  test.equal(ssr.label("optionalObject.requiredString"), "Required string", '"optionalObject.requiredString" should have inflected to "Required string" label');
 
   //dynamic
   ss.labels({"sub.number": "A different label"});
@@ -3058,20 +3059,16 @@ Tinytest.add("SimpleSchema - Basic Schema Merge", function(test) {
 
   test.equal(s1._schema, {
     a: {
-      type: Boolean,
-      label: "A"
+      type: Boolean
     },
     b: {
-      type: String,
-      label: "B"
+      type: String
     },
     c: {
-      type: String,
-      label: "C"
+      type: String
     },
     d: {
-      type: String,
-      label: "D"
+      type: String
     }
   }, "schema was not merged correctly");
 
@@ -3104,25 +3101,20 @@ Tinytest.add("SimpleSchema - Mixed Schema Merge", function(test) {
 
   test.equal(s2._schema, {
     a: {
-      type: Boolean,
-      label: "A"
+      type: Boolean
     },
     b: {
-      type: Array,
-      label: "B"
+      type: Array
     },
     'b.$': {
       type: String,
-      optional: true,
-      label: "B"
+      optional: true
     },
     c: {
-      type: String,
-      label: "C"
+      type: String
     },
     d: {
-      type: String,
-      label: "D"
+      type: String
     }
   }, "schema was not merged correctly");
 
@@ -3161,8 +3153,7 @@ Tinytest.add("SimpleSchema - Mixed Schema Merge With Base Extend and Override", 
 
   test.equal(s2._schema, {
     a: {
-      type: Number,
-      label: "A"
+      type: Number
     },
     b: {
       type: Array,
@@ -3174,12 +3165,10 @@ Tinytest.add("SimpleSchema - Mixed Schema Merge With Base Extend and Override", 
       label: "Bacon"
     },
     c: {
-      type: String,
-      label: "C"
+      type: String
     },
     d: {
-      type: String,
-      label: "D"
+      type: String
     }
   }, "schema was not merged correctly");
   

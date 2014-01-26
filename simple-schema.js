@@ -41,7 +41,7 @@ SimpleSchema = function(schemas, options) {
 
   // store the list of defined keys for speedier checking
   self._schemaKeys = [];
-  
+
   // store the list of blackbox keys for passing to MongoObject constructor
   self._blackboxKeys = [];
 
@@ -61,7 +61,7 @@ SimpleSchema = function(schemas, options) {
     fieldNameRoot = fieldName.split(".")[0];
 
     self._schemaKeys.push(fieldName);
-    
+
     if (definition.blackbox === true) {
       self._blackboxKeys.push(fieldName);
     }
@@ -106,7 +106,7 @@ SimpleSchema = function(schemas, options) {
     }
 
   });
-  
+
   // Set override messages
   self.messages(overrideMessages);
 
@@ -257,21 +257,20 @@ SimpleSchema.prototype.labels = function(labels) {
 
 // should be used to safely get a label as string
 SimpleSchema.prototype.label = function(key) {
-  var def = this.schema(key);
+  var self = this, def = self.schema(key);
   // if there is no field defined use all fields
   if (key == null) {
     var result = {};
     _.each(def, function(def, fieldName) {
-      result[fieldName] = this.label(fieldName);
-    }, this);
+      result[fieldName] = self.label(fieldName);
+    });
     return result;
-  // if a field was defined get that
+    // if a field was defined get that
   } else if (def != null) {
     var label = def.label;
-    return _.isFunction(label) ? label.call(def) : label;
-  // TODO the label generation could be done here instead
+    return _.isFunction(label) ? label.call(def) : (label || inflectedLabel(key));
   } else {
-  	return null;
+    return null;
   }
 };
 
@@ -387,10 +386,10 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
 // The key string should have $ in place of any numeric array positions.
 SimpleSchema.prototype.allowsKey = function(key) {
   var self = this;
-  
+
   // Loop through all keys in the schema
-  return _.any(self._schemaKeys, function (schemaKey) {
-    
+  return _.any(self._schemaKeys, function(schemaKey) {
+
     // If the schema key is the test key, it's allowed.
     if (schemaKey === key) {
       return true;
@@ -408,14 +407,14 @@ SimpleSchema.prototype.allowsKey = function(key) {
     if (lastTwo === ".$" && key.slice(0, -2) === schemaKey) {
       return true;
     }
-    
+
     // If the schema key is an ancestor of the test key and the 
     // schema key is a black box, it's allowed
-    if (self.schema(schemaKey).blackbox === true && 
+    if (self.schema(schemaKey).blackbox === true &&
             key.slice(0, schemaKey.length + 1) === schemaKey + ".") {
       return true;
     }
-    
+
     return false;
   });
 };
@@ -514,7 +513,7 @@ var mergeSchemas = function(schemas) {
     if (Match.test(schema, SimpleSchema)) {
       schema = schema._schema;
     } else {
-      schema = inflectLabels(addImplicitKeys(expandSchema(schema)));
+      schema = addImplicitKeys(expandSchema(schema));
     }
 
     // Loop through and extend each individual field
@@ -678,31 +677,17 @@ var getObjectKeys = function(schema, schemaKeyList) {
   return rKeys;
 };
 
-//label inflection
-var inflectLabels = function(schema) {
-  if (!_.isObject(schema))
-    return schema;
-
-  var editedSchema = {};
-  _.each(schema, function(definition, fieldName) {
-    if (_.isString(definition.label) || _.isFunction(definition.label)) {
-      editedSchema[fieldName] = definition;
-      return;
+// returns an inflected version of fieldName to use as the label
+var inflectedLabel = function(fieldName) {
+  var label = fieldName, lastPeriod = label.lastIndexOf(".");
+  if (lastPeriod !== -1) {
+    label = label.substring(lastPeriod + 1);
+    if (label === "$") {
+      var pcs = fieldName.split(".");
+      label = pcs[pcs.length - 2];
     }
-
-    var label = fieldName, lastPeriod = label.lastIndexOf(".");
-    if (lastPeriod !== -1) {
-      label = label.substring(lastPeriod + 1);
-      if (label === "$") {
-        var pcs = fieldName.split(".");
-        label = pcs[pcs.length - 2];
-      }
-    }
-    definition.label = S(label).humanize().s;
-    editedSchema[fieldName] = definition;
-  });
-
-  return editedSchema;
+  }
+  return S(label).humanize().s;
 };
 
 var deleteIfPresent = function(obj, key) {
