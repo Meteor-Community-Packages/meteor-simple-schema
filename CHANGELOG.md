@@ -5,6 +5,12 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.33
+
+* Fix validation of `blackbox` objects
+* Fix `labels` method
+* Messages and labels are now reactive
+
 ### 0.2.32
 
 * Add support for `blackbox` option. See README

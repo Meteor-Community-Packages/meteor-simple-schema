@@ -133,12 +133,23 @@ SimpleSchemaValidationContext.prototype.keyIsInvalid = function(name) {
 
 SimpleSchemaValidationContext.prototype.keyErrorMessage = function(name) {
   var self = this, genericName = makeGeneric(name);
+  var ss = self._simpleSchema;
   self._deps[genericName].depend();
+  
   var errorObj = _.findWhere(self._invalidKeys, {name: name});
   if (!errorObj) {
     errorObj = _.findWhere(self._invalidKeys, {name: genericName});
+    if (!errorObj) {
+      return "";
+    }
   }
-  return errorObj ? errorObj.message : "";
+
+  var def = ss.schema(genericName);
+  if (!def) {
+    return "";
+  }
+  
+  return ss.messageForError(errorObj.type, errorObj.name, def, errorObj.value);
 };
 
 /*
@@ -182,7 +193,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
   }
 
   var invalidKeys = [];
-  
+
   var mDoc; // for caching the MongoObject if necessary
 
   // Validation function called for each affected key
@@ -341,7 +352,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
     }
 
     // Loop through object keys
-    else if (isBasicObject(val)) {
+    else if (isBasicObject(val) && (!def || !def.blackbox)) {
 
       // Get list of present keys
       var presentKeys = _.keys(val);
@@ -525,7 +536,9 @@ var isBlankNullOrUndefined = function(str) {
 };
 
 var errorObject = function(errorType, keyName, keyValue, def, ss) {
-  return {name: keyName, type: errorType, message: ss.messageForError(errorType, keyName, def, keyValue)};
+  // TODO when we're sure nothing relies on the `message` prop anymore, retire it
+  // We should be getting error message dynamically from keyErrorMessage method
+  return {name: keyName, type: errorType, value: keyValue, message: ss.messageForError(errorType, keyName, def, keyValue)};
 };
 
 // Tests whether it's an Object as opposed to something that inherits from Object

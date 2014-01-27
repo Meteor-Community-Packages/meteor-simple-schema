@@ -189,9 +189,8 @@ A string that will be used to refer to this field in validation error messages.
 The default is an inflected (humanized) derivation of the key name itself. For
 example, the key "firstName" will have a default label of "First name".
 
-If you require reactive translations or a field that changes it's meaning in some
-circumstances you can provide a callback function as a label. Note that the generated
-validation messages aren't reactive afterwards.
+If you require a field that changes it's meaning in some
+circumstances you can provide a callback function as a label.
 
 ```js
 MySchema = new SimpleSchema({
@@ -205,16 +204,19 @@ MySchema = new SimpleSchema({
 });
 ```
 
-To access the labels again use `MySchema.label(fieldName)` which will generate you
-a usable string. If this is done inside `Meteor.render()` the label will be reactive.
-
-If you need to alter labels on the fly you can do so using the `labels` method.
+Alternatively, you can use the `labels` method to alter one or more labels on
+the fly:
 
 ```js
 MySchema.labels({
     password: "Enter your password"
 });
 ```
+
+This method causes reactive labels to update.
+
+To get the label for a field, use `MySchema.label(fieldName)`, which returns
+a usable string. This method is reactive.
 
 ### optional
 
@@ -549,7 +551,10 @@ method returns the normalized copy.
 
 ## Customizing Validation Messages
 
-To customize validation messages, pass a messages object to `SimpleSchema.messages()`.
+To customize validation messages, pass a messages object to either 
+`SimpleSchema.messages()` or `mySimpleSchemaInstance.messages()`. Instance-specific
+messages are given priority over global messages.
+
 The format of the messages object is:
 
 ```js
@@ -589,7 +594,7 @@ The message is a string. It can contain a number of different placeholders indic
 By way of example, here is what it would look like if you defined the default error messages yourself:
 
 ```js
-MySchema.messages({
+SimpleSchema.messages({
     required: "[label] is required",
     minString: "[label] must be at least [min] characters",
     maxString: "[label] cannot exceed [max] characters",
@@ -611,10 +616,11 @@ MySchema.messages({
 });
 ```
 
-You should call this method on both the client and the server to make sure that your messages are consistent.
-If you are interested in supporting multiple languages, you should be able to rerun this method
-to change the messages at any time, for example, in an autorun function based on a language value stored in session
-that loads the message object from static json files.
+You should call this method on both the client and the server to make sure
+that your messages are consistent. You can call this method multiple times,
+for example to change languages on the fly, and the messages on screen will
+reactively change. If your message contains a `[label]` placeholder, the
+label name reactively updates when changed, too.
 
 ## Dates
 

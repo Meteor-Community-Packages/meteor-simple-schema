@@ -217,6 +217,11 @@ var ss = new SimpleSchema({
     type: Address,
     optional: true,
     blackbox: true
+  },
+  blackBoxObject: {
+    type: Object,
+    optional: true,
+    blackbox: true
   }
 });
 
@@ -2405,6 +2410,25 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Update - Invalid - $set", f
   test.length(sc.invalidKeys(), 1);
 });
 
+Tinytest.add("SimpleSchema - Black Box Objects", function(test) {
+  var sc = validate(ss, {
+    blackBoxObject: "string"
+  }, false, false, true);
+  test.length(sc.invalidKeys(), 1);
+  
+  var sc = validate(ss, {
+    blackBoxObject: {}
+  }, false, false, true);
+  test.length(sc.invalidKeys(), 0);
+  
+  var sc = validate(ss, {
+    blackBoxObject: {
+      foo: "bar"
+    }
+  }, false, false, true);
+  test.length(sc.invalidKeys(), 0);
+});
+
 Tinytest.add("SimpleSchema - Validation Against Another Key - Insert - Valid", function(test) {
   var sc = validate(pss, {
     password: "password",
@@ -2644,6 +2668,13 @@ Tinytest.add("SimpleSchema - Cleanup With Modifier Operators", function(test) {
   //when you clean a good object it's still good
   var myObj = new Address("New York", "NY");
   doTest({customObject: myObj}, {customObject: myObj});
+  
+  //when you clean a good object it's still good
+  var myObj = {
+    foo: "bar",
+    "foobar.foobar": 10000
+  };
+  doTest({blackBoxObject: myObj}, {blackBoxObject: myObj});
 
   //$SET
 

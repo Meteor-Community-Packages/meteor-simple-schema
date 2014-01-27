@@ -50,6 +50,9 @@ SimpleSchema = function(schemas, options) {
 
   // a place to store custom error messages for this schema
   self._messages = {};
+  
+  self._depsMessages = new Deps.Dependency;
+  self._depsLabels = {};
 
   var overrideMessages = {};
   _.each(self._schema, function(definition, fieldName) {
@@ -61,6 +64,8 @@ SimpleSchema = function(schemas, options) {
     fieldNameRoot = fieldName.split(".")[0];
 
     self._schemaKeys.push(fieldName);
+    
+    self._depsLabels[fieldName] = new Deps.Dependency;
 
     if (definition.blackbox === true) {
       self._blackboxKeys.push(fieldName);
@@ -133,6 +138,8 @@ SimpleSchema.RegEx = {
   Email: /^([0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*@([0-9a-zA-Z][-\w]*[0-9a-zA-Z]\.)+[a-zA-Z]{2,9})$/,
   Url: /^(?:(?:https?|ftp):\/\/)(?:\S+(?::\S*)?@)?(?:(?!10(?:\.\d{1,3}){3})(?!127(?:\.\d{1,3}){3})(?!169\.254(?:\.\d{1,3}){2})(?!192\.168(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]+-?)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]+-?)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})))(?::\d{2,5})?(?:\/[^\s]*)?$/i
 };
+
+SimpleSchema._depsGlobalMessages = new Deps.Dependency;
 
 // exported for backwards compatibility, deprecated
 SchemaRegEx = SimpleSchema.RegEx;
@@ -251,7 +258,8 @@ SimpleSchema.prototype.labels = function(labels) {
     if (!(fieldName in self._schema))
       return;
 
-    self._schema[fieldName]["label"] = label;
+    self._schema[fieldName].label = label;
+    self._depsLabels[fieldName] && self._depsLabels[fieldName].changed();
   });
 };
 
@@ -267,6 +275,7 @@ SimpleSchema.prototype.label = function(key) {
     return result;
     // if a field was defined get that
   } else if (def != null) {
+    self._depsLabels[key] && self._depsLabels[key].depend();
     var label = def.label;
     return _.isFunction(label) ? label.call(def) : (label || inflectedLabel(key));
   } else {
@@ -300,12 +309,15 @@ SimpleSchema._globalMessages = {
 
 SimpleSchema.messages = function(messages) {
   _.extend(SimpleSchema._globalMessages, messages);
+  SimpleSchema._depsGlobalMessages.changed();
 };
 
 // Schema-specific messages
 
 SimpleSchema.prototype.messages = function(messages) {
-  _.extend(this._messages, messages);
+  var self = this;
+  _.extend(self._messages, messages);
+  self._depsMessages.changed();
 };
 
 // Returns a string message for the given error type and key. Uses the
@@ -317,6 +329,11 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
     genType = type.substring(0, firstTypePeriod);
     genTypePlusKey = genType + " " + key;
   }
+  
+  // reactively update when message templates or labels are changed
+  SimpleSchema._depsGlobalMessages.depend();
+  self._depsMessages.depend();
+  self._depsLabels[key] && self._depsLabels[key].depend();
 
   // Try finding the correct message to use at various levels, from most
   // specific to least specific.
