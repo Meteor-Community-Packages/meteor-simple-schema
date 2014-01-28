@@ -249,7 +249,7 @@ SimpleSchema.prototype.schema = function(key) {
   var self = this;
   // if not null or undefined (more specific)
   if (key != null) {
-    return self._schema[key];
+    return self._schema[SimpleSchema._makeGeneric(key)];
   } else {
     return self._schema;
   }
