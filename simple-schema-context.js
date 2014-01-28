@@ -41,7 +41,7 @@ SimpleSchemaValidationContext.prototype.validate = function(doc, options) {
   //mark all changed keys as changed
   var changedKeys = _.union(addedKeys, removedKeys);
   _.each(changedKeys, function(name) {
-    var genericName = makeGeneric(name);
+    var genericName = SimpleSchema._makeGeneric(name);
     if (genericName in self._deps) {
       self._deps[genericName].changed();
     }
@@ -82,7 +82,7 @@ SimpleSchemaValidationContext.prototype.validateOne = function(doc, keyName, opt
   }
 
   //mark key as changed due to new validation (they may be valid now, or invalid in a different way)
-  var genericName = makeGeneric(keyName);
+  var genericName = SimpleSchema._makeGeneric(keyName);
   if (genericName in self._deps) {
     self._deps[genericName].changed();
   }
@@ -98,7 +98,7 @@ SimpleSchemaValidationContext.prototype.resetValidation = function() {
   var removedKeys = _.pluck(self._invalidKeys, "name");
   self._invalidKeys = [];
   _.each(removedKeys, function(name) {
-    var genericName = makeGeneric(name);
+    var genericName = SimpleSchema._makeGeneric(name);
     if (genericName in self._deps) {
       self._deps[genericName].changed();
     }
@@ -119,20 +119,20 @@ SimpleSchemaValidationContext.prototype.invalidKeys = function() {
 
 SimpleSchemaValidationContext.prototype._keyIsInvalid = function(name, genericName) {
   var self = this;
-  genericName = genericName || makeGeneric(name);
+  genericName = genericName || SimpleSchema._makeGeneric(name);
   var specificIsInvalid = !!_.findWhere(self._invalidKeys, {name: name});
   var genericIsInvalid = (genericName !== name) ? (!!_.findWhere(self._invalidKeys, {name: genericName})) : false;
   return specificIsInvalid || genericIsInvalid;
 };
 
 SimpleSchemaValidationContext.prototype.keyIsInvalid = function(name) {
-  var self = this, genericName = makeGeneric(name);
+  var self = this, genericName = SimpleSchema._makeGeneric(name);
   self._deps[genericName].depend();
   return self._keyIsInvalid(name, genericName);
 };
 
 SimpleSchemaValidationContext.prototype.keyErrorMessage = function(name) {
-  var self = this, genericName = makeGeneric(name);
+  var self = this, genericName = SimpleSchema._makeGeneric(name);
   var ss = self._simpleSchema;
   self._deps[genericName].depend();
   
@@ -328,7 +328,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
 
       // Make a generic version of the affected key, and use that
       // to get the schema for this key.
-      affectedKeyGeneric = makeGeneric(affectedKey);
+      affectedKeyGeneric = SimpleSchema._makeGeneric(affectedKey);
       def = ss.schema(affectedKeyGeneric);
 
       // Perform validation for this key
@@ -557,11 +557,4 @@ var safariBugFix = function(type) {
 
 var isSet = function(val) {
   return val !== void 0 && val !== null;
-};
-
-var makeGeneric = function(name) {
-  if (typeof name !== "string")
-    return null;
-
-  return name.replace(/\.[0-9]+\./g, '.$.').replace(/\.[0-9]+/g, '.$');
 };

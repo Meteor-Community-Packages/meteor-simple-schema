@@ -5,6 +5,11 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### Next
+
+`label` method now works correctly when passing in specific array keys, e.g.,
+`array.0.name` as opposed to `array.$.name`
+
 ### 0.2.33
 
 * Fix validation of `blackbox` objects
