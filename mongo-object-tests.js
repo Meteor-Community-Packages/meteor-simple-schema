@@ -16,7 +16,7 @@ Tinytest.add("MongoObject - Round Trip", function(test) {
     var jpo = JSON.stringify(po);
     test.equal(jpo, jo, "After round trip, object was " + jpo + " but should have been " + jo);
   }
-  
+
   // Round Trip Tests
   rt({});
   rt({a: 1});
@@ -38,7 +38,7 @@ Tinytest.add("MongoObject - Round Trip", function(test) {
   rt({a: {b: [{c: 1}, {c: 2}]}});
   rt({a: {b: [{c: "Test1"}, {c: "Test2"}]}});
   rt({a: {b: [{c: new Date}, {c: new Date}]}});
-  
+
 });
 
 Tinytest.add("MongoObject - Flat", function(test) {
@@ -50,7 +50,7 @@ Tinytest.add("MongoObject - Flat", function(test) {
     var jexp = JSON.stringify(exp);
     test.equal(jfo, jexp, "Object " + jo + " was flattened to " + jfo + " but should have been " + jexp);
   }
-  
+
   // Round Trip Tests
   var testDate = new Date;
   testFlat({}, {});
@@ -73,6 +73,49 @@ Tinytest.add("MongoObject - Flat", function(test) {
   testFlat({a: {b: [{c: 1}, {c: 2}]}}, {"a.b.0.c": 1, "a.b.1.c": 2});
   testFlat({a: {b: [{c: "Test1"}, {c: "Test2"}]}}, {"a.b.0.c": "Test1", "a.b.1.c": "Test2"});
   testFlat({a: {b: [{c: testDate}, {c: testDate}]}}, {"a.b.0.c": testDate, "a.b.1.c": testDate});
+});
+
+Tinytest.add("MongoObject - removeValueForPosition", function(test) {
+  // Helper Function
+  function testRemove(o, exp, pos) {
+    var mDoc = new MongoObject(o);
+    mDoc.removeValueForPosition(pos);
+    var jo = JSON.stringify(o);
+    var jno = JSON.stringify(mDoc.getObject());
+    var jexp = JSON.stringify(exp);
+    test.equal(jno, jexp, "After round trip, object " + jo + " was " + jno + " but should have been " + jexp);
+  }
+
+  // correctly removed
+  testRemove({
+    foo: "bar"
+  }, {}, 'foo');
+
+  // correctly not removed
+  testRemove({
+    foo: "bar"
+  }, {
+    foo: "bar"
+  }, 'fooBar');
+  
+  // all descendents are removed, too
+  testRemove({
+    foo: {
+      bar: "foobar"
+    }
+  }, {}, 'foo');
+  
+  // but not siblings
+  testRemove({
+    foo: {
+      bar: "foobar",
+      foobar: 1
+    }
+  }, {
+    foo: {
+      bar: "foobar"
+    }
+  }, 'foo[foobar]');
 });
 
 //Test API:

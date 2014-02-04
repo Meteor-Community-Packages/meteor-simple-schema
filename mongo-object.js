@@ -132,7 +132,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
     // Update affected key caches
     for (var p in self._genericAffectedKeys) {
       if (self._genericAffectedKeys.hasOwnProperty(p)) {
-        if (position.slice(0, p.length) === p) {
+        if (p === position || p.slice(0, position.length + 1) === position + "[") {
           delete self._genericAffectedKeys[p];
           delete self._affectedKeys[p];
         }
