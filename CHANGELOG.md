@@ -5,6 +5,15 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.35
+
+* Fix an issue where properties could be removed during cleaning because they
+start with the same string of characters as an invalid property.
+* When determining which error message to display, we now look for the generic
+key after the specific key. For example, the error message for "addresses.$.street"
+will now be used for an error involving "addresses.0.street" when there is no
+specific error message for "addresses.0.street".
+
 ### 0.2.34
 
 `label` method now works correctly when passing in specific array keys, e.g.,

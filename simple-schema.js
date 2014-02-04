@@ -332,11 +332,20 @@ SimpleSchema.prototype.messages = function(messages) {
 // Returns a string message for the given error type and key. Uses the
 // def and value arguments to fill in placeholders in the error messages.
 SimpleSchema.prototype.messageForError = function(type, key, def, value) {
-  var self = this, typePlusKey = type + " " + key, genType,
-          genTypePlusKey, firstTypePeriod = type.indexOf(".");
+  var self = this;
+  
+  // Prep some strings to be used when finding the correct message for this error
+  var typePlusKey = type + " " + key;
+  var genericKey = SimpleSchema._makeGeneric(key);
+  var typePlusGenKey = type + " " + genericKey;
+  var firstTypePeriod = type.indexOf(".");
+  var genType;
+  var genTypePlusKey;
+  var genTypePlusGenKey;
   if (firstTypePeriod !== -1) {
     genType = type.substring(0, firstTypePeriod);
     genTypePlusKey = genType + " " + key;
+    genTypePlusGenKey = genType + " " + genericKey;
   }
   
   // reactively update when message templates or labels are changed
@@ -347,27 +356,34 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
   // Try finding the correct message to use at various levels, from most
   // specific to least specific.
   // 
-  // (1) Use message for specific key, specific type, schema-specific
-  // (2) Use message for specific type, schema-specific
-  var message = self._messages[typePlusKey] || self._messages[type];
-  // (3) Use message for specific key, general type, schema-specific
-  // (4) Use message for general type, schema-specific
+  // (1) Use schema-specific message for specific key, specific type
+  // (2) Use schema-specific message for generic key, specific type
+  // (3) Use schema-specific message for specific type
+  var message = self._messages[typePlusKey] || self._messages[typePlusGenKey] || self._messages[type];
+  // (4) Use schema-specific message for specific key, general type
+  // (5) Use schema-specific message for generic key, general type
+  // (6) Use schema-specific message for general type
   if (!message && genType) {
-    message = self._messages[genTypePlusKey] || self._messages[genType];
+    message = self._messages[genTypePlusKey] || self._messages[genTypePlusGenKey] || self._messages[genType];
   }
-  // (5) Use global message for specific key, specific type
-  // (6) Use global message for specific type
+  // (7) Use global message for specific key, specific type
+  // (8) Use global message for generic key, specific type
+  // (9) Use global message for specific type
   if (!message) {
-    message = SimpleSchema._globalMessages[typePlusKey] || SimpleSchema._globalMessages[type];
+    message = SimpleSchema._globalMessages[typePlusKey] || SimpleSchema._globalMessages[typePlusGenKey] || SimpleSchema._globalMessages[type];
   }
-  // (7) Use global message for specific key, general type
-  // (8) Use global message for general type
+  // (10) Use global message for specific key, general type
+  // (11) Use global message for generic key, general type
+  // (12) Use global message for general type
   if (!message && genType) {
-    message = SimpleSchema._globalMessages[genTypePlusKey] || SimpleSchema._globalMessages[genType];
+    message = SimpleSchema._globalMessages[genTypePlusKey] || SimpleSchema._globalMessages[genTypePlusGenKey] || SimpleSchema._globalMessages[genType];
   }
-  if (!message)
+  if (!message) {
     return "Unknown validation error";
-  def = def || self._schema[key] || {};
+  }
+  
+  // Now replace all placeholders in the message with the correct values
+  def = def || self.schema(key) || {};
   message = message.replace("[label]", self.label(key));
   if (typeof def.minCount !== "undefined") {
     message = message.replace("[minCount]", def.minCount);
@@ -404,6 +420,8 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
   if (def.type instanceof Function) {
     message = message.replace("[type]", def.type.name);
   }
+  
+  // Now return the message
   return message;
 };
 
