@@ -473,35 +473,6 @@ If you return a custom string, you'll usually want to define a message for it.
 name (schema key) as the only argument. The return object will have `isSet`, `value`,
 and `operator` properties for that field.
 
-### Validating One Key Against Another
-
-Here's an example of declaring one value valid or invalid based on another
-value using a custom validation function.
-
-```js
-SimpleSchema.messages({
-  "passwordMismatch": "Passwords do not match"
-});
-
-MySchema = new SimpleSchema({
-  password: {
-    type: String,
-    label: "Enter a password",
-    min: 8
-  },
-  confirmPassword: {
-    type: String,
-    label: "Enter the password again",
-    min: 8,
-    custom: function () {
-      if (this.value !== this.field('password').value) {
-        return "passwordMismatch";
-      }
-    }
-  }
-});
-```
-
 ### Other Validation Context Methods
 
 Call `myContext.invalidKeys()` to get the full array of invalid key data. Each object
@@ -642,6 +613,61 @@ This all becomes pretty great when put to use in the
 [collection2](https://github.com/aldeed/meteor-collection2)
 and [autoform](https://github.com/aldeed/meteor-autoform) packages.
 Take a look at their documentation.
+
+## Best Practice Code Examples
+
+### Make a field conditionally required
+
+If you have a field that should be required only in certain circumstances, first make the field
+optional, and then use a custom function similar to this:
+
+```js
+{
+  field: {
+    type: String,
+    optional: true,
+    custom: function () {
+      if (customCondition && !this.isSet && (!this.operator || (this.value === null || this.value === ""))) {
+        return "required";
+      }
+    }
+  }
+}
+```
+
+Where `customCondition` is whatever should trigger it being required.
+
+Note: In the future we could make this a bit simpler by allowing `optional` to be a function that returns
+true or false. Pull request welcome.
+
+### Validate one key against another
+
+Here's an example of declaring one value valid or invalid based on another
+value using a custom validation function.
+
+```js
+SimpleSchema.messages({
+  "passwordMismatch": "Passwords do not match"
+});
+
+MySchema = new SimpleSchema({
+  password: {
+    type: String,
+    label: "Enter a password",
+    min: 8
+  },
+  confirmPassword: {
+    type: String,
+    label: "Enter the password again",
+    min: 8,
+    custom: function () {
+      if (this.value !== this.field('password').value) {
+        return "passwordMismatch";
+      }
+    }
+  }
+});
+```
 
 ## License
 
