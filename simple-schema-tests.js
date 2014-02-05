@@ -2,6 +2,8 @@
  * BEGIN SETUP FOR TESTS
  */
 
+//SimpleSchema.debug = true;
+
 // Custom type for custom type checking
 Address = function(city, state) {
   this.city = city;

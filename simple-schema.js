@@ -50,7 +50,7 @@ SimpleSchema = function(schemas, options) {
 
   // a place to store custom error messages for this schema
   self._messages = {};
-  
+
   self._depsMessages = new Deps.Dependency;
   self._depsLabels = {};
 
@@ -64,7 +64,7 @@ SimpleSchema = function(schemas, options) {
     fieldNameRoot = fieldName.split(".")[0];
 
     self._schemaKeys.push(fieldName);
-    
+
     self._depsLabels[fieldName] = new Deps.Dependency;
 
     if (definition.blackbox === true) {
@@ -185,7 +185,20 @@ SimpleSchema.prototype.namedContext = function(name) {
   if (typeof name !== "string") {
     name = "default";
   }
-  self._validationContexts[name] = self._validationContexts[name] || new SimpleSchemaValidationContext(self);
+  if (!self._validationContexts[name]) {
+    self._validationContexts[name] = new SimpleSchemaValidationContext(self);
+    
+    // In debug mode, log all invalid key errors to the browser console
+    if (SimpleSchema.debug && Meteor.isClient) {
+      Meteor.startup(function() {
+        Deps.autorun(function() {
+          if (!self._validationContexts[name].isValid()) {
+            console.log(self._validationContexts[name].invalidKeys());
+          }
+        });
+      });
+    }
+  }
   return self._validationContexts[name];
 };
 
@@ -333,7 +346,7 @@ SimpleSchema.prototype.messages = function(messages) {
 // def and value arguments to fill in placeholders in the error messages.
 SimpleSchema.prototype.messageForError = function(type, key, def, value) {
   var self = this;
-  
+
   // Prep some strings to be used when finding the correct message for this error
   var typePlusKey = type + " " + key;
   var genericKey = SimpleSchema._makeGeneric(key);
@@ -347,7 +360,7 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
     genTypePlusKey = genType + " " + key;
     genTypePlusGenKey = genType + " " + genericKey;
   }
-  
+
   // reactively update when message templates or labels are changed
   SimpleSchema._depsGlobalMessages.depend();
   self._depsMessages.depend();
@@ -381,7 +394,7 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
   if (!message) {
     return "Unknown validation error";
   }
-  
+
   // Now replace all placeholders in the message with the correct values
   def = def || self.schema(key) || {};
   message = message.replace("[label]", self.label(key));
@@ -420,7 +433,7 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
   if (def.type instanceof Function) {
     message = message.replace("[type]", def.type.name);
   }
-  
+
   // Now return the message
   return message;
 };
@@ -731,7 +744,8 @@ var inflectedLabel = function(fieldName) {
       label = pcs[pcs.length - 2];
     }
   }
-  if (label === "_id") return "ID";
+  if (label === "_id")
+    return "ID";
   return S(label).humanize().s;
 };
 

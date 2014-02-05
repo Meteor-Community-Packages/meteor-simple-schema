@@ -5,6 +5,13 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.36
+
+You can now set `SimpleSchema.debug = true` to cause all named validation
+contexts to automatically log all invalid key errors to the browser console.
+This can be helpful while developing an app to figure out why certain
+actions are failing validation.
+
 ### 0.2.35
 
 * Fix an issue where properties could be removed during cleaning because they
