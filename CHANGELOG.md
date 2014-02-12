@@ -5,6 +5,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.37
+
+Fix a small issue with debug option.
+
 ### 0.2.36
 
 You can now set `SimpleSchema.debug = true` to cause all named validation

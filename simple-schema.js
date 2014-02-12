@@ -180,6 +180,16 @@ SimpleSchema.prototype.condition = function(obj) {
   return true;
 };
 
+function logInvalidKeysForContext(context, name) {
+  Meteor.startup(function() {
+    Deps.autorun(function() {
+      if (!context.isValid()) {
+        console.log('SimpleSchema invalid keys for "' + name + '" context:', context.invalidKeys());
+      }
+    });
+  });
+}
+
 SimpleSchema.prototype.namedContext = function(name) {
   var self = this;
   if (typeof name !== "string") {
@@ -187,15 +197,11 @@ SimpleSchema.prototype.namedContext = function(name) {
   }
   if (!self._validationContexts[name]) {
     self._validationContexts[name] = new SimpleSchemaValidationContext(self);
-    
+
     // In debug mode, log all invalid key errors to the browser console
     if (SimpleSchema.debug && Meteor.isClient) {
-      Meteor.startup(function() {
-        Deps.autorun(function() {
-          if (!self._validationContexts[name].isValid()) {
-            console.log(self._validationContexts[name].invalidKeys());
-          }
-        });
+      Deps.nonreactive(function () {
+        logInvalidKeysForContext(self._validationContexts[name], name);
       });
     }
   }
