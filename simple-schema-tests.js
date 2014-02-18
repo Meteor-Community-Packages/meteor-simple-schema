@@ -239,7 +239,7 @@ var pss = new SimpleSchema({
   },
   confirmPassword: {
     type: String,
-    custom: function () {
+    custom: function() {
       if (this.value !== this.field('password').value) {
         return "passwordMismatch";
       }
@@ -284,6 +284,94 @@ var friends = new SimpleSchema({
   'enemies.$.traits.$.weight': {
     type: Number,
     decimal: true
+  }
+});
+
+var autoValues = new SimpleSchema({
+  name: {
+    type: String
+  },
+  someDefault: {
+    type: Number,
+    autoValue: function() {
+      if (!this.isSet) {
+        return 5;
+      }
+    }
+  },
+  updateCount: {
+    type: Number,
+    autoValue: function() {
+      if (!this.operator) {
+        return 0;
+      } else {
+        return {$inc: 1};
+      }
+    }
+  },
+  content: {
+    type: String,
+    optional: true
+  },
+  firstWord: {
+    type: String,
+    optional: true,
+    autoValue: function() {
+      var content = this.field("content");
+      if (content.isSet) {
+        return content.value.split(' ')[0];
+      } else {
+        this.unset();
+      }
+    }
+  },
+  updatesHistory: {
+    type: [Object],
+    optional: true,
+    autoValue: function() {
+      var content = this.field("content");
+      if (content.isSet) {
+        if (!this.operator) {
+          return [{
+              date: new Date,
+              content: content.value
+            }];
+        } else {
+          return {
+            $push: {
+              date: new Date,
+              content: content.value
+            }
+          };
+        }
+      }
+    }
+  },
+  'updatesHistory.$.date': {
+    type: Date,
+    optional: true
+  },
+  'updatesHistory.$.content': {
+    type: String,
+    optional: true
+  }
+});
+
+var defaultValues = new SimpleSchema({
+  name: {
+    type: String,
+    defaultValue: "Test",
+    optional: true
+  },
+  'a.b': {
+    type: String,
+    defaultValue: "Test",
+    optional: true
+  },
+  'b.$.a': {
+    type: String,
+    defaultValue: "Test",
+    optional: true
   }
 });
 
@@ -364,7 +452,7 @@ Tinytest.add("SimpleSchema - Required Checks - Insert - Invalid", function(test)
     }
   });
   test.length(sc.invalidKeys(), 9);
-  
+
   sc = validate(ssr, {
     requiredString: null,
     requiredBoolean: null,
@@ -376,7 +464,7 @@ Tinytest.add("SimpleSchema - Required Checks - Insert - Invalid", function(test)
     optionalObject: {}
   });
   test.length(sc.invalidKeys(), 9);
-  
+
   sc = validate(ssr, {
     requiredString: null,
     requiredBoolean: null,
@@ -452,8 +540,8 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Valid - $set", function(
       requiredEmail: "test123@sub.example.edu",
       requiredUrl: "http://google.com",
       requiredObject: {
-      requiredNumber: 1
-    },
+        requiredNumber: 1
+      },
       optionalObject: {
         requiredString: "test"
       }
@@ -468,8 +556,8 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Valid - $set", function(
       requiredEmail: "test123@sub.example.edu",
       requiredUrl: "http://google.com",
       requiredObject: {
-      requiredNumber: 1
-    },
+        requiredNumber: 1
+      },
       'optionalObject.requiredString': "test"
     }}, true, true);
   test.equal(sc.invalidKeys(), []);
@@ -484,8 +572,8 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Valid - $setOnInsert", f
       requiredEmail: "test123@sub.example.edu",
       requiredUrl: "http://google.com",
       requiredObject: {
-      requiredNumber: 1
-    },
+        requiredNumber: 1
+      },
       optionalObject: {
         requiredString: "test"
       }
@@ -500,8 +588,8 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Valid - $setOnInsert", f
       requiredEmail: "test123@sub.example.edu",
       requiredUrl: "http://google.com",
       requiredObject: {
-      requiredNumber: 1
-    },
+        requiredNumber: 1
+      },
       'optionalObject.requiredString': "test"
     }}, true, true);
   test.equal(sc.invalidKeys(), []);
@@ -520,8 +608,8 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Valid - Combined", funct
       requiredEmail: "test123@sub.example.edu",
       requiredUrl: "http://google.com",
       requiredObject: {
-      requiredNumber: 1
-    },
+        requiredNumber: 1
+      },
       'optionalObject.requiredString': "test"
     }
   }, true, true);
@@ -538,8 +626,8 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Valid - Combined", funct
       requiredEmail: "test123@sub.example.edu",
       requiredUrl: "http://google.com",
       requiredObject: {
-      requiredNumber: 1
-    },
+        requiredNumber: 1
+      },
       'optionalObject.requiredString': "test"
     }
   }, true, true);
@@ -1042,7 +1130,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
     number: 1.1
   });
   test.length(sc.invalidKeys(), 1);
-  
+
   //isNaN number failure
   sc = validate(ss, {
     number: NaN
@@ -1142,10 +1230,10 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
       string: {test: "test"}
     }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
-  
+
   sc = validate(ss, {$setOnInsert: {
-    string: {test: "test"}
-  }}, true, true);
+      string: {test: "test"}
+    }}, true, true);
   test.length(sc.invalidKeys(), 1); //with filter
 
   //array string failure
@@ -1184,7 +1272,7 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
       boolean: {test: "test"}
     }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
-  
+
   sc = validate(ss, {$setOnInsert: {
       boolean: {test: "test"}
     }}, true, true);
@@ -1221,7 +1309,7 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
       number: {test: "test"}
     }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
-  
+
   sc = validate(ss, {$setOnInsert: {
       number: {test: "test"}
     }}, true, true);
@@ -1264,7 +1352,7 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
       date: {test: "test"}
     }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
-  
+
   sc = validate(ss, {$setOnInsert: {
       date: {test: "test"}
     }}, true, true);
@@ -1336,7 +1424,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
       string: {test: "test"}
     }}, {modifier: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
-  
+
   sc = validate(ss, {$set: {
       string: {test: "test"}
     }}, true, true);
@@ -1378,10 +1466,10 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
       boolean: {test: "test"}
     }}, {modifier: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
-  
+
   sc = validate(ss, {$set: {
-        boolean: {test: "test"}
-      }}, true, true);
+      boolean: {test: "test"}
+    }}, true, true);
   test.length(sc.invalidKeys(), 1); //with filter
 
   //array bool failure
@@ -1415,10 +1503,10 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
       number: {test: "test"}
     }}, {modifier: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
-  
+
   sc = validate(ss, {$set: {
-        number: {test: "test"}
-      }}, true, true);
+      number: {test: "test"}
+    }}, true, true);
   test.length(sc.invalidKeys(), 1); //with filter
 
   //array number failure
@@ -1473,7 +1561,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
       date: {test: "test"}
     }}, {modifier: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
-  
+
   sc = validate(ss, {$set: {
       date: {test: "test"}
     }}, true, true);
@@ -2369,12 +2457,12 @@ Tinytest.add("SimpleSchema - Black Box Objects", function(test) {
     blackBoxObject: "string"
   }, false, false, true);
   test.length(sc.invalidKeys(), 1);
-  
+
   var sc = validate(ss, {
     blackBoxObject: {}
   }, false, false, true);
   test.length(sc.invalidKeys(), 0);
-  
+
   var sc = validate(ss, {
     blackBoxObject: {
       foo: "bar"
@@ -2458,11 +2546,11 @@ Tinytest.add("SimpleSchema - Extend Schema Definition", function(test) {
   } catch (exception) {
     test.instanceOf(exception, Error);
   }
-  
+
   SimpleSchema.extendOptions({
     unique: Match.Optional(Boolean)
   });
-  
+
   try {
     ssWithUnique = new SimpleSchema({
       name: {
@@ -2616,13 +2704,13 @@ Tinytest.add("SimpleSchema - Cleanup With Modifier Operators", function(test) {
   doTest({string: "This is a string", admin: true}, {string: "This is a string"});
   //type conversion works
   doTest({string: 1}, {string: "1"});
-  
+
   //WITH CUSTOM OBJECT
 
   //when you clean a good object it's still good
   var myObj = new Address("New York", "NY");
   doTest({customObject: myObj}, {customObject: myObj});
-  
+
   //when you clean a good object it's still good
   var myObj = {
     foo: "bar",
@@ -2767,11 +2855,11 @@ Tinytest.add("SimpleSchema - Custom Types", function(test) {
     file: new Uint8Array([104, 101, 108, 108, 111]),
     address: new Address("San Francisco", "CA")
   };
-  
+
   // without cleaning first
   c1 = validate(peopleSchema, person, false, false, true);
   test.length(c1.invalidKeys(), 0);
-  
+
   // with cleaning first
   c1 = validate(peopleSchema, person);
   test.length(c1.invalidKeys(), 0);
@@ -2782,11 +2870,11 @@ Tinytest.add("SimpleSchema - Custom Types", function(test) {
     file: {},
     address: {}
   };
-  
+
   // without cleaning first
   c1 = validate(peopleSchema, person2, false, false, true);
   test.length(c1.invalidKeys(), 3);
-  
+
   // with cleaning first
   c1 = validate(peopleSchema, person2);
   test.length(c1.invalidKeys(), 3);
@@ -2805,11 +2893,11 @@ Tinytest.add("SimpleSchema - Custom Types", function(test) {
       type: Object
     }
   });
-  
+
   // without cleaning first
   c1 = validate(peopleSchema, person, false, false, true);
   test.length(c1.invalidKeys(), 4);
-  
+
   // with cleaning first
   c1 = validate(peopleSchema, person);
   test.length(c1.invalidKeys(), 4);
@@ -2854,14 +2942,16 @@ Tinytest.add("SimpleSchema - Labels", function(test) {
   //dynamic
   ss.labels({"sub.number": "A different label"});
   test.equal(ss.label("sub.number"), "A different label", '"sub.number" label should have been changed to "A different label"');
-  
+
   //callback
-  ss.labels({"sub.number": function () { return "A callback label" }});
+  ss.labels({"sub.number": function() {
+      return "A callback label"
+    }});
   test.equal(ss.label("sub.number"), "A callback label", '"sub.number" label should be "A callback label" through the callback function');
 });
 
 Tinytest.add("SimpleSchema - RegEx and Messages", function(test) {
-  
+
   // global
   SimpleSchema.messages({
     'regEx': 'Global Message One',
@@ -2879,7 +2969,7 @@ Tinytest.add("SimpleSchema - RegEx and Messages", function(test) {
       ]
     }
   });
-  
+
   var c1 = testSchema.newContext();
   c1.validate({one: "BBB"});
   test.length(c1.invalidKeys(), 1);
@@ -3024,22 +3114,22 @@ Tinytest.add("SimpleSchema - Issue 30", function(test) {
 Tinytest.add("SimpleSchema - Basic Schema Merge", function(test) {
 
   var s1 = new SimpleSchema([
-  {
-    a: {
-      type: Boolean
+    {
+      a: {
+        type: Boolean
+      },
+      b: {
+        type: String
+      }
     },
-    b: {
-      type: String
+    {
+      c: {
+        type: String
+      },
+      d: {
+        type: String
+      }
     }
-  },
-  {
-    c: {
-      type: String
-    },
-    d: {
-      type: String
-    }
-  }
   ]);
 
   test.equal(s1._schema, {
@@ -3156,11 +3246,70 @@ Tinytest.add("SimpleSchema - Mixed Schema Merge With Base Extend and Override", 
       type: String
     }
   }, "schema was not merged correctly");
-  
+
   // test validation
   var ctx = s2.namedContext();
   var isValid = ctx.validate({a: "Wrong"});
   test.length(ctx.invalidKeys(), 4);
+
+});
+
+Tinytest.add("SimpleSchema - AutoValues", function(test) {
+
+  function avClean(obj, exp, opts) {
+    autoValues.clean(obj, opts);
+    test.equal(obj, exp);
+  }
+
+  avClean(
+          {name: "Test", firstWord: "Illegal to manually set value"},
+  {name: "Test", someDefault: 5, updateCount: 0}
+  );
+
+  avClean(
+          {name: "Test", someDefault: 20},
+  {name: "Test", someDefault: 20, updateCount: 0}
+  );
+
+  var o = {name: "Test", content: 'Hello world!'};
+  autoValues.clean(o);
+  test.equal(o.firstWord, 'Hello', 'expected firstWord to be "Hello"');
+  test.length(o.updatesHistory, 1);
+  test.equal(o.updatesHistory[0].content, 'Hello world!', 'expected updatesHistory.content to be "Hello world!"');
+
+});
+
+Tinytest.add("SimpleSchema - DefaultValues", function(test) {
+
+  function avClean(obj, exp, opts) {
+    defaultValues.clean(obj, opts);
+    test.equal(obj, exp);
+  }
+
+  avClean(
+          {},
+  {name: "Test", a: {b: "Test"}}
+  );
+
+  avClean(
+          {name: "Test1", a: {b: "Test1"}},
+  {name: "Test1", a: {b: "Test1"}}
+  );
+  
+  avClean(
+          {name: "Test1", a: {b: "Test1"}, b: []},
+  {name: "Test1", a: {b: "Test1"}, b: []}
+  );
+  
+  avClean(
+          {name: "Test1", a: {b: "Test1"}, b: [{}]},
+  {name: "Test1", a: {b: "Test1"}, b: [{a: "Test"}]}
+  );
+  
+  avClean(
+          {name: "Test1", a: {b: "Test1"}, b: [{a: "Test1"}, {}]},
+  {name: "Test1", a: {b: "Test1"}, b: [{a: "Test1"}, {a: "Test"}]}
+  );
 
 });
 

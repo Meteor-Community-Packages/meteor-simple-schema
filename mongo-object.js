@@ -102,14 +102,15 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
   self.forEachNode = function(func, options) {
     if (typeof func !== "function")
       throw new Error("filter requires a loop function");
-    
+
     options = _.extend({
       endPointsOnly: true
     }, options);
-    
+
     var updatedValues = {};
     _.each(self._affectedKeys, function(affectedKey, position) {
-      if (options.endPointsOnly && _.contains(self._parentPositions, position)) return; //only endpoints
+      if (options.endPointsOnly && _.contains(self._parentPositions, position))
+        return; //only endpoints
       func.call({
         updateValue: function(newVal) {
           updatedValues[position] = newVal;
@@ -119,12 +120,12 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
         }
       }, self.getValueForPosition(position), position, affectedKey, self._genericAffectedKeys[position]);
     });
-    
+
     // Actually update/remove values as instructed
-    _.each(updatedValues, function (newVal, position) {
+    _.each(updatedValues, function(newVal, position) {
       self.setValueForPosition(position, newVal);
     });
-    
+
   };
 
   self.getValueForPosition = function(position) {
@@ -151,7 +152,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    */
   self.setValueForPosition = function(position, value) {
     var nextPiece, subkey, subkeys = position.split("["), current = self._obj;
-    
+
     for (var i = 0, ln = subkeys.length; i < ln; i++) {
       subkey = subkeys[i];
       // If the subkey ends in "]", remove the ending
@@ -165,7 +166,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
         //if value is undefined, delete the property
         if (value === void 0)
           delete current[subkey];
-      } 
+      }
       // Otherwise attempt to keep moving deeper into the object.
       else {
         // If we're setting (as opposed to deleting) a key and we hit a place
@@ -176,10 +177,10 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
           nextPiece = parseInt(nextPiece, 10);
           current[subkey] = isNaN(nextPiece) ? {} : [];
         }
-        
+
         // Move deeper into the object
         current = current[subkey];
-        
+
         // If we can go no further, then quit
         if (!isArray(current) && !isBasicObject(current) && i < ln - 1) {
           return;
@@ -323,23 +324,10 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    * Adds `key` with value `val` under operator `op` to the source object.
    */
   self.addKey = function(key, val, op) {
-    var position, keyPieces;
-    if (typeof op === "string") {
-      position = op + "[" + key + "]";
-    } else {
-      keyPieces = key.split(".");
-      for (var i = 0, ln = keyPieces.length; i < ln; i++) {
-        if (i === 0) {
-          position = keyPieces[i];
-        } else {
-          position += "[" + keyPieces[i] + "]";
-        }
-      }
-    }
-
+    var position = op ? op + "[" + key + "]" : MongoObject._keyToPosition(key);
     self.setValueForPosition(position, val);
   };
-  
+
   /**
    * @method MongoObject.prototype.removeGenericKeys
    * @param {String[]} keys
@@ -427,8 +415,8 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
         }
       }
     }
-    
-    _.each(keysToRemove, function (key) {
+
+    _.each(keysToRemove, function(key) {
       self.removeGenericKey(key);
     });
   };
@@ -485,24 +473,6 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
   self.getObject = function() {
     return self._obj;
   };
-
-  /**
-   * @method MongoObject._rebuildObject
-   * @private
-   * @returns {undefined}
-   * 
-   * Rebuilds the source object from the list of affected keys.
-   */
-//  self._rebuildObject = function() {
-//    var newObj = {};
-//    _.each(self._affectedKeys, function(affectedKey, position) {
-//      if (!_.contains(self._parentPositions, position)) {
-//        MongoObject.expandKey(self.getValueForPosition(position), position, newObj);
-//      }
-//    });
-//    self._obj = newObj;
-//    reParseObj();
-//  };
 
   /**
    * @method MongoObject.getFlatObject
@@ -634,6 +604,18 @@ MongoObject.expandKey = function(val, key, obj) {
     }
     current = current[subkey];
   }
+};
+
+MongoObject._keyToPosition = function keyToPosition(key, wrapAll) {
+  var position = '';
+  _.each(key.split("."), function (piece, i) {
+    if (i === 0 && !wrapAll) {
+      position += piece;
+    } else {
+      position += "[" + piece + "]";
+    }
+  });
+  return position;
 };
 
 var isArray = Array.isArray || function(obj) {

@@ -22,7 +22,8 @@ var schemaDefinition = {
   regEx: Match.Optional(Match.OneOf(RegExp, [RegExp])),
   custom: Match.Optional(Function),
   blackbox: Match.Optional(Boolean),
-  autoValue: Match.Optional(Function)
+  autoValue: Match.Optional(Function),
+  defaultValue: Match.Optional(Match.Any)
 };
 
 //exported
@@ -45,6 +46,9 @@ SimpleSchema = function(schemas, options) {
   
   // store autoValue functions by key
   self._autoValues = {};
+  
+  // store defaultValues by key
+  self._defaultValues = {};
 
   // store the list of blackbox keys for passing to MongoObject constructor
   self._blackboxKeys = [];
@@ -70,7 +74,15 @@ SimpleSchema = function(schemas, options) {
     self._schemaKeys.push(fieldName);
 
     if ('autoValue' in definition) {
+      if (fieldName.slice(-2) === ".$") {
+        throw new Error('An array item field (one that ends with ".$") cannot have autoValue.')
+      }
       self._autoValues[fieldName] = definition.autoValue;
+    } else if ('defaultValue' in definition) {
+      if (fieldName.slice(-2) === ".$") {
+        throw new Error('An array item field (one that ends with ".$") cannot have defaultValue.')
+      }
+      self._defaultValues[fieldName] = definition.defaultValue;
     }
 
     self._depsLabels[fieldName] = new Deps.Dependency;
@@ -235,6 +247,7 @@ SimpleSchema.prototype.addValidator = SimpleSchema.prototype.validator = functio
  * @param {Boolean} [options.filter=true] - Do filtering?
  * @param {Boolean} [options.autoConvert=true] - Do automatic type converting?
  * @param {Boolean} [options.getAutoValues=true] - Inject automatic values?
+ * @param {Boolean} [options.getDefaultValues=true] - Inject default values?
  * @param {Boolean} [options.isModifier=false] - Is doc a modifier object?
  * @param {Object} [options.extendAutoValueContext] - This object will be added to the `this` context of autoValue functions.
  * @returns {Object} The modified doc.
@@ -251,6 +264,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
     filter: true,
     autoConvert: true,
     getAutoValues: true,
+    getDefaultValues: true,
     isModifier: false,
     extendAutoValueContext: {}
   }, options || {});
@@ -269,7 +283,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
   }
 
   var mDoc = new MongoObject(doc, self._blackboxKeys);
-
+  
   // Filter out anything that would affect keys not defined
   // or implied by the schema
   options.filter && mDoc.filterGenericKeys(function(genericKey) {
@@ -278,6 +292,9 @@ SimpleSchema.prototype.clean = function(doc, options) {
   
   // Set automatic values
   options.getAutoValues && getAutoValues.call(self, mDoc, options.isModifier, options.extendAutoValueContext);
+  
+  // Set default values for non-modifier docs only
+  options.getDefaultValues && !options.isModifier && getDefaultValues.call(self, mDoc);
   
   // Autoconvert values if requested and if possible
   options.autoConvert && mDoc.forEachNode(function(val, position, affectedKey, affectedKeyGeneric) {
@@ -825,7 +842,7 @@ function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
     }, extendedAutoValueContext || {}), mDoc.getObject());
 
     if (autoValue === void 0) {
-      doUnset && mDoc.removeKey(fieldName);
+      doUnset && mDoc.removeGenericKey(fieldName);
       return;
     }
 
@@ -863,4 +880,46 @@ function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
     }
   });
 }
-;
+
+/**
+ * @method getDefaultValues
+ * @private 
+ * @param {MongoObject} mDoc
+ * @returns {undefined}
+ * 
+ * Updates doc with default values from the defaultValue option. Modifies
+ * the referenced object in place. Intended to be called for normal, non-modifier
+ * objects only.
+ */
+function getDefaultValues(mDoc) {
+  var self = this;
+  _.each(self._defaultValues, function(value, fieldName) {
+    // If does not affect this field and we're under an array, add the field
+    // with the default value only for objects that are present in the nearest
+    // ancestor array.
+    if (fieldName.indexOf("$") !== -1) {
+      var nearestArrayKey = fieldName.slice(0, fieldName.lastIndexOf("$") + 1);
+      var remainingKey = fieldName.slice(nearestArrayKey.length + 1);
+      var endingPosition = MongoObject._keyToPosition(remainingKey, true);
+      var positions = mDoc.getPositionsForGenericKey(nearestArrayKey);
+      positions.forEach(function (position) {
+        if (mDoc.getValueForPosition(position + endingPosition) === void 0) {
+          mDoc.setValueForPosition(position + endingPosition, value);
+        }
+      });
+    }
+    // If affects this field and val is undefined, set to default
+    else if (mDoc.affectsGenericKey(fieldName)) {
+      var keyInfo = mDoc.getInfoForKey(fieldName) || {};
+      // Set default values only if the current value is undefined
+      if (keyInfo.value === void 0) {
+        mDoc.setValueForGenericKey(fieldName, value);
+      }
+    }
+    // If does not affect this field and we're not under an array, add the
+    // field with the default value
+    else {
+      mDoc.addKey(fieldName, value, null);
+    }
+  });
+}

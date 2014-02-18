@@ -176,6 +176,23 @@ Tinytest.add("MongoObject - getInfoForKey", function(test) {
 
 });
 
+Tinytest.add("MongoObject - _keyToPosition", function(test) {
+  // Helper Function
+  function convert(key, wrapAll, exp) {
+    var pos = MongoObject._keyToPosition(key, wrapAll);
+    var jpos = JSON.stringify(pos);
+    var jexp = JSON.stringify(exp);
+    test.equal(jpos, jexp, "Key converted incorrectly to position");
+  }
+
+  convert('foo', false, 'foo');
+  convert('foo', true, '[foo]');
+  convert('foo.bar', false, 'foo[bar]');
+  convert('foo.bar', true, '[foo][bar]');
+  convert('foo.bar.0', false, 'foo[bar][0]');
+  convert('foo.bar.0', true, '[foo][bar][0]');
+});
+
 //Test API:
 //test.isFalse(v, msg)
 //test.isTrue(v, msg)
