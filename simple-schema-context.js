@@ -197,7 +197,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
   var mDoc; // for caching the MongoObject if necessary
 
   // Validation function called for each affected key
-  function validate(val, affectedKey, affectedKeyGeneric, def, op) {
+  function validate(val, affectedKey, affectedKeyGeneric, def, op, localObject) {
 
     // Get the schema for this key, marking invalid if there isn't one.
     if (!def) {
@@ -246,7 +246,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
       }
 
       // Check value using valusIsAllowed function
-      if (def.valueIsAllowed && !def.valueIsAllowed(val, obj, op)) {
+      if (def.valueIsAllowed && !def.valueIsAllowed(val, obj, op, localObject)) {
         invalidKeys.push(errorObject("notAllowed", affectedKey, val, def, ss));
         return;
       }
@@ -267,7 +267,8 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
             value: keyInfo.value,
             operator: keyInfo.operator
           };
-        }
+        },
+        localObject: localObject
       });
       if (typeof errorType === "string") {
         invalidKeys.push(errorObject(errorType, affectedKey, val, def, ss));
@@ -301,8 +302,10 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
   }
 
   // The recursive function
-  function checkObj(val, affectedKey, operator, adjusted) {
+  function checkObj(val, affectedKey, operator, adjusted, localObject) {
     var affectedKeyGeneric, def;
+
+    localObject = (localObject !== undefined) ? localObject : val;
 
     // Adjust for first-level modifier operators
     if (!operator && affectedKey && affectedKey.substring(0, 1) === "$") {
@@ -333,7 +336,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
 
       // Perform validation for this key
       if (!keyToValidate || keyToValidate === affectedKey || keyToValidate === affectedKeyGeneric) {
-        validate(val, affectedKey, affectedKeyGeneric, def, operator);
+        validate(val, affectedKey, affectedKeyGeneric, def, operator, localObject);
       }
     }
 
@@ -347,7 +350,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
     // Loop through arrays
     if (_.isArray(val)) {
       _.each(val, function(v, i) {
-        checkObj(v, affectedKey + '.' + i, operator, adjusted);
+        checkObj(v, affectedKey + '.' + i, operator, adjusted, localObject);
       });
     }
 
@@ -387,7 +390,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
       // Check all keys in the merged list
       _.each(keysToCheck, function(key) {
         if (shouldCheck(key)) {
-          checkObj(val[key], appendAffectedKey(affectedKey, key), operator, adjusted);
+          checkObj(val[key], appendAffectedKey(affectedKey, key), operator, adjusted, val);
         }
       });
     }
