@@ -944,7 +944,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   sc = validate(ss, {
     string: {test: "test"}
   });
-  test.equal(sc.invalidKeys(), []); //with filter
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //array string failure
   sc = validate(ss, {
@@ -986,7 +986,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   sc = validate(ss, {
     boolean: {test: "test"}
   });
-  test.equal(sc.invalidKeys(), []); //with filter
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //array bool failure
   sc = validate(ss, {
@@ -1023,7 +1023,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   sc = validate(ss, {
     number: {test: "test"}
   });
-  test.equal(sc.invalidKeys(), []); //with filter
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //array number failure
   sc = validate(ss, {
@@ -1072,7 +1072,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   sc = validate(ss, {
     date: {test: "test"}
   });
-  test.equal(sc.invalidKeys(), []); //with filter
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //array date failure
   sc = validate(ss, {
@@ -1142,17 +1142,11 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
       string: {test: "test"}
     }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
-
-  //with filter, the doc will become empty and error should
-  //be thrown
-  try {
-    sc = validate(ss, {$setOnInsert: {
-        string: {test: "test"}
-      }}, true, true);
-    test.fail({type: 'exception', message: 'Expected an exception to be thrown'});
-  } catch (exception) {
-    test.instanceOf(exception, Error);
-  }
+  
+  sc = validate(ss, {$setOnInsert: {
+    string: {test: "test"}
+  }}, true, true);
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //array string failure
   sc = validate(ss, {$setOnInsert: {
@@ -1190,17 +1184,11 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
       boolean: {test: "test"}
     }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
-
-  //with filter, the doc will become empty and error should
-  //be thrown
-  try {
-    sc = validate(ss, {$setOnInsert: {
-        boolean: {test: "test"}
-      }}, true, true);
-    test.fail({type: 'exception', message: 'Expected an exception to be thrown'});
-  } catch (exception) {
-    test.instanceOf(exception, Error);
-  }
+  
+  sc = validate(ss, {$setOnInsert: {
+      boolean: {test: "test"}
+    }}, true, true);
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //array bool failure
   sc = validate(ss, {$setOnInsert: {
@@ -1233,17 +1221,11 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
       number: {test: "test"}
     }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
-
-  //with filter, the doc will become empty and error should
-  //be thrown
-  try {
-    sc = validate(ss, {$setOnInsert: {
-        number: {test: "test"}
-      }}, true, true);
-    test.fail({type: 'exception', message: 'Expected an exception to be thrown'});
-  } catch (exception) {
-    test.instanceOf(exception, Error);
-  }
+  
+  sc = validate(ss, {$setOnInsert: {
+      number: {test: "test"}
+    }}, true, true);
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //array number failure
   sc = validate(ss, {$setOnInsert: {
@@ -1282,17 +1264,11 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
       date: {test: "test"}
     }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
-
-  //with filter, the doc will become empty and error should
-  //be thrown
-  try {
-    sc = validate(ss, {$setOnInsert: {
-        date: {test: "test"}
-      }}, true, true);
-    test.fail({type: 'exception', message: 'Expected an exception to be thrown'});
-  } catch (exception) {
-    test.instanceOf(exception, Error);
-  }
+  
+  sc = validate(ss, {$setOnInsert: {
+      date: {test: "test"}
+    }}, true, true);
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //array date failure
   sc = validate(ss, {$setOnInsert: {
@@ -1360,17 +1336,11 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
       string: {test: "test"}
     }}, {modifier: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
-
-  //with filter, the doc will become empty and error should
-  //be thrown
-  try {
-    sc = validate(ss, {$set: {
-        string: {test: "test"}
-      }}, true);
-    test.fail({type: 'exception', message: 'Expected an exception to be thrown'});
-  } catch (exception) {
-    test.instanceOf(exception, Error);
-  }
+  
+  sc = validate(ss, {$set: {
+      string: {test: "test"}
+    }}, true, true);
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //array string failure
   sc = validate(ss, {$set: {
@@ -1408,17 +1378,11 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
       boolean: {test: "test"}
     }}, {modifier: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
-
-  //with filter, the doc will become empty and error should
-  //be thrown
-  try {
-    sc = validate(ss, {$set: {
+  
+  sc = validate(ss, {$set: {
         boolean: {test: "test"}
-      }}, true);
-    test.fail({type: 'exception', message: 'Expected an exception to be thrown'});
-  } catch (exception) {
-    test.instanceOf(exception, Error);
-  }
+      }}, true, true);
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //array bool failure
   sc = validate(ss, {$set: {
@@ -1451,17 +1415,11 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
       number: {test: "test"}
     }}, {modifier: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
-
-  //with filter, the doc will become empty and error should
-  //be thrown
-  try {
-    sc = validate(ss, {$set: {
+  
+  sc = validate(ss, {$set: {
         number: {test: "test"}
-      }}, true);
-    test.fail({type: 'exception', message: 'Expected an exception to be thrown'});
-  } catch (exception) {
-    test.instanceOf(exception, Error);
-  }
+      }}, true, true);
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //array number failure
   sc = validate(ss, {$set: {
@@ -1515,17 +1473,11 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
       date: {test: "test"}
     }}, {modifier: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
-
-  //with filter, the doc will become empty and error should
-  //be thrown
-  try {
-    sc = validate(ss, {$set: {
-        date: {test: "test"}
-      }}, true);
-    test.fail({type: 'exception', message: 'Expected an exception to be thrown'});
-  } catch (exception) {
-    test.instanceOf(exception, Error);
-  }
+  
+  sc = validate(ss, {$set: {
+      date: {test: "test"}
+    }}, true, true);
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //array date failure
   sc = validate(ss, {$set: {

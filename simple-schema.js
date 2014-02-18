@@ -21,7 +21,8 @@ var schemaDefinition = {
   decimal: Match.Optional(Boolean),
   regEx: Match.Optional(Match.OneOf(RegExp, [RegExp])),
   custom: Match.Optional(Function),
-  blackbox: Match.Optional(Boolean)
+  blackbox: Match.Optional(Boolean),
+  autoValue: Match.Optional(Function)
 };
 
 //exported
@@ -41,6 +42,9 @@ SimpleSchema = function(schemas, options) {
 
   // store the list of defined keys for speedier checking
   self._schemaKeys = [];
+  
+  // store autoValue functions by key
+  self._autoValues = {};
 
   // store the list of blackbox keys for passing to MongoObject constructor
   self._blackboxKeys = [];
@@ -64,6 +68,10 @@ SimpleSchema = function(schemas, options) {
     fieldNameRoot = fieldName.split(".")[0];
 
     self._schemaKeys.push(fieldName);
+
+    if ('autoValue' in definition) {
+      self._autoValues[fieldName] = definition.autoValue;
+    }
 
     self._depsLabels[fieldName] = new Deps.Dependency;
 
@@ -200,7 +208,7 @@ SimpleSchema.prototype.namedContext = function(name) {
 
     // In debug mode, log all invalid key errors to the browser console
     if (SimpleSchema.debug && Meteor.isClient) {
-      Deps.nonreactive(function () {
+      Deps.nonreactive(function() {
         logInvalidKeysForContext(self._validationContexts[name], name);
       });
     }
@@ -220,14 +228,31 @@ SimpleSchema.prototype.addValidator = SimpleSchema.prototype.validator = functio
   this._validators.push(func);
 };
 
-// Filter and automatically type convert
+/**
+ * @method SimpleSchema.prototype.clean
+ * @param {Object} doc - Document or modifier to clean. Referenced object will be modified in place.
+ * @param {Object} [options]
+ * @param {Boolean} [options.filter=true] - Do filtering?
+ * @param {Boolean} [options.autoConvert=true] - Do automatic type converting?
+ * @param {Boolean} [options.getAutoValues=true] - Inject automatic values?
+ * @param {Boolean} [options.isModifier=false] - Is doc a modifier object?
+ * @param {Object} [options.extendAutoValueContext] - This object will be added to the `this` context of autoValue functions.
+ * @returns {Object} The modified doc.
+ * 
+ * Cleans a document or modifier object. By default, will filter, automatically
+ * type convert where possible, and inject automatic values. Use the options
+ * to skip one or more of these.
+ */
 SimpleSchema.prototype.clean = function(doc, options) {
   var self = this;
-
+  
   // By default, doc will be filtered and autoconverted
   options = _.extend({
     filter: true,
-    autoConvert: true
+    autoConvert: true,
+    getAutoValues: true,
+    isModifier: false,
+    extendAutoValueContext: {}
   }, options || {});
 
   // Convert $pushAll (deprecated) to $push with $each
@@ -250,16 +275,19 @@ SimpleSchema.prototype.clean = function(doc, options) {
   options.filter && mDoc.filterGenericKeys(function(genericKey) {
     return self.allowsKey(genericKey);
   });
-
+  
+  // Set automatic values
+  options.getAutoValues && getAutoValues.call(self, mDoc, options.isModifier, options.extendAutoValueContext);
+  
   // Autoconvert values if requested and if possible
   options.autoConvert && mDoc.forEachNode(function(val, position, affectedKey, affectedKeyGeneric) {
     if (affectedKeyGeneric) {
       var def = self._schema[affectedKeyGeneric];
       def && this.updateValue(typeconvert(val, def.type));
     }
-  });
-
-  return mDoc.getObject();
+  }, {endPointsOnly: false});
+  
+  return doc;
 };
 
 // Returns the entire schema object or just the definition for one key
@@ -516,6 +544,8 @@ SimpleSchema.prototype.valueIsAllowedSchemaKeys = function() {
 
 //called by clean()
 var typeconvert = function(value, type) {
+  if (_.isArray(value) || (_.isObject(value) && !(value instanceof Date)))
+    return value; //can't and shouldn't convert arrays or objects
   if (type === String) {
     if (typeof value !== "undefined" && value !== null && typeof value !== "string") {
       return value.toString();
@@ -760,3 +790,77 @@ var deleteIfPresent = function(obj, key) {
     delete obj[key];
   }
 };
+
+/**
+ * @method getAutoValues
+ * @private 
+ * @param {MongoObject} mDoc
+ * @param {Boolean} [isModifier=false] - Is it a modifier doc?
+ * @param {Object} [extendedAutoValueContext] - Object that will be added to the context when calling each autoValue function
+ * @returns {undefined}
+ * 
+ * Updates doc with automatic values from autoValue functions. Modifies
+ * the referenced object in place.
+ */
+function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
+  var self = this;
+  _.each(self._autoValues, function(func, fieldName) {
+    var keyInfo = mDoc.getInfoForKey(fieldName) || {};
+    var doUnset = false;
+    var autoValue = func.call(_.extend({
+      isSet: mDoc.affectsGenericKey(fieldName),
+      unset: function() {
+        doUnset = true;
+      },
+      value: keyInfo.value,
+      operator: keyInfo.operator,
+      field: function(fName) {
+        var keyInfo = mDoc.getInfoForKey(fName) || {};
+        return {
+          isSet: (keyInfo.value !== void 0),
+          value: keyInfo.value,
+          operator: keyInfo.operator
+        };
+      }
+    }, extendedAutoValueContext || {}), mDoc.getObject());
+
+    if (autoValue === void 0) {
+      doUnset && mDoc.removeKey(fieldName);
+      return;
+    }
+
+    // If the user's auto value is of the pseudo-modifier format, parse it
+    // into operator and value.
+    var fieldNameHasDollar = (fieldName.indexOf(".$") !== -1);
+    var newValue = autoValue;
+    var op = null;
+    if (_.isObject(autoValue)) {
+      for (var key in autoValue) {
+        if (autoValue.hasOwnProperty(key) && key.substring(0, 1) === "$") {
+          if (fieldNameHasDollar) {
+            throw new Error("The return value of an autoValue function may not be an object with update operators when the field name contains a dollar sign");
+          }
+          op = key;
+          newValue = autoValue[key];
+          break;
+        }
+      }
+    }
+
+    // Add $set for updates and upserts if necessary
+    if (op === null && isModifier) {
+      op = "$set";
+    }
+
+    if (fieldNameHasDollar) {
+      // There is no way to know which specific keys should be set to
+      // the autoValue, so we will set only keys that exist
+      // in the object and match this generic key.
+      mDoc.setValueForGenericKey(fieldName, newValue);
+    } else {
+      mDoc.removeKey(fieldName);
+      mDoc.addKey(fieldName, newValue, op);
+    }
+  });
+}
+;
