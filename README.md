@@ -287,6 +287,7 @@ The function is passed three arguments:
 * `value`: The value to be validated
 * `obj`: The entire object (document or modifier) being validated
 * `operator`: A string identifying which operator is currently being validated if `obj` is a modifier. For non-modifier objects, this will be null.
+* `localObject`: The local object being validated.  For schemas with nested objects, this is the object containing the key being validated.
 
 The valueIsAllowed function may be called multiple times with different `operator` arguments
 for a single validation run. If you are unsure what operators might be used, your
@@ -472,6 +473,7 @@ If you return a custom string, you'll usually want to define a message for it.
     * `field()`: Use this method to get information about other fields. Pass a field
 name (schema key) as the only argument. The return object will have `isSet`, `value`,
 and `operator` properties for that field.
+    * `localObject`: The local object being validated.  For schemas with nested objects, this is the object containing the key being validated.
 
 ### Other Validation Context Methods
 
