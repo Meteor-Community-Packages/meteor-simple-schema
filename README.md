@@ -280,22 +280,8 @@ is not one of these.
 
 ### valueIsAllowed
 
-A function that must return true to allow the value.
-
-The function is passed three arguments:
-
-* `value`: The value to be validated
-* `obj`: The entire object (document or modifier) being validated
-* `operator`: A string identifying which operator is currently being validated if `obj` is a modifier. For non-modifier objects, this will be null.
-
-The valueIsAllowed function may be called multiple times with different `operator` arguments
-for a single validation run. If you are unsure what operators might be used, your
-code must handle all possible operators or return false for operators you don't want to allow.
-
-The valueIsAllowed function is called for undefined or null values, too. If the
-field is `optional: true`, be sure to return true from your valueIsAllowed
-function whenever `value` is null or undefined, unless you want to override the
-`optional` setting and make it required in certain circumstances.
+Deprecated. Use the `custom` option and return "notAllowed" if the value
+is not allowed.
 
 ### regEx
 
@@ -338,25 +324,39 @@ in the exact object that you are going to pass to `Collection.insert()` or
 
 ## Cleaning Data
 
-SimpleSchema instances provide a `clean` method that you can use to autoConvert
-and/or filter an object before validating it.
+SimpleSchema instances provide a `clean` method that cleans or alters data in
+a number of ways. It's intended to be called prior to validation to avoid
+any avoidable validation errors.
 
-* Filtering removes any keys not explicitly or implicitly allowed by the schema,
+The `clean` method takes the object to be cleaned as its first argument and
+the following optional options as its second argument:
+
+ * `filter`: Filter properties not found in the schema? True by default.
+ * `autoConvert`: Type convert properties into the correct type where possible? True by default.
+ * `getAutoValues`: Run `autoValue` functions and inject automatic values? True by default.
+ * `getDefaultValues`: Inject `defaultValue` values for undefined or missing values? True by default.
+ * `isModifier`: Is the first argument a modifier object? False by default.
+ * `extendAutoValueContext`: This object will be added to the `this` context of autoValue functions.
+
+Additional notes:
+
+* The object is cleaned in place. That is, the original referenced object will
+be cleaned. You do not have to use the return value of the `clean` method.
+* `filter` removes any keys not explicitly or implicitly allowed by the schema,
 which prevents errors being thrown for those keys during validation.
-* Automatic value conversion helps eliminate unnecessary validation
+* `autoConvert` helps eliminate unnecessary validation
 messages by automatically converting values where possible. For example, non-string
 values can be converted to a String if the schema expects a String, and strings
 that are numbers can be converted to Numbers if the schema expects a Number.
-
-By default, `clean` does both. If you want to skip either filtering or type
-conversion, set the corresponding option to false:
+* `getDefaultValues` runs only when `isModifier` is `false`.
+* `extendAutoValueContext` can be used to give your `autoValue` functions
+additional valuable information, such as `userId`. (Note that operations done
+using the Collection2 package automatically add `userId` to the `autoValue`
+context already.)
 
 ```js
-// This does nothing
-obj = mySchema.clean(obj, {
-  filter: false,
-  autoConvert: false
-});
+mySchema.clean(obj);
+//obj is now potentially changed
 ```
 
 NOTE: The `collection2` package always calls `clean` before every insert, update,
@@ -417,20 +417,29 @@ context object and causes the reactive methods to react.
 Now you can call `myContext.isValid()` to see if the object passed into `validate()`
 was found to be valid. This is a reactive method that returns true or false.
 
-Note: When you are passing in a mongo modifier object, set the `modifier` option to true:
-
-```js
-myContext.validate({$set: { age: 29 }}, { modifier: true });
-```
+For a list of options, see the "Validation Options" section.
 
 ### Validating Only One Key in an Object
 
-You may have the need to validate just one key. For this, use `myContext.validateOne(obj, key, options)`.
-Only the specified schema key will be validated. This may cause all of the
-reactive methods to react.
+You may have the need to validate just one key. For this,
+use `myContext.validateOne(obj, key, options)`. This works the same way as the
+`validate` method, except that only the specified schema key will be validated.
+This may cause all of the reactive methods to react.
 
 This method returns `true` if the specified schema key is valid according to
 the schema or `false` if it is not.
+
+For a list of options, see the "Validation Options" section.
+
+### Validation Options
+
+Both `validate` and `validateOne` methods accept the following options:
+
+* `modifier`: Are you validating a Mongo modifier object? False by default.
+* `upsert`: Are you validating a Mongo modifier object potentially containing
+upsert operators? False by default.
+* `extendedCustomContext`: This object will be added to the `this` context in
+any custom validation functions that are run during validation. See "Custom Validation" section.
 
 ### Validating Using check() or Match.test()
 
@@ -457,21 +466,25 @@ specific SimpleSchema instance, use `mySimpleSchema.addValidator(myFunction)`.
 * To add a custom validation function that is called for a specific key in
 a specific schema, use the `custom` option in the schema definition for that key.
 
-All custom validation functions are similar:
+All custom validation functions work the same way and have the same `this` context:
 
 * Do any necessary custom validation, and return an error type string if you
 determine that the value is invalid. Any non-string return value means the value is valid.
 * The error type string can be one of the built-in strings or any string you want.
 If you return a custom string, you'll usually want to define a message for it.
 * Within the function, `this` provides the following properties:
-    * `key`: The generic name of the schema key. (Not set for `custom` because you already know.)
-    * `definition`: The schema definition object. (Not set for `custom` because you already know.)
+    * `key`: The name of the schema key (e.g., "addresses.0.street")
+    * `genericKey`: The generic name of the schema key (e.g., "addresses.$.street")
+    * `definition`: The schema definition object.
     * `isSet`: Does the object being validated have this key set?
-    * `value`: The value to validate
+    * `value`: The value to validate.
     * `operator`: The mongo operator for which we're doing validation. Might be `null`.
     * `field()`: Use this method to get information about other fields. Pass a field
-name (schema key) as the only argument. The return object will have `isSet`, `value`,
-and `operator` properties for that field.
+name (non-generic schema key) as the only argument. The return object will have
+`isSet`, `value`, and `operator` properties for that field.
+    * `siblingField()`: Use this method to get information about other fields that
+have the same parent object. Works the same way as `field()`. This is helpful
+when you use sub-schemas or when you're dealing with arrays of objects.
 
 ### Other Validation Context Methods
 

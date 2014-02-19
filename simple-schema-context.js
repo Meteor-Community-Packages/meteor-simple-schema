@@ -21,10 +21,11 @@ SimpleSchemaValidationContext.prototype.validate = function(doc, options) {
   var self = this;
   options = _.extend({
     modifier: false,
-    upsert: false
+    upsert: false,
+    extendedCustomContext: {}
   }, options || {});
 
-  var invalidKeys = doValidation(doc, options.modifier, options.upsert, null, self._simpleSchema);
+  var invalidKeys = doValidation(doc, options.modifier, options.upsert, null, self._simpleSchema, options.extendedCustomContext);
 
   //now update self._invalidKeys and dependencies
 
@@ -58,10 +59,12 @@ SimpleSchemaValidationContext.prototype.validate = function(doc, options) {
 SimpleSchemaValidationContext.prototype.validateOne = function(doc, keyName, options) {
   var self = this;
   options = _.extend({
-    modifier: false
+    modifier: false,
+    upsert: false,
+    extendedCustomContext: {}
   }, options || {});
 
-  var invalidKeys = doValidation(doc, options.modifier, options.upsert, keyName, self._simpleSchema);
+  var invalidKeys = doValidation(doc, options.modifier, options.upsert, keyName, self._simpleSchema, options.extendedCustomContext);
 
   //now update self._invalidKeys and dependencies
 
@@ -156,7 +159,7 @@ SimpleSchemaValidationContext.prototype.keyErrorMessage = function(name) {
  * PRIVATE
  */
 
-var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
+var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extendedCustomContext) {
 
   // First do some basic checks of the object, and throw errors if necessary
   if (!_.isObject(obj)) {
@@ -254,11 +257,15 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
     }
 
     // Perform custom validation
-    if (def.custom) {
-      var lastDot = affectedKey.lastIndexOf('.');
-      var fieldParentName = lastDot === -1 ? '' : affectedKey.slice(0, lastDot + 1);
-      var errorType = def.custom.call({
-        key: affectedKeyGeneric, //we probably know this already, but not if we're in a subschema
+    var lastDot = affectedKey.lastIndexOf('.');
+    var fieldParentName = lastDot === -1 ? '' : affectedKey.slice(0, lastDot + 1);
+    var validators = def.custom ? [def.custom] : [];
+    validators = validators.concat(ss._validators).concat(SimpleSchema._validators);
+    _.every(validators, function(validator) {
+      var errorType = validator.call(_.extend({
+        key: affectedKey,
+        genericKey: affectedKeyGeneric,
+        definition: def,
         isSet: (val !== void 0),
         value: val,
         operator: op,
@@ -280,30 +287,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
             operator: keyInfo.operator
           };
         }
-      });
-      if (typeof errorType === "string") {
-        invalidKeys.push(errorObject(errorType, affectedKey, val, def, ss));
-        return;
-      }
-    }
-
-    _.every(ss._validators.concat(SimpleSchema._validators), function(validator) {
-      var errorType = validator.call({
-        key: affectedKeyGeneric,
-        definition: def,
-        isSet: (val !== void 0),
-        value: val,
-        operator: op,
-        field: function(fName) {
-          mDoc = mDoc || new MongoObject(obj, ss._blackboxKeys); //create if necessary, cache for speed
-          var keyInfo = mDoc.getInfoForKey(fName) || {};
-          return {
-            isSet: (keyInfo.value !== void 0),
-            value: keyInfo.value,
-            operator: keyInfo.operator
-          };
-        }
-      }, affectedKeyGeneric, val, def, op); //pass args for backwards compatibility; don't use them
+      }, extendedCustomContext || {}), affectedKeyGeneric, val, def, op); //pass args for backwards compatibility; don't use them
       if (typeof errorType === "string") {
         invalidKeys.push(errorObject(errorType, affectedKey, val, def, ss));
         return false;
