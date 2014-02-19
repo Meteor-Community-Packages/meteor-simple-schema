@@ -2945,7 +2945,7 @@ Tinytest.add("SimpleSchema - Labels", function(test) {
 
   //callback
   ss.labels({"sub.number": function() {
-      return "A callback label"
+      return "A callback label";
     }});
   test.equal(ss.label("sub.number"), "A callback label", '"sub.number" label should be "A callback label" through the callback function');
 });

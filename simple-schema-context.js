@@ -245,7 +245,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
 
       }
 
-      // Check value using valusIsAllowed function
+      // DEPRECATED: Check value using valusIsAllowed function
       if (def.valueIsAllowed && !def.valueIsAllowed(val, obj, op)) {
         invalidKeys.push(errorObject("notAllowed", affectedKey, val, def, ss));
         return;
@@ -255,13 +255,25 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss) {
 
     // Perform custom validation
     if (def.custom) {
+      var lastDot = affectedKey.lastIndexOf('.');
+      var fieldParentName = lastDot === -1 ? '' : affectedKey.slice(0, lastDot + 1);
       var errorType = def.custom.call({
+        key: affectedKeyGeneric, //we probably know this already, but not if we're in a subschema
         isSet: (val !== void 0),
         value: val,
         operator: op,
         field: function(fName) {
           mDoc = mDoc || new MongoObject(obj, ss._blackboxKeys); //create if necessary, cache for speed
           var keyInfo = mDoc.getInfoForKey(fName) || {};
+          return {
+            isSet: (keyInfo.value !== void 0),
+            value: keyInfo.value,
+            operator: keyInfo.operator
+          };
+        },
+        siblingField: function(fName) {
+          mDoc = mDoc || new MongoObject(obj, ss._blackboxKeys); //create if necessary, cache for speed
+          var keyInfo = mDoc.getInfoForKey(fieldParentName + fName) || {};
           return {
             isSet: (keyInfo.value !== void 0),
             value: keyInfo.value,
