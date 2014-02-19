@@ -3,7 +3,7 @@
   "description": "A simple schema validation object with reactivity. Used by collection2 and autoform.",
   "homepage": "https://github.com/aldeed/meteor-simple-schema",
   "author": "Eric Dobbertin (http://dairystatedesigns.com)",
-  "version": "0.2.37",
+  "version": "0.2.38",
   "git": "https://github.com/aldeed/meteor-simple-schema.git",
   "packages": {}
 }

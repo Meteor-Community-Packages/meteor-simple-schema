@@ -5,6 +5,23 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.38
+
+* `autoValue` option moved from Collection2 package to SimpleSchema
+* `defaultValue` option added
+* Significant rewrite of `MongoObject` (used internally), which results in
+fixing some obscure bugs and hopefully not creating any new ones.
+* `clean` now does everything on the referenced object without cloning it. If
+this is not what you want, then you should pass in a clone of the object you
+want to protect and grab the resulting cleaned object from the return value.
+* All types of custom validation functions now have the same `this` context.
+* `siblingField()` method now available in `this` within both `autoValue` and
+custom validation functions.
+* `this.userId` is potentially available in custom validation functions. You
+must pass it to `validate` or `validateOne` in the `extendedCustomContext` option.
+Validation as part of Collection2 operations or AutoForm submissions provides
+this automatically.
+
 ### 0.2.37
 
 Fix a small issue with debug option.
