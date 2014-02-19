@@ -834,7 +834,7 @@ var deleteIfPresent = function(obj, key) {
 function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
   var self = this;
   var doneKeys = [];
-
+  
   function runAV(func) {
     var affectedKey = this.key;
     // If already called for this key, skip it
@@ -872,7 +872,13 @@ function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
     doneKeys.push(affectedKey);
 
     if (autoValue === void 0) {
-      doUnset && this.remove();
+      if (doUnset) {
+        if (this.position) {
+          mDoc.removeValueForPosition(this.position);
+        } else {
+          this.remove();
+        }
+      }
       return;
     }
 
@@ -890,15 +896,25 @@ function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
     }
 
     // Add $set for updates and upserts if necessary
-    if (op === null && isModifier)
+    if (!op && isModifier) {
       op = "$set";
+      newValue = autoValue;
+    }
 
     // Update/change value
     if (op) {
-      this.remove();
+      if (this.position) {
+        mDoc.removeValueForPosition(this.position);
+      } else {
+        this.remove();
+      }
       mDoc.setValueForPosition(op + '[' + affectedKey + ']', newValue);
     } else {
-      this.updateValue(autoValue);
+      if (this.position) {
+        mDoc.setValueForPosition(this.position, autoValue);
+      } else {
+        this.updateValue(autoValue);
+      }
     }
   }
 
@@ -929,21 +945,14 @@ function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
       positionSuffix = '';
       positions = [MongoObject._keyToPosition(fieldName)];
     }
-
-    positions.forEach(function(position) {
+    
+    _.each(positions, function(position) {
       if (mDoc.getValueForPosition(position + positionSuffix) === void 0) {
-        // Construct the non-generic key
-        var key = MongoObject._positionToKey(position) + keySuffix;
         runAV.call({
-          key: key,
+          key: MongoObject._positionToKey(position) + keySuffix,
           value: void 0,
           operator: null,
-          remove: function() {
-            mDoc.removeValueForPosition(position + positionSuffix);
-          },
-          updateValue: function(val) {
-            mDoc.setValueForPosition(position + positionSuffix, val);
-          }
+          position: position + positionSuffix
         }, func);
       }
     });
