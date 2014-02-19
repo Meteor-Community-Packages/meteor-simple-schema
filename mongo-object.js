@@ -3,6 +3,11 @@
  * @param {Object} objOrModifier
  * @param {string[]} blackBoxKeys - A list of the names of keys that shouldn't be traversed
  * @returns {undefined}
+ * 
+ * Creates a new MongoObject instance. The object passed as the first argument
+ * will be modified in place by calls to instance methods. Also, immediately
+ * upon creation of the instance, the object will have any `undefined` keys
+ * removed recursively.
  */
 MongoObject = function(objOrModifier, blackBoxKeys) {
   var self = this;
@@ -69,7 +74,9 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
       currentPosition && !_.isEmpty(val) && self._parentPositions.push(currentPosition);
       // Loop
       _.each(val, function(v, k) {
-        if (k !== "$slice") {
+        if (v === void 0) {
+          delete val[k];
+        } else if (k !== "$slice") {
           parseObj(v, (currentPosition ? currentPosition + "[" + k + "]" : k), appendAffectedKey(affectedKey, k), operator, adjusted);
         }
       });
@@ -112,13 +119,18 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
       if (options.endPointsOnly && _.contains(self._parentPositions, position))
         return; //only endpoints
       func.call({
+        value: self.getValueForPosition(position),
+        operator: extractOp(position),
+        position: position,
+        key: affectedKey,
+        genericKey: self._genericAffectedKeys[position],
         updateValue: function(newVal) {
           updatedValues[position] = newVal;
         },
         remove: function() {
           updatedValues[position] = void 0;
         }
-      }, self.getValueForPosition(position), position, affectedKey, self._genericAffectedKeys[position]);
+      });
     });
 
     // Actually update/remove values as instructed
@@ -199,6 +211,24 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
   self.removeValueForPosition = function(position) {
     self.setValueForPosition(position, void 0);
   };
+  
+  /**
+   * @method MongoObject.prototype.getKeyForPosition
+   * @param {String} position
+   * @returns {undefined}
+   */
+  self.getKeyForPosition = function(position) {
+    return self._affectedKeys[position];
+  };
+  
+  /**
+   * @method MongoObject.prototype.getGenericKeyForPosition
+   * @param {String} position
+   * @returns {undefined}
+   */
+  self.getGenericKeyForPosition = function(position) {
+    return self._genericAffectedKeys[position];
+  };
 
   /**
    * @method MongoObject.getInfoForKey
@@ -209,10 +239,6 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    * Example: {value: 1, operator: "$pull"}
    */
   self.getInfoForKey = function(key) {
-    if (keyIsGeneric(key)) {
-      return;
-    }
-
     // Get the info
     var position = self.getPositionForKey(key);
     if (position) {
@@ -250,10 +276,6 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    * Example: 'foo[bar][0]'
    */
   self.getPositionForKey = function(key) {
-    if (keyIsGeneric(key)) {
-      throw new Error("MongoObject.getPositionForKey accepts non-generic keys only");
-    }
-
     // Get the info
     for (var position in self._affectedKeys) {
       if (self._affectedKeys.hasOwnProperty(position)) {
@@ -279,10 +301,6 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    * Example: ['foo[bar][0]']
    */
   self.getPositionsForGenericKey = function(key) {
-    if (!keyIsGeneric(key)) {
-      throw new Error("MongoObject.getPositionsForGenericKey accepts generic keys only");
-    }
-
     // Get the info
     var list = [];
     for (var position in self._genericAffectedKeys) {
@@ -305,9 +323,6 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    * Returns the value of the requested non-generic key
    */
   self.getValueForKey = function(key) {
-    if (keyIsGeneric(key)) {
-      throw new Error("MongoObject.getArrayInfoForKey accepts non-generic keys only");
-    }
     var position = self.getPositionForKey(key);
     if (position) {
       return self.getValueForPosition(position);
@@ -618,6 +633,25 @@ MongoObject._keyToPosition = function keyToPosition(key, wrapAll) {
   return position;
 };
 
+/**
+ * @method MongoObject._positionToKey
+ * @param {String} position
+ * @returns {String} The key that this position in an object would affect.
+ * 
+ * This is different from MongoObject.prototype.getKeyForPosition in that
+ * this method does not depend on the requested position actually being
+ * present in any particular MongoObject.
+ */
+MongoObject._positionToKey = function positionToKey(position) {
+  //XXX Probably a better way to do this, but this is
+  //foolproof for now.
+  var mDoc = new MongoObject({});
+  mDoc.setValueForPosition(position, 1); //value doesn't matter
+  var key = mDoc.getKeyForPosition(position);
+  mDoc = null;
+  return key;
+};
+
 var isArray = Array.isArray || function(obj) {
   return obj.toString() === '[object Array]';
 };
@@ -661,10 +695,6 @@ var makeGeneric = function makeGeneric(name) {
   if (typeof name !== "string")
     return null;
   return name.replace(/\.[0-9]+\./g, '.$.').replace(/\.[0-9]+/g, '.$');
-};
-
-var keyIsGeneric = function keyIsGeneric(key) {
-  return (key.slice(-2) === ".$" || key.indexOf(".$.") !== -1);
 };
 
 var appendAffectedKey = function appendAffectedKey(affectedKey, key) {

@@ -43,12 +43,9 @@ SimpleSchema = function(schemas, options) {
 
   // store the list of defined keys for speedier checking
   self._schemaKeys = [];
-  
+
   // store autoValue functions by key
   self._autoValues = {};
-  
-  // store defaultValues by key
-  self._defaultValues = {};
 
   // store the list of blackbox keys for passing to MongoObject constructor
   self._blackboxKeys = [];
@@ -73,16 +70,30 @@ SimpleSchema = function(schemas, options) {
 
     self._schemaKeys.push(fieldName);
 
+    // We support defaultValue shortcut by converting it immediately into an
+    // autoValue.
+    if ('defaultValue' in definition) {
+      if ('autoValue' in definition) {
+        console.warn('SimpleSchema: Found both autoValue and defaultValue options for "' + fieldName + '". Ignoring defaultValue.');
+      } else {
+        if (fieldName.slice(-2) === ".$") {
+          throw new Error('An array item field (one that ends with ".$") cannot have defaultValue.')
+        }
+        self._autoValues[fieldName] = (function defineAutoValue(v) {
+          return function() {
+            if (this.operator === null && !this.isSet) {
+              return v;
+            }
+          };
+        })(definition.defaultValue);
+      }
+    }
+
     if ('autoValue' in definition) {
       if (fieldName.slice(-2) === ".$") {
         throw new Error('An array item field (one that ends with ".$") cannot have autoValue.')
       }
       self._autoValues[fieldName] = definition.autoValue;
-    } else if ('defaultValue' in definition) {
-      if (fieldName.slice(-2) === ".$") {
-        throw new Error('An array item field (one that ends with ".$") cannot have defaultValue.')
-      }
-      self._defaultValues[fieldName] = definition.defaultValue;
     }
 
     self._depsLabels[fieldName] = new Deps.Dependency;
@@ -131,7 +142,7 @@ SimpleSchema = function(schemas, options) {
     }
 
   });
-
+  
   // Set override messages
   self.messages(overrideMessages);
 
@@ -246,25 +257,23 @@ SimpleSchema.prototype.addValidator = SimpleSchema.prototype.validator = functio
  * @param {Object} [options]
  * @param {Boolean} [options.filter=true] - Do filtering?
  * @param {Boolean} [options.autoConvert=true] - Do automatic type converting?
- * @param {Boolean} [options.getAutoValues=true] - Inject automatic values?
- * @param {Boolean} [options.getDefaultValues=true] - Inject default values?
+ * @param {Boolean} [options.getAutoValues=true] - Inject automatic and default values?
  * @param {Boolean} [options.isModifier=false] - Is doc a modifier object?
  * @param {Object} [options.extendAutoValueContext] - This object will be added to the `this` context of autoValue functions.
  * @returns {Object} The modified doc.
  * 
  * Cleans a document or modifier object. By default, will filter, automatically
- * type convert where possible, and inject automatic values. Use the options
+ * type convert where possible, and inject automatic/default values. Use the options
  * to skip one or more of these.
  */
 SimpleSchema.prototype.clean = function(doc, options) {
   var self = this;
-  
+
   // By default, doc will be filtered and autoconverted
   options = _.extend({
     filter: true,
     autoConvert: true,
     getAutoValues: true,
-    getDefaultValues: true,
     isModifier: false,
     extendAutoValueContext: {}
   }, options || {});
@@ -283,27 +292,30 @@ SimpleSchema.prototype.clean = function(doc, options) {
   }
 
   var mDoc = new MongoObject(doc, self._blackboxKeys);
-  
+
   // Filter out anything that would affect keys not defined
   // or implied by the schema
   options.filter && mDoc.filterGenericKeys(function(genericKey) {
     return self.allowsKey(genericKey);
   });
-  
+
   // Set automatic values
   options.getAutoValues && getAutoValues.call(self, mDoc, options.isModifier, options.extendAutoValueContext);
-  
-  // Set default values for non-modifier docs only
-  options.getDefaultValues && !options.isModifier && getDefaultValues.call(self, mDoc);
-  
+
   // Autoconvert values if requested and if possible
-  options.autoConvert && mDoc.forEachNode(function(val, position, affectedKey, affectedKeyGeneric) {
-    if (affectedKeyGeneric) {
-      var def = self._schema[affectedKeyGeneric];
-      def && this.updateValue(typeconvert(val, def.type));
+  options.autoConvert && mDoc.forEachNode(function() {
+    if (this.genericKey) {
+      var def = self._schema[this.genericKey];
+      var val = this.value;
+      if (def && val !== void 0) {
+        var newVal = typeconvert(val, def.type);
+        if (newVal !== void 0 && newVal !== val) {
+          this.updateValue(newVal);
+        }
+      }
     }
   }, {endPointsOnly: false});
-  
+
   return doc;
 };
 
@@ -816,23 +828,38 @@ var deleteIfPresent = function(obj, key) {
  * @param {Object} [extendedAutoValueContext] - Object that will be added to the context when calling each autoValue function
  * @returns {undefined}
  * 
- * Updates doc with automatic values from autoValue functions. Modifies
- * the referenced object in place.
+ * Updates doc with automatic values from autoValue functions or default
+ * values from defaultValue. Modifies the referenced object in place.
  */
 function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
   var self = this;
-  _.each(self._autoValues, function(func, fieldName) {
-    var keyInfo = mDoc.getInfoForKey(fieldName) || {};
+  var doneKeys = [];
+
+  function runAV(func) {
+    var affectedKey = this.key;
+    // If already called for this key, skip it
+    if (_.contains(doneKeys, affectedKey))
+      return;
+    var lastDot = affectedKey.lastIndexOf('.');
+    var fieldParentName = lastDot === -1 ? '' : affectedKey.slice(0, lastDot + 1);
     var doUnset = false;
     var autoValue = func.call(_.extend({
-      isSet: mDoc.affectsGenericKey(fieldName),
+      isSet: (this.value !== void 0),
       unset: function() {
         doUnset = true;
       },
-      value: keyInfo.value,
-      operator: keyInfo.operator,
+      value: this.value,
+      operator: this.operator,
       field: function(fName) {
         var keyInfo = mDoc.getInfoForKey(fName) || {};
+        return {
+          isSet: (keyInfo.value !== void 0),
+          value: keyInfo.value,
+          operator: keyInfo.operator
+        };
+      },
+      siblingField: function(fName) {
+        var keyInfo = mDoc.getInfoForKey(fieldParentName + fName) || {};
         return {
           isSet: (keyInfo.value !== void 0),
           value: keyInfo.value,
@@ -841,22 +868,20 @@ function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
       }
     }, extendedAutoValueContext || {}), mDoc.getObject());
 
+    // Update tracking of which keys we've run autovalue for
+    doneKeys.push(affectedKey);
+
     if (autoValue === void 0) {
-      doUnset && mDoc.removeGenericKey(fieldName);
+      doUnset && this.remove();
       return;
     }
 
     // If the user's auto value is of the pseudo-modifier format, parse it
     // into operator and value.
-    var fieldNameHasDollar = (fieldName.indexOf(".$") !== -1);
-    var newValue = autoValue;
-    var op = null;
+    var op, newValue;
     if (_.isObject(autoValue)) {
       for (var key in autoValue) {
         if (autoValue.hasOwnProperty(key) && key.substring(0, 1) === "$") {
-          if (fieldNameHasDollar) {
-            throw new Error("The return value of an autoValue function may not be an object with update operators when the field name contains a dollar sign");
-          }
           op = key;
           newValue = autoValue[key];
           break;
@@ -865,61 +890,62 @@ function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
     }
 
     // Add $set for updates and upserts if necessary
-    if (op === null && isModifier) {
+    if (op === null && isModifier)
       op = "$set";
-    }
 
-    if (fieldNameHasDollar) {
-      // There is no way to know which specific keys should be set to
-      // the autoValue, so we will set only keys that exist
-      // in the object and match this generic key.
-      mDoc.setValueForGenericKey(fieldName, newValue);
+    // Update/change value
+    if (op) {
+      this.remove();
+      mDoc.setValueForPosition(op + '[' + affectedKey + ']', newValue);
     } else {
-      mDoc.removeKey(fieldName);
-      mDoc.addKey(fieldName, newValue, op);
+      this.updateValue(autoValue);
     }
-  });
-}
+  }
 
-/**
- * @method getDefaultValues
- * @private 
- * @param {MongoObject} mDoc
- * @returns {undefined}
- * 
- * Updates doc with default values from the defaultValue option. Modifies
- * the referenced object in place. Intended to be called for normal, non-modifier
- * objects only.
- */
-function getDefaultValues(mDoc) {
-  var self = this;
-  _.each(self._defaultValues, function(value, fieldName) {
-    // If does not affect this field and we're under an array, add the field
+  // First get auto values or default values for properties that are found in the object
+  mDoc.forEachNode(function() {
+    var genericKey = this.genericKey;
+    if (genericKey) {
+      var def = self._schema[genericKey];
+      // Run autoValue if there is one
+      def && def.autoValue && runAV.call(this, def.autoValue);
+    }
+  }, {endPointsOnly: false});
+
+  // Second get auto values or default values for properties that are not found in the object
+  _.each(self._autoValues, function(func, fieldName) {
+    // If we're under an array, add the field
     // with the default value only for objects that are present in the nearest
     // ancestor array.
+    var positionSuffix, keySuffix, positions;
     if (fieldName.indexOf("$") !== -1) {
-      var nearestArrayKey = fieldName.slice(0, fieldName.lastIndexOf("$") + 1);
-      var remainingKey = fieldName.slice(nearestArrayKey.length + 1);
-      var endingPosition = MongoObject._keyToPosition(remainingKey, true);
-      var positions = mDoc.getPositionsForGenericKey(nearestArrayKey);
-      positions.forEach(function (position) {
-        if (mDoc.getValueForPosition(position + endingPosition) === void 0) {
-          mDoc.setValueForPosition(position + endingPosition, value);
-        }
-      });
+      var testField = fieldName.slice(0, fieldName.lastIndexOf("$") + 1);
+      keySuffix = fieldName.slice(testField.length + 1);
+      positionSuffix = MongoObject._keyToPosition(keySuffix, true);
+      keySuffix = '.' + keySuffix;
+      positions = mDoc.getPositionsForGenericKey(testField);
+    } else {
+      keySuffix = '';
+      positionSuffix = '';
+      positions = [MongoObject._keyToPosition(fieldName)];
     }
-    // If affects this field and val is undefined, set to default
-    else if (mDoc.affectsGenericKey(fieldName)) {
-      var keyInfo = mDoc.getInfoForKey(fieldName) || {};
-      // Set default values only if the current value is undefined
-      if (keyInfo.value === void 0) {
-        mDoc.setValueForGenericKey(fieldName, value);
+
+    positions.forEach(function(position) {
+      if (mDoc.getValueForPosition(position + positionSuffix) === void 0) {
+        // Construct the non-generic key
+        var key = MongoObject._positionToKey(position) + keySuffix;
+        runAV.call({
+          key: key,
+          value: void 0,
+          operator: null,
+          remove: function() {
+            mDoc.removeValueForPosition(position + positionSuffix);
+          },
+          updateValue: function(val) {
+            mDoc.setValueForPosition(position + positionSuffix, val);
+          }
+        }, func);
       }
-    }
-    // If does not affect this field and we're not under an array, add the
-    // field with the default value
-    else {
-      mDoc.addKey(fieldName, value, null);
-    }
+    });
   });
 }
