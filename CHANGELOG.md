@@ -5,6 +5,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.39
+
+* Fix issue with `autoValue` and `defaultValue` altering some updates.
+
 ### 0.2.38
 
 * `autoValue` option moved from Collection2 package to SimpleSchema

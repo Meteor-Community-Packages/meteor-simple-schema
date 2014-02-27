@@ -3277,6 +3277,192 @@ Tinytest.add("SimpleSchema - AutoValues", function(test) {
   test.length(o.updatesHistory, 1);
   test.equal(o.updatesHistory[0].content, 'Hello world!', 'expected updatesHistory.content to be "Hello world!"');
 
+  var av = new SimpleSchema({
+    foo: {
+      type: String,
+      optional: true
+    },
+    bar: {
+      type: Boolean,
+      optional: true,
+      autoValue: function() {
+        test.equal(this.isSet, false);
+        test.isUndefined(this.value);
+        test.equal(this.operator, null);
+        var foo = this.field('foo');
+        test.equal(foo.isSet, false);
+        test.isUndefined(foo.value);
+        test.equal(foo.operator, null);
+        foo = this.siblingField('foo');
+        test.equal(foo.isSet, false);
+        test.isUndefined(foo.value);
+        test.equal(foo.operator, null);
+      }
+    }
+  });
+  av.clean({});
+
+  var av2 = new SimpleSchema({
+    foo: {
+      type: String,
+      optional: true
+    },
+    bar: {
+      type: Boolean,
+      optional: true,
+      autoValue: function() {
+        test.equal(this.isSet, false);
+        test.isUndefined(this.value);
+        test.equal(this.operator, null);
+        var foo = this.field('foo');
+        test.equal(foo.isSet, true);
+        test.equal(foo.value, "clown");
+        test.equal(foo.operator, null);
+        foo = this.siblingField('foo');
+        test.equal(foo.isSet, true);
+        test.equal(foo.value, "clown");
+        test.equal(foo.operator, null);
+      }
+    }
+  });
+  av2.clean({foo: "clown"});
+  
+  var av3 = new SimpleSchema({
+    foo: {
+      type: String,
+      optional: true
+    },
+    bar: {
+      type: Boolean,
+      optional: true,
+      autoValue: function() {
+        test.equal(this.isSet, true);
+        test.equal(this.value, true);
+        test.equal(this.operator, null);
+        var foo = this.field('foo');
+        test.equal(foo.isSet, true);
+        test.equal(foo.value, "clown");
+        test.equal(foo.operator, null);
+        foo = this.siblingField('foo');
+        test.equal(foo.isSet, true);
+        test.equal(foo.value, "clown");
+        test.equal(foo.operator, null);
+      }
+    }
+  });
+  av3.clean({foo: "clown", bar: true});
+  
+  var av4 = new SimpleSchema({
+    foo: {
+      type: String,
+      optional: true
+    },
+    bar: {
+      type: Boolean,
+      optional: true,
+      autoValue: function() {
+        test.equal(this.isSet, true);
+        test.equal(this.value, false);
+        test.equal(this.operator, null);
+        var foo = this.field('foo');
+        test.equal(foo.isSet, false);
+        test.isUndefined(foo.value);
+        test.equal(foo.operator, null);
+        foo = this.siblingField('foo');
+        test.equal(foo.isSet, false);
+        test.isUndefined(foo.value);
+        test.equal(foo.operator, null);
+        this.unset();
+      }
+    }
+  });
+  var doc = {bar: false};
+  av4.clean(doc);
+  test.equal(doc, {});
+  
+  var av5 = new SimpleSchema({
+    foo: {
+      type: String,
+      optional: true
+    },
+    bar: {
+      type: Boolean,
+      optional: true,
+      autoValue: function() {
+        test.equal(this.isSet, true);
+        test.equal(this.value, false);
+        test.equal(this.operator, "$set");
+        var foo = this.field('foo');
+        test.equal(foo.isSet, false);
+        test.isUndefined(foo.value);
+        test.equal(foo.operator, null);
+        foo = this.siblingField('foo');
+        test.equal(foo.isSet, false);
+        test.isUndefined(foo.value);
+        test.equal(foo.operator, null);
+      }
+    }
+  });
+  var doc = {$set: {bar: false}};
+  av5.clean(doc);
+  test.equal(doc, {$set: {bar: false}});
+  
+  var av6 = new SimpleSchema({
+    foo: {
+      type: String,
+      optional: true
+    },
+    bar: {
+      type: Boolean,
+      optional: true,
+      autoValue: function() {
+        test.equal(this.isSet, true);
+        test.equal(this.value, false);
+        test.equal(this.operator, "$set");
+        var foo = this.field('foo');
+        test.equal(foo.isSet, true);
+        test.equal(foo.value, "clown");
+        test.equal(foo.operator, "$set");
+        foo = this.siblingField('foo');
+        test.equal(foo.isSet, true);
+        test.equal(foo.value, "clown");
+        test.equal(foo.operator, "$set");
+        return true;
+      }
+    }
+  });
+  doc = {$set: {foo: "clown", bar: false}};
+  av6.clean(doc);
+  test.equal(doc, {$set: {foo: "clown", bar: true}});
+  
+  var av7 = new SimpleSchema({
+    foo: {
+      type: String,
+      optional: true
+    },
+    bar: {
+      type: Boolean,
+      optional: true,
+      autoValue: function() {
+        test.equal(this.isSet, false);
+        test.isUndefined(this.value);
+        test.equal(this.operator, null);
+        var foo = this.field('foo');
+        test.equal(foo.isSet, false);
+        test.isUndefined(foo.value);
+        test.equal(foo.operator, null);
+        foo = this.siblingField('foo');
+        test.equal(foo.isSet, false);
+        test.isUndefined(foo.value);
+        test.equal(foo.operator, null);
+        return {$set: true};
+      }
+    }
+  });
+  doc = {};
+  av7.clean(doc);
+  test.equal(doc, {$set: {bar: true}});
+
 });
 
 Tinytest.add("SimpleSchema - DefaultValues", function(test) {
@@ -3288,24 +3474,24 @@ Tinytest.add("SimpleSchema - DefaultValues", function(test) {
 
   avClean(
           {},
-  {name: "Test", a: {b: "Test"}}
+          {name: "Test", a: {b: "Test"}}
   );
 
   avClean(
           {name: "Test1", a: {b: "Test1"}},
   {name: "Test1", a: {b: "Test1"}}
   );
-  
+
   avClean(
           {name: "Test1", a: {b: "Test1"}, b: []},
   {name: "Test1", a: {b: "Test1"}, b: []}
   );
-  
+
   avClean(
           {name: "Test1", a: {b: "Test1"}, b: [{}]},
   {name: "Test1", a: {b: "Test1"}, b: [{a: "Test"}]}
   );
-  
+
   avClean(
           {name: "Test1", a: {b: "Test1"}, b: [{a: "Test1"}, {}]},
   {name: "Test1", a: {b: "Test1"}, b: [{a: "Test1"}, {a: "Test"}]}

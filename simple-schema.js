@@ -298,7 +298,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
   options.filter && mDoc.filterGenericKeys(function(genericKey) {
     return self.allowsKey(genericKey);
   });
-
+  
   // Set automatic values
   options.getAutoValues && getAutoValues.call(self, mDoc, options.isModifier, options.extendAutoValueContext);
 
@@ -855,7 +855,7 @@ function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
         return {
           isSet: (keyInfo.value !== void 0),
           value: keyInfo.value,
-          operator: keyInfo.operator
+          operator: keyInfo.operator || null
         };
       },
       siblingField: function(fName) {
@@ -863,7 +863,7 @@ function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
         return {
           isSet: (keyInfo.value !== void 0),
           value: keyInfo.value,
-          operator: keyInfo.operator
+          operator: keyInfo.operator || null
         };
       }
     }, extendedAutoValueContext || {}), mDoc.getObject());
@@ -873,11 +873,7 @@ function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
 
     if (autoValue === void 0) {
       if (doUnset) {
-        if (this.position) {
-          mDoc.removeValueForPosition(this.position);
-        } else {
-          this.remove();
-        }
+        mDoc.removeValueForPosition(this.position);
       }
       return;
     }
@@ -903,37 +899,18 @@ function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
 
     // Update/change value
     if (op) {
-      if (this.position) {
-        mDoc.removeValueForPosition(this.position);
-      } else {
-        this.remove();
-      }
+      mDoc.removeValueForPosition(this.position);
       mDoc.setValueForPosition(op + '[' + affectedKey + ']', newValue);
     } else {
-      if (this.position) {
-        mDoc.setValueForPosition(this.position, autoValue);
-      } else {
-        this.updateValue(autoValue);
-      }
+      mDoc.setValueForPosition(this.position, autoValue);
     }
   }
 
-  // First get auto values or default values for properties that are found in the object
-  mDoc.forEachNode(function() {
-    var genericKey = this.genericKey;
-    if (genericKey) {
-      var def = self._schema[genericKey];
-      // Run autoValue if there is one
-      def && def.autoValue && runAV.call(this, def.autoValue);
-    }
-  }, {endPointsOnly: false});
-
-  // Second get auto values or default values for properties that are not found in the object
   _.each(self._autoValues, function(func, fieldName) {
-    // If we're under an array, add the field
-    // with the default value only for objects that are present in the nearest
-    // ancestor array.
-    var positionSuffix, keySuffix, positions;
+    var positionSuffix, key, keySuffix, positions;
+    
+    // If we're under an array, run autovalue for all the properties of
+    // any objects that are present in the nearest ancestor array.
     if (fieldName.indexOf("$") !== -1) {
       var testField = fieldName.slice(0, fieldName.lastIndexOf("$") + 1);
       keySuffix = fieldName.slice(testField.length + 1);
@@ -941,20 +918,40 @@ function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
       keySuffix = '.' + keySuffix;
       positions = mDoc.getPositionsForGenericKey(testField);
     } else {
-      keySuffix = '';
-      positionSuffix = '';
-      positions = [MongoObject._keyToPosition(fieldName)];
-    }
-    
-    _.each(positions, function(position) {
-      if (mDoc.getValueForPosition(position + positionSuffix) === void 0) {
-        runAV.call({
-          key: MongoObject._positionToKey(position) + keySuffix,
-          value: void 0,
-          operator: null,
-          position: position + positionSuffix
-        }, func);
+      
+      // See if anything in the object affects this key
+      positions = mDoc.getPositionsForGenericKey(fieldName);
+      
+      // Run autovalue for properties that are set in the object
+      if (positions.length) {
+        key = fieldName;
+        keySuffix = '';
+        positionSuffix = '';
       }
+      
+      // Run autovalue for properties that are NOT set in the object
+      else {
+        key = fieldName;
+        keySuffix = '';
+        positionSuffix = '';
+        positions = [MongoObject._keyToPosition(fieldName)];
+      }
+    
+    }
+
+    _.each(positions, function(position) {
+      runAV.call({
+        key: (key || MongoObject._positionToKey(position)) + keySuffix,
+        value: mDoc.getValueForPosition(position + positionSuffix),
+        operator: extractOp(position),
+        position: position + positionSuffix
+      }, func);
     });
   });
 }
+
+// Extracts operator piece, if present, from position string
+var extractOp = function extractOp(position) {
+  var firstPositionPiece = position.slice(0, position.indexOf("["));
+  return (firstPositionPiece.substring(0, 1) === "$") ? firstPositionPiece : null;
+};
