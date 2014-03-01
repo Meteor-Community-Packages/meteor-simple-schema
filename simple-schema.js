@@ -298,9 +298,6 @@ SimpleSchema.prototype.clean = function(doc, options) {
   options.filter && mDoc.filterGenericKeys(function(genericKey) {
     return self.allowsKey(genericKey);
   });
-  
-  // Set automatic values
-  options.getAutoValues && getAutoValues.call(self, mDoc, options.isModifier, options.extendAutoValueContext);
 
   // Autoconvert values if requested and if possible
   options.autoConvert && mDoc.forEachNode(function() {
@@ -315,6 +312,9 @@ SimpleSchema.prototype.clean = function(doc, options) {
       }
     }
   }, {endPointsOnly: false});
+
+  // Set automatic values
+  options.getAutoValues && getAutoValues.call(self, mDoc, options.isModifier, options.extendAutoValueContext);
 
   return doc;
 };
