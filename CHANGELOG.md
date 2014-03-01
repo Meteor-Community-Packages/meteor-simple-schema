@@ -5,9 +5,14 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.40
+
+Generate auto values after type conversion so that autoValue functions don't
+have to handle type conversion. *(Thanks @mjgallag!)*
+
 ### 0.2.39
 
-* Fix issue with `autoValue` and `defaultValue` altering some updates.
+Fix issue with `autoValue` and `defaultValue` altering some updates.
 
 ### 0.2.38
 
