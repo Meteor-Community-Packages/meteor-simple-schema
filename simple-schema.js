@@ -834,6 +834,11 @@ var deleteIfPresent = function(obj, key) {
 function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
   var self = this;
   var doneKeys = [];
+
+  //on the client we can add the userId if not already in the custom context
+  if (Meteor.isClient && extendedAutoValueContext.userId === void 0) {
+    extendedAutoValueContext.userId = (Meteor.userId && Meteor.userId()) || null;
+  }
   
   function runAV(func) {
     var affectedKey = this.key;

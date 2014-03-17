@@ -25,6 +25,11 @@ SimpleSchemaValidationContext.prototype.validate = function(doc, options) {
     extendedCustomContext: {}
   }, options || {});
 
+  //on the client we can add the userId if not already in the custom context
+  if (Meteor.isClient && options.extendedCustomContext.userId === void 0) {
+    options.extendedCustomContext.userId = (Meteor.userId && Meteor.userId()) || null;
+  }
+
   var invalidKeys = doValidation(doc, options.modifier, options.upsert, null, self._simpleSchema, options.extendedCustomContext);
 
   //now update self._invalidKeys and dependencies
@@ -63,6 +68,11 @@ SimpleSchemaValidationContext.prototype.validateOne = function(doc, keyName, opt
     upsert: false,
     extendedCustomContext: {}
   }, options || {});
+
+  //on the client we can add the userId if not already in the custom context
+  if (Meteor.isClient && options.extendedCustomContext.userId === void 0) {
+    options.extendedCustomContext.userId = (Meteor.userId && Meteor.userId()) || null;
+  }
 
   var invalidKeys = doValidation(doc, options.modifier, options.upsert, keyName, self._simpleSchema, options.extendedCustomContext);
 
