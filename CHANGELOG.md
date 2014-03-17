@@ -5,6 +5,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.41
+
+Added userId or `null` to custom validation and autoValue contexts when on the client.
+
 ### 0.2.40
 
 Generate auto values after type conversion so that autoValue functions don't
