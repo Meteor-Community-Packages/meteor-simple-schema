@@ -365,12 +365,13 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
 
       // For required checks, we want to also loop through all keys expected
       // based on the schema, in case any are missing.
-      var requiredKeys, valueIsAllowedKeys;
+      var requiredKeys, valueIsAllowedKeys, customKeys;
       if (!isModifier || (isUpsert && operator === "$set") || (affectedKeyGeneric && affectedKeyGeneric.slice(-2) === ".$")) {
         requiredKeys = ss.requiredObjectKeys(affectedKeyGeneric);
 
         // Filter out required keys that are ancestors
-        // of those in $set
+        // of those in $set because they will be created
+        // by MongoDB while setting.
         requiredKeys = _.filter(requiredKeys, function(k) {
           return !_.some(presentKeys, function(pk) {
             return (pk.slice(0, k.length + 1) === k + ".");
@@ -380,15 +381,16 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
 
       if (!isModifier || (operator === "$set") || (affectedKeyGeneric && affectedKeyGeneric.slice(-2) === ".$")) {
 
-        // We want to be sure to call any present valueIsAllowed functions
+        // We want to be sure to call any present valueIsAllowed and custom functions
         // even if the value isn't set, so they can be used for custom
         // required errors, such as basing it on another field's value.
         valueIsAllowedKeys = ss.valueIsAllowedObjectKeys(affectedKeyGeneric);
+        customKeys = ss.customObjectKeys(affectedKeyGeneric);
 
       }
 
       // Merge the lists
-      var keysToCheck = _.union(presentKeys, requiredKeys || [], valueIsAllowedKeys || []);
+      var keysToCheck = _.union(presentKeys, requiredKeys || [], valueIsAllowedKeys || [], customKeys || []);
 
       // Check all keys in the merged list
       _.each(keysToCheck, function(key) {

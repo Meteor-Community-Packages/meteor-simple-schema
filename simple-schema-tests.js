@@ -375,6 +375,16 @@ var defaultValues = new SimpleSchema({
   }
 });
 
+var optCust = new SimpleSchema({
+  foo: {
+    type: String,
+    optional: true,
+    custom: function() {
+      return "custom";
+    }
+  }
+});
+
 /*
  * END SETUP FOR TESTS
  */
@@ -3496,6 +3506,16 @@ Tinytest.add("SimpleSchema - DefaultValues", function(test) {
           {name: "Test1", a: {b: "Test1"}, b: [{a: "Test1"}, {}]},
   {name: "Test1", a: {b: "Test1"}, b: [{a: "Test1"}, {a: "Test"}]}
   );
+
+});
+
+Tinytest.add("SimpleSchema - Optional Custom", function(test) {
+  var ctx = optCust.namedContext();
+  // Ensure that custom validation runs even when the optional
+  // field is undefined.
+  ctx.validate({});
+  test.equal(ctx.invalidKeys().length, 1, 'expected 1 invalid key');
+  test.equal(ctx.invalidKeys()[0].type, 'custom', 'expected custom error');
 
 });
 

@@ -28,9 +28,12 @@ var schemaDefinition = {
 
 //exported
 SimpleSchema = function(schemas, options) {
-  var self = this, requiredSchemaKeys = [], firstLevelSchemaKeys = [],
-          firstLevelRequiredSchemaKeys = [], valueIsAllowedSchemaKeys = [],
-          firstLevelValueIsAllowedSchemaKeys = [], fieldNameRoot;
+  var self = this;
+  var firstLevelSchemaKeys = [];
+  var requiredSchemaKeys = [], firstLevelRequiredSchemaKeys = [];
+  var valueIsAllowedSchemaKeys = [], firstLevelValueIsAllowedSchemaKeys = [];
+  var customSchemaKeys = [], firstLevelCustomSchemaKeys = [];
+  var fieldNameRoot;
   options = options || {};
   schemas = schemas || {};
 
@@ -111,6 +114,10 @@ SimpleSchema = function(schemas, options) {
       if (definition.valueIsAllowed) {
         firstLevelValueIsAllowedSchemaKeys.push(fieldNameRoot);
       }
+
+      if (definition.custom) {
+        firstLevelCustomSchemaKeys.push(fieldNameRoot);
+      }
     }
 
     if (!definition.optional) {
@@ -119,6 +126,10 @@ SimpleSchema = function(schemas, options) {
 
     if (definition.valueIsAllowed) {
       valueIsAllowedSchemaKeys.push(fieldName);
+    }
+
+    if (definition.custom) {
+      customSchemaKeys.push(fieldName);
     }
 
     // Set up nicer error messages for the built-in regEx.
@@ -147,13 +158,19 @@ SimpleSchema = function(schemas, options) {
   self.messages(overrideMessages);
 
   // Cache these lists
-  self._requiredSchemaKeys = requiredSchemaKeys;
   self._firstLevelSchemaKeys = firstLevelSchemaKeys;
+  //required
+  self._requiredSchemaKeys = requiredSchemaKeys;
   self._firstLevelRequiredSchemaKeys = firstLevelRequiredSchemaKeys;
   self._requiredObjectKeys = getObjectKeys(self._schema, requiredSchemaKeys);
+  //valueIsAllowed
   self._valueIsAllowedSchemaKeys = valueIsAllowedSchemaKeys;
   self._firstLevelValueIsAllowedSchemaKeys = firstLevelValueIsAllowedSchemaKeys;
   self._valueIsAllowedObjectKeys = getObjectKeys(self._schema, valueIsAllowedSchemaKeys);
+  //custom
+  self._customSchemaKeys = customSchemaKeys;
+  self._firstLevelCustomSchemaKeys = firstLevelCustomSchemaKeys;
+  self._customObjectKeys = getObjectKeys(self._schema, customSchemaKeys);
 
   // We will store named validation contexts here
   self._validationContexts = {};
@@ -569,6 +586,18 @@ SimpleSchema.prototype.valueIsAllowedObjectKeys = function(keyPrefix) {
 
 SimpleSchema.prototype.valueIsAllowedSchemaKeys = function() {
   return this._valueIsAllowedSchemaKeys;
+};
+
+SimpleSchema.prototype.customObjectKeys = function(keyPrefix) {
+  var self = this;
+  if (!keyPrefix) {
+    return self._firstLevelCustomSchemaKeys;
+  }
+  return self._customObjectKeys[keyPrefix + "."] || [];
+};
+
+SimpleSchema.prototype.customSchemaKeys = function() {
+  return this._customSchemaKeys;
 };
 
 //called by clean()
