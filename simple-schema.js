@@ -968,7 +968,11 @@ function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
         key = fieldName;
         keySuffix = '';
         positionSuffix = '';
-        positions = [MongoObject._keyToPosition(fieldName)];
+        if (isModifier) {
+          positions = ["$set[" + fieldName + "]"];
+        } else {
+          positions = [MongoObject._keyToPosition(fieldName)];
+        }
       }
     
     }

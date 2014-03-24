@@ -372,6 +372,11 @@ var defaultValues = new SimpleSchema({
     type: String,
     defaultValue: "Test",
     optional: true
+  },
+  strVals: {
+    type: [String],
+    defaultValue: [],
+    optional: true
   }
 });
 
@@ -3484,27 +3489,39 @@ Tinytest.add("SimpleSchema - DefaultValues", function(test) {
 
   avClean(
           {},
-          {name: "Test", a: {b: "Test"}}
+          {name: "Test", a: {b: "Test"}, strVals: []}
+  );
+
+  avClean(
+          {strVals: ["foo", "bar"]},
+          {name: "Test", a: {b: "Test"}, strVals: ["foo", "bar"]}
   );
 
   avClean(
           {name: "Test1", a: {b: "Test1"}},
-  {name: "Test1", a: {b: "Test1"}}
+  {name: "Test1", a: {b: "Test1"}, strVals: []}
   );
 
   avClean(
           {name: "Test1", a: {b: "Test1"}, b: []},
-  {name: "Test1", a: {b: "Test1"}, b: []}
+  {name: "Test1", a: {b: "Test1"}, b: [], strVals: []}
   );
 
   avClean(
           {name: "Test1", a: {b: "Test1"}, b: [{}]},
-  {name: "Test1", a: {b: "Test1"}, b: [{a: "Test"}]}
+  {name: "Test1", a: {b: "Test1"}, b: [{a: "Test"}], strVals: []}
   );
 
   avClean(
           {name: "Test1", a: {b: "Test1"}, b: [{a: "Test1"}, {}]},
-  {name: "Test1", a: {b: "Test1"}, b: [{a: "Test1"}, {a: "Test"}]}
+  {name: "Test1", a: {b: "Test1"}, b: [{a: "Test1"}, {a: "Test"}], strVals: []}
+  );
+
+  // Updates should not be affected
+  avClean(
+          {$addToSet: {strVals: 'new value'}},
+          {$addToSet: {strVals: 'new value'}},
+          {isModifier: true}
   );
 
 });
