@@ -768,23 +768,28 @@ var adjustArrayFields = function(schema) {
  * @returns {Object} modified schema
  */
 var addImplicitKeys = function(schema) {
-  var arrayKeysToAdd = [], objectKeysToAdd = [], newKey, key, nextThree;
+  var arrayKeysToAdd = [], objectKeysToAdd = [], newKey, key;
 
   // Pass 1 (objects)
   _.each(schema, function(def, existingKey) {
     var pos = existingKey.indexOf(".");
-
     while (pos !== -1) {
       newKey = existingKey.substring(0, pos);
-      nextThree = existingKey.substring(pos, pos + 3);
-      if (newKey.substring(newKey.length - 2) !== ".$") {
-        if (nextThree === ".$.") {
-          arrayKeysToAdd.push(newKey);
-        } else {
-          objectKeysToAdd.push(newKey);
-        }
+
+      // It's an array item; nothing to add
+      if (newKey.substring(newKey.length - 2) === ".$") {
+        pos = -1;
       }
-      pos = existingKey.indexOf(".", pos + 3);
+      // It's an array of objects; add it with type [Object] if not already in the schema
+      else if (existingKey.substring(pos, pos + 3) === ".$.") {
+        arrayKeysToAdd.push(newKey); // add later, since we are iterating over schema right now
+        pos = existingKey.indexOf(".", pos + 3); // skip over next dot, find the one after
+      }
+      // It's an object; add it with type Object if not already in the schema
+      else {
+        objectKeysToAdd.push(newKey); // add later, since we are iterating over schema right now
+        pos = existingKey.indexOf(".", pos + 1); // find next dot
+      }
     }
   });
 

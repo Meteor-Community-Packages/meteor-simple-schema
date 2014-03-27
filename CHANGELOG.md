@@ -5,6 +5,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.45
+
+Fix issue where some implied schema keys were not automatically added to complex schema definitions
+
 ### 0.2.44
 
 * Ensure that custom validation functions are always called in even more situations,
