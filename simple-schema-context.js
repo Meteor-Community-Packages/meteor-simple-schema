@@ -170,6 +170,7 @@ SimpleSchemaValidationContext.prototype.keyErrorMessage = function(name) {
  */
 
 var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extendedCustomContext) {
+  var setKeys = [];
 
   // First do some basic checks of the object, and throw errors if necessary
   if (!_.isObject(obj)) {
@@ -186,6 +187,9 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
       if (!allKeysAreOperators) {
         throw new Error("When the modifier option is true, all validation object keys must be operators");
       }
+
+      // Get a list of all keys in $set and $setOnInsert combined, for use later
+      setKeys = setKeys.concat(_.keys(obj.$set || {})).concat(_.keys(obj.$setOnInsert || {}));
     }
   } else if (looksLikeModifier(obj)) {
     throw new Error("When the validation object contains mongo operators, you must set the modifier option to true");
@@ -194,9 +198,6 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
   // If this is an upsert, add all the $setOnInsert keys to $set;
   // since we don't know whether it will be an insert or update, we'll
   // validate upserts as if they will be an insert.
-  // TODO It would be more secure to validate twice, once as
-  // an update and once as an insert, because $set validation does not
-  // consider missing required keys to be an issue.
   if ("$setOnInsert" in obj) {
     if (isUpsert) {
       obj.$set = obj.$set || {};
@@ -206,11 +207,10 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
   }
 
   var invalidKeys = [];
-
   var mDoc; // for caching the MongoObject if necessary
 
   // Validation function called for each affected key
-  function validate(val, affectedKey, affectedKeyGeneric, def, op) {
+  function validate(val, affectedKey, affectedKeyGeneric, def, op, skipRequiredCheck, strictRequiredCheck) {
 
     // Get the schema for this key, marking invalid if there isn't one.
     if (!def) {
@@ -224,8 +224,13 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
     // * If there is an operator other than $unset or $rename, val must
     //   not be null or an empty string, but undefined is OK.
     // * If the operator is $unset or $rename, it's invalid.
-    if (!def.optional) {
-      if (op === "$unset" || op === "$rename" || isBlankNullOrUndefined(val)) {
+    if (!skipRequiredCheck && !def.optional) {
+      if (
+        op === "$unset" ||
+        op === "$rename" ||
+        ((!op || (op === "$set" && isUpsert) || strictRequiredCheck) && isBlankNullOrUndefined(val)) ||
+        (op && isBlankOrNull(val))
+        ) {
         invalidKeys.push(errorObject("required", affectedKey, null, def, ss));
         return;
       }
@@ -237,33 +242,34 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
       return;
     }
 
-    // Value checks are not necessary for null or undefined values,
-    // or for certain operators.
-    if (!_.contains(["$unset", "$rename", "$pull", "$pullAll", "$pop"], op)) {
+    // No further checking necessary for $unset or $rename
+    if (_.contains(["$unset", "$rename"], op)) {
+      return;
+    }
 
-      if (isSet(val)) {
+    // Value checks are not necessary for null or undefined values
+    if (isSet(val)) {
 
-        // Check that value is of the correct type
-        var typeError = doTypeChecks(def, val, op);
-        if (typeError) {
-          invalidKeys.push(errorObject(typeError, affectedKey, val, def, ss));
-          return;
-        }
-
-        // Check value against allowedValues array
-        if (def.allowedValues && !_.contains(def.allowedValues, val)) {
-          invalidKeys.push(errorObject("notAllowed", affectedKey, val, def, ss));
-          return;
-        }
-
+      // Check that value is of the correct type
+      var typeError = doTypeChecks(def, val, op);
+      if (typeError) {
+        invalidKeys.push(errorObject(typeError, affectedKey, val, def, ss));
+        return;
       }
 
-      // DEPRECATED: Check value using valusIsAllowed function
-      if (def.valueIsAllowed && !def.valueIsAllowed(val, obj, op)) {
+      // Check value against allowedValues array
+      if (def.allowedValues && !_.contains(def.allowedValues, val)) {
         invalidKeys.push(errorObject("notAllowed", affectedKey, val, def, ss));
         return;
       }
 
+    }
+
+    // DEPRECATED: Check value using valusIsAllowed function
+    if (def.valueIsAllowed && !def.valueIsAllowed(val, obj, op)) {
+      console.warn("SimpleSchema: 'valueIsAllowed' is deprecated. Use 'custom' instead.");
+      invalidKeys.push(errorObject("notAllowed", affectedKey, val, def, ss));
+      return;
     }
 
     // Perform custom validation
@@ -307,8 +313,8 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
   }
 
   // The recursive function
-  function checkObj(val, affectedKey, operator, adjusted) {
-    var affectedKeyGeneric, def;
+  function checkObj(val, affectedKey, operator, adjusted, skipRequiredCheck, strictRequiredCheck) {
+    var affectedKeyGeneric, def, checkAllRequired = false;
 
     // Adjust for first-level modifier operators
     if (!operator && affectedKey && affectedKey.substring(0, 1) === "$") {
@@ -329,7 +335,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
         } else {
           affectedKey = affectedKey + ".0";
         }
-        adjusted = true;
+        checkAllRequired = adjusted = true;
       }
 
       // Make a generic version of the affected key, and use that
@@ -339,7 +345,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
 
       // Perform validation for this key
       if (!keyToValidate || keyToValidate === affectedKey || keyToValidate === affectedKeyGeneric) {
-        validate(val, affectedKey, affectedKeyGeneric, def, operator);
+        validate(val, affectedKey, affectedKeyGeneric, def, operator, skipRequiredCheck, strictRequiredCheck);
       }
     }
 
@@ -359,43 +365,41 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
 
     // Loop through object keys
     else if (isBasicObject(val) && (!def || !def.blackbox)) {
+      var presentKeys, requiredKeys, valueIsAllowedKeys, customKeys;
 
       // Get list of present keys
-      var presentKeys = _.keys(val);
+      presentKeys = _.keys(val);
 
-      // For required checks, we want to also loop through all keys expected
-      // based on the schema, in case any are missing.
-      var requiredKeys, valueIsAllowedKeys, customKeys;
-      if (!isModifier || (isUpsert && operator === "$set") || (affectedKeyGeneric && affectedKeyGeneric.slice(-2) === ".$")) {
+      if (!isModifier || operator === "$set" || checkAllRequired) {
+
+        // For required checks, we want to also loop through all keys expected
+        // based on the schema, in case any are missing.
         requiredKeys = ss.requiredObjectKeys(affectedKeyGeneric);
-
-        // Filter out required keys that are ancestors
-        // of those in $set because they will be created
-        // by MongoDB while setting.
-        requiredKeys = _.filter(requiredKeys, function(k) {
-          return !_.some(presentKeys, function(pk) {
-            return (pk.slice(0, k.length + 1) === k + ".");
-          });
-        });
-      }
-
-      if (!isModifier || (operator === "$set") || (affectedKeyGeneric && affectedKeyGeneric.slice(-2) === ".$")) {
 
         // We want to be sure to call any present valueIsAllowed and custom functions
         // even if the value isn't set, so they can be used for custom
         // required errors, such as basing it on another field's value.
         valueIsAllowedKeys = ss.valueIsAllowedObjectKeys(affectedKeyGeneric);
         customKeys = ss.customObjectKeys(affectedKeyGeneric);
-
       }
 
       // Merge the lists
       var keysToCheck = _.union(presentKeys, requiredKeys || [], valueIsAllowedKeys || [], customKeys || []);
 
+      // If this object is within an array, make sure we check for
+      // required as if it's not a modifier
+      var strictRequiredCheck = (affectedKeyGeneric && affectedKeyGeneric.slice(-2) === ".$");
+
       // Check all keys in the merged list
       _.each(keysToCheck, function(key) {
         if (shouldCheck(key)) {
-          checkObj(val[key], appendAffectedKey(affectedKey, key), operator, adjusted);
+          // We can skip the required check for keys that are ancestors
+          // of those in $set or $setOnInsert because they will be created
+          // by MongoDB while setting.
+          skipRequiredCheck = _.some(setKeys, function(sk) {
+            return (sk.slice(0, key.length + 1) === key + ".");
+          });
+          checkObj(val[key], appendAffectedKey(affectedKey, key), operator, adjusted, skipRequiredCheck, strictRequiredCheck);
         }
       });
     }
@@ -541,6 +545,10 @@ var isBlank = function(str) {
 
 var isBlankNullOrUndefined = function(str) {
   return (str === void 0 || str === null || isBlank(str));
+};
+
+var isBlankOrNull = function(str) {
+  return (str === null || isBlank(str));
 };
 
 var errorObject = function(errorType, keyName, keyValue, def, ss) {

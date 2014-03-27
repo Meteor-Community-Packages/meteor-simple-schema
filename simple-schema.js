@@ -297,6 +297,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
 
   // Convert $pushAll (deprecated) to $push with $each
   if ("$pushAll" in doc) {
+    console.warn("SimpleSchema.clean: $pushAll is deprecated; converting to $push with $each");
     doc.$push = doc.$push || {};
     for (var field in doc.$pushAll) {
       doc.$push[field] = doc.$push[field] || {};
@@ -313,7 +314,11 @@ SimpleSchema.prototype.clean = function(doc, options) {
   // Filter out anything that would affect keys not defined
   // or implied by the schema
   options.filter && mDoc.filterGenericKeys(function(genericKey) {
-    return self.allowsKey(genericKey);
+    var allowed = self.allowsKey(genericKey);
+    if (!allowed) {
+      console.info('SimpleSchema.clean: filtered out value that would have affected key "' + genericKey + '", which is not allowed by the schema');
+    }
+    return allowed;
   });
 
   // Autoconvert values if requested and if possible
@@ -324,6 +329,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
       if (def && val !== void 0) {
         var newVal = typeconvert(val, def.type);
         if (newVal !== void 0 && newVal !== val) {
+          console.info('SimpleSchema.clean: autoconverted value ' + val + ' from ' + typeof val + ' to ' + typeof newVal + ' for ' + this.genericKey);
           this.updateValue(newVal);
         }
       }

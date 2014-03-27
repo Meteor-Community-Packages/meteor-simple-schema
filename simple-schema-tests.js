@@ -911,11 +911,14 @@ Tinytest.add("SimpleSchema - Required Checks - Update - Invalid - $set", functio
   test.length(sc.invalidKeys(), 8);
 
   //array of objects
+
+  //name is required
   sc = validate(friends, {$set: {
       'friends.1.name': null
     }}, true);
   test.length(sc.invalidKeys(), 1);
 
+  //type is required
   sc = validate(friends, {$set: {
       friends: [{name: 'Bob'}]
     }}, true);

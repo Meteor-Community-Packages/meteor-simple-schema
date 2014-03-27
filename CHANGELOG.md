@@ -5,6 +5,12 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.44
+
+* Ensure that custom validation functions are always called in even more situations,
+but make sure that this doesn't cause unnecessary "required" errors.
+* Add some `console.info` to help you see what is filtered out and autoconverted by the `clean` method.
+
 ### 0.2.43
 
 Fix issue where default values were being added to update modifiers.
