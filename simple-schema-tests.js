@@ -390,6 +390,21 @@ var optCust = new SimpleSchema({
   }
 });
 
+var reqCust = new SimpleSchema({
+  a: {
+    type: [Object],
+    custom: function () {
+      // Just adding custom to trigger extra validation
+    }
+  },
+  b: {
+    type: [Object],
+    custom: function () {
+      // Just adding custom to trigger extra validation
+    }
+  }
+});
+
 /*
  * END SETUP FOR TESTS
  */
@@ -3536,7 +3551,20 @@ Tinytest.add("SimpleSchema - Optional Custom", function(test) {
   ctx.validate({});
   test.equal(ctx.invalidKeys().length, 1, 'expected 1 invalid key');
   test.equal(ctx.invalidKeys()[0].type, 'custom', 'expected custom error');
+});
 
+Tinytest.add("SimpleSchema - Required Custom", function (test) {
+  var ctx = reqCust.namedContext();
+  // Ensure that we don't get required errors for a required field that
+  // has a `custom` function when we're doing an UPDATE
+  ctx.validate({$set: {a: [{}]}}, {modifier: true});
+  test.equal(ctx.invalidKeys().length, 0, 'expected no validation errors');
+
+  ctx.validate({$set: {'a.0': {}}}, {modifier: true});
+  test.equal(ctx.invalidKeys().length, 0, 'expected no validation errors');
+
+  ctx.validate({$push: {'a': {}}}, {modifier: true});
+  test.equal(ctx.invalidKeys().length, 0, 'expected no validation errors');
 });
 
 /*

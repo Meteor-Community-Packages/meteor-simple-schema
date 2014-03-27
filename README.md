@@ -142,8 +142,15 @@ MySchema = new SimpleSchema({
 });
 ```
 
-In the example above, adding the `addresses` key itself isn't necessary, but
-you could do so if you want to, particularly if you want to specify a minimum or maximum array count:
+In the examples above, we did not explicitly define the `mailingAddress` object or
+the `addresses` array or the `addresses.$` object. This is fine because they will be
+implicitly defined for you. However,
+__note that implicit objects and arrays of objects are assumed to be optional__.
+This means their required properties will only be required if the object
+itself is present in the document or modifier being validated. So in general, it's
+clearer if you explicitly define objects and arrays of objects in your schema.
+Here's an example of explicitly defining an array of objects such that it will be
+required and have a minimum and maximum array count:
 
 ```js
 MySchema = new SimpleSchema({
