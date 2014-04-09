@@ -757,3 +757,5 @@ Anyone is welcome to contribute. Fork, make and test your changes
 
 - @mquandalle
 - @Nemo64
+
+[![Support via Gittip](https://rawgithub.com/twolfson/gittip-badge/0.2.0/dist/gittip.png)](https://www.gittip.com/aldeed/)
