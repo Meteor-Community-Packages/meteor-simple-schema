@@ -343,6 +343,27 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
       affectedKeyGeneric = SimpleSchema._makeGeneric(affectedKey);
       def = ss.schema(affectedKeyGeneric);
 
+      // We didn't find a schema for our key, so check if the key
+      // is a nested dot-syntax key inside of a blackbox object
+      if (!def) {
+        var parentPath = affectedKeyGeneric, lastDot;
+
+        // Iterate the dot-syntax hierarchy until we find a key in our schema
+        do {
+          lastDot = parentPath.lastIndexOf('.');
+          if (lastDot !== -1) {
+            parentPath = parentPath.slice(0, lastDot); // Remove last path component
+            def = ss.schema(parentPath);
+          }
+        } while (lastDot !== -1 && !def);
+
+        if (!def || !def.blackbox) {
+          def = null;
+        } else {
+          return; // The key points inside of a black box so our validation attempt ends
+        }
+      }
+
       // Perform validation for this key
       if (!keyToValidate || keyToValidate === affectedKey || keyToValidate === affectedKeyGeneric) {
         validate(val, affectedKey, affectedKeyGeneric, def, operator, skipRequiredCheck, strictRequiredCheck);

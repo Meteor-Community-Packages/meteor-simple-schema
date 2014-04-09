@@ -2502,6 +2502,33 @@ Tinytest.add("SimpleSchema - Black Box Objects", function(test) {
     }
   }, false, false, true);
   test.length(sc.invalidKeys(), 0);
+
+  var sc = validate(ss, {$set: {
+    blackBoxObject: {
+      foo: "bar"
+    }
+  }}, true, false, true);
+  test.length(sc.invalidKeys(), 0);
+
+  var sc = validate(ss, {$set: {
+    'blackBoxObject.foo': "bar"
+  }}, true, false, true);
+  test.length(sc.invalidKeys(), 0);
+
+  var sc = validate(ss, {$set: {
+    'blackBoxObject.1': "bar"
+  }}, true, false, true);
+  test.length(sc.invalidKeys(), 0);
+
+  var sc = validate(ss, {$push: {
+    'blackBoxObject.foo': "bar"
+  }}, true, false, true);
+  test.length(sc.invalidKeys(), 0);
+
+  var sc = validate(ss, {$set: {
+    'blackBoxObject': []
+  }}, true, false, true);
+  test.length(sc.invalidKeys(), 1);
 });
 
 Tinytest.add("SimpleSchema - Validation Against Another Key - Insert - Valid", function(test) {
