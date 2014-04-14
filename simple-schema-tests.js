@@ -354,6 +354,19 @@ var autoValues = new SimpleSchema({
   'updatesHistory.$.content': {
     type: String,
     optional: true
+  },
+  avArrayOfObjects: {
+    type: [Object],
+    optional: true
+  },
+  'avArrayOfObjects.$.a': {
+    type: String
+  },
+  'avArrayOfObjects.$.foo': {
+    type: String,
+    autoValue: function () {
+      return "bar";
+    }
   }
 });
 
@@ -3336,6 +3349,15 @@ Tinytest.add("SimpleSchema - AutoValues", function(test) {
   test.equal(o.firstWord, 'Hello', 'expected firstWord to be "Hello"');
   test.length(o.updatesHistory, 1);
   test.equal(o.updatesHistory[0].content, 'Hello world!', 'expected updatesHistory.content to be "Hello world!"');
+
+  // autoValues in object in array with modifier
+  o = {$push: {avArrayOfObjects: {a: "b"}}};
+  autoValues.clean(o, {isModifier: true});
+  test.equal(o, {$push: {avArrayOfObjects: {a: "b", foo: "bar"}}, $set: {someDefault: 5}, $inc:{updateCount:1}}, 'autoValue in object in array not set correctly');
+
+  o = {$set: {avArrayOfObjects: [{a: "b"}]}};
+  autoValues.clean(o, {isModifier: true});
+  test.equal(o, {$set: {avArrayOfObjects: [{a: "b", foo: "bar"}], someDefault: 5}, $inc:{updateCount:1}}, 'autoValue in object in array not set correctly');
 
   var av = new SimpleSchema({
     foo: {

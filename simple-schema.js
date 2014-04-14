@@ -937,7 +937,7 @@ function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
     }
 
     // Add $set for updates and upserts if necessary
-    if (!op && isModifier) {
+    if (!op && isModifier && this.position.slice(0, 1) !== '$') {
       op = "$set";
       newValue = autoValue;
     }
