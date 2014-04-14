@@ -5,6 +5,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.47
+
+Fix issue with setting autoValue for property of an object that's in an array, when cleaning a modifier.
+
 ### 0.2.46
 
 Fix issue where blackbox objects were being validated in update modifiers. (Thanks @Pugio!)
