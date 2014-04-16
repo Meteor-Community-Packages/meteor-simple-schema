@@ -5,6 +5,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.2.48
+
+Internal change: Add keepArrays option to mongoObject.getFlatObject, for use by autoform pkg.
+
 ### 0.2.47
 
 Fix issue with setting autoValue for property of an object that's in an array, when cleaning a modifier.

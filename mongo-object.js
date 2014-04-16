@@ -3,7 +3,7 @@
  * @param {Object} objOrModifier
  * @param {string[]} blackBoxKeys - A list of the names of keys that shouldn't be traversed
  * @returns {undefined}
- * 
+ *
  * Creates a new MongoObject instance. The object passed as the first argument
  * will be modified in place by calls to instance methods. Also, immediately
  * upon creation of the instance, the object will have any `undefined` keys
@@ -15,8 +15,10 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
   self._affectedKeys = {};
   self._genericAffectedKeys = {};
   self._parentPositions = [];
+  self._positionsInsideArrays = [];
+  self._objectPositions = [];
 
-  function parseObj(val, currentPosition, affectedKey, operator, adjusted) {
+  function parseObj(val, currentPosition, affectedKey, operator, adjusted, isWithinArray) {
 
     // Adjust for first-level modifier operators
     if (!operator && affectedKey && affectedKey.substring(0, 1) === "$") {
@@ -53,16 +55,22 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
       if (currentPosition) {
         self._affectedKeys[currentPosition] = affectedKey;
         self._genericAffectedKeys[currentPosition] = affectedKeyGeneric;
+
+        // If we're within an array, mark this position so we can omit it from flat docs
+        isWithinArray && self._positionsInsideArrays.push(currentPosition);
       }
     }
 
     // Loop through arrays
     if (_.isArray(val) && !_.isEmpty(val)) {
-      // Mark positions with objects that should be left out of flat docs.
-      currentPosition && self._parentPositions.push(currentPosition);
+      if (currentPosition) {
+        // Mark positions with arrays that should be ignored when we want endpoints only
+        self._parentPositions.push(currentPosition);
+      }
+
       // Loop
       _.each(val, function(v, i) {
-        parseObj(v, (currentPosition ? currentPosition + "[" + i + "]" : i), affectedKey + '.' + i, operator, adjusted);
+        parseObj(v, (currentPosition ? currentPosition + "[" + i + "]" : i), affectedKey + '.' + i, operator, adjusted, true);
       });
     }
 
@@ -70,14 +78,18 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
     // but always for the passed-in object, even if it
     // is a custom object.
     else if ((isBasicObject(val) && !affectedKeyIsBlackBox) || !currentPosition) {
-      // Mark positions with arrays that should be left out of flat docs.
-      currentPosition && !_.isEmpty(val) && self._parentPositions.push(currentPosition);
+      if (currentPosition && !_.isEmpty(val)) {
+        // Mark positions with objects that should be ignored when we want endpoints only
+        self._parentPositions.push(currentPosition);
+        // Mark positions with objects that should be left out of flat docs.
+        self._objectPositions.push(currentPosition);
+      }
       // Loop
       _.each(val, function(v, k) {
         if (v === void 0) {
           delete val[k];
         } else if (k !== "$slice") {
-          parseObj(v, (currentPosition ? currentPosition + "[" + k + "]" : k), appendAffectedKey(affectedKey, k), operator, adjusted);
+          parseObj(v, (currentPosition ? currentPosition + "[" + k + "]" : k), appendAffectedKey(affectedKey, k), operator, adjusted, isWithinArray);
         }
       });
     }
@@ -89,6 +101,8 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
     self._affectedKeys = {};
     self._genericAffectedKeys = {};
     self._parentPositions = [];
+    self._positionsInsideArrays = [];
+    self._objectPositions = [];
     parseObj(self._obj);
   }
 
@@ -98,7 +112,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    * @param {Object} [options]
    * @param {Boolean} [options.endPointsOnly=true] - Only call function for endpoints and not for nodes that contain other nodes
    * @returns {undefined}
-   * 
+   *
    * Runs a function for each endpoint node in the object tree, including all items in every array.
    * The function arguments are
    * (1) the value at this node
@@ -211,7 +225,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
   self.removeValueForPosition = function(position) {
     self.setValueForPosition(position, void 0);
   };
-  
+
   /**
    * @method MongoObject.prototype.getKeyForPosition
    * @param {String} position
@@ -220,7 +234,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
   self.getKeyForPosition = function(position) {
     return self._affectedKeys[position];
   };
-  
+
   /**
    * @method MongoObject.prototype.getGenericKeyForPosition
    * @param {String} position
@@ -234,7 +248,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    * @method MongoObject.getInfoForKey
    * @param {String} key - Non-generic key
    * @returns {undefined|Object}
-   * 
+   *
    * Returns the value and operator of the requested non-generic key.
    * Example: {value: 1, operator: "$pull"}
    */
@@ -270,7 +284,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    * @method MongoObject.getPositionForKey
    * @param {String} key - Non-generic key
    * @returns {undefined|String} Position string
-   * 
+   *
    * Returns the position string for the place in the object that
    * affects the requested non-generic key.
    * Example: 'foo[bar][0]'
@@ -295,7 +309,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    * @method MongoObject.getPositionsForGenericKey
    * @param {String} key - Generic key
    * @returns {String[]} Array of position strings
-   * 
+   *
    * Returns an array of position strings for the places in the object that
    * affect the requested generic key.
    * Example: ['foo[bar][0]']
@@ -319,7 +333,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    * @method MongoObject.getValueForKey
    * @param {String} key - Non-generic key
    * @returns {undefined|Any}
-   * 
+   *
    * Returns the value of the requested non-generic key
    */
   self.getValueForKey = function(key) {
@@ -335,7 +349,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    * @param {Any} val - Value to give this key
    * @param {String} op - Operator under which to set it, or `null` for a non-modifier object
    * @returns {undefined}
-   * 
+   *
    * Adds `key` with value `val` under operator `op` to the source object.
    */
   self.addKey = function(key, val, op) {
@@ -347,7 +361,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    * @method MongoObject.prototype.removeGenericKeys
    * @param {String[]} keys
    * @returns {undefined}
-   * 
+   *
    * Removes anything that affects any of the generic keys in the list
    */
   self.removeGenericKeys = function(keys) {
@@ -364,7 +378,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    * @method MongoObject.removeGenericKey
    * @param {String} key
    * @returns {undefined}
-   * 
+   *
    * Removes anything that affects the requested generic key
    */
   self.removeGenericKey = function(key) {
@@ -381,7 +395,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    * @method MongoObject.removeKey
    * @param {String} key
    * @returns {undefined}
-   * 
+   *
    * Removes anything that affects the requested non-generic key
    */
   self.removeKey = function(key) {
@@ -400,7 +414,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    * @method MongoObject.removeKeys
    * @param {String[]} keys
    * @returns {undefined}
-   * 
+   *
    * Removes anything that affects any of the non-generic keys in the list
    */
   self.removeKeys = function(keys) {
@@ -413,7 +427,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    * @method MongoObject.filterGenericKeys
    * @param {Function} test - Test function
    * @returns {undefined}
-   * 
+   *
    * Passes all affected keys to a test function, which
    * should return false to remove whatever is affecting that key
    */
@@ -441,7 +455,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    * @param {String} key
    * @param {Any} val
    * @returns {undefined}
-   * 
+   *
    * Sets the value for every place in the object that affects
    * the requested non-generic key
    */
@@ -462,7 +476,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    * @param {String} key
    * @param {Any} val
    * @returns {undefined}
-   * 
+   *
    * Sets the value for every place in the object that affects
    * the requested generic key
    */
@@ -481,7 +495,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
   /**
    * @method MongoObject.getObject
    * @returns {Object}
-   * 
+   *
    * Get the source object, potentially modified by other method calls on this
    * MongoObject instance.
    */
@@ -492,16 +506,27 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
   /**
    * @method MongoObject.getFlatObject
    * @returns {Object}
-   * 
+   *
    * Gets a flat object based on the MongoObject instance.
    * In a flat object, the key is the name of the non-generic affectedKey,
    * with mongo dot notation if necessary, and the value is the value for
    * that key.
+   *
+   * With `keepArrays: true`, we don't flatten within arrays. Currently
+   * MongoDB does not see a key such as `a.0.b` and automatically assume
+   * an array. Instead it would create an object with key "0" if there
+   * wasn't already an array saved as the value of `a`, which is rarely
+   * if ever what we actually want. To avoid this confusion, we
+   * set entire arrays.
    */
-  self.getFlatObject = function() {
+  self.getFlatObject = function(options) {
+    options = options || {};
     var newObj = {};
     _.each(self._affectedKeys, function(affectedKey, position) {
-      if (typeof affectedKey === "string" && !_.contains(self._parentPositions, position)) {
+      if (typeof affectedKey === "string" &&
+        (options.keepArrays === true && !_.contains(self._positionsInsideArrays, position) && !_.contains(self._objectPositions, position)) ||
+        (!options.keepArrays && !_.contains(self._parentPositions, position))
+        ) {
         newObj[affectedKey] = self.getValueForPosition(position);
       }
     });
@@ -512,7 +537,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    * @method MongoObject.affectsKey
    * @param {String} key
    * @returns {Object}
-   * 
+   *
    * Returns true if the non-generic key is affected by this object
    */
   self.affectsKey = function(key) {
@@ -523,7 +548,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    * @method MongoObject.affectsGenericKey
    * @param {String} key
    * @returns {Object}
-   * 
+   *
    * Returns true if the generic key is affected by this object
    */
   self.affectsGenericKey = function(key) {
@@ -541,7 +566,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    * @method MongoObject.affectsGenericKeyImplicit
    * @param {String} key
    * @returns {Object}
-   * 
+   *
    * Like affectsGenericKey, but will return true if a child key is affected
    */
   self.affectsGenericKeyImplicit = function(key) {
@@ -574,7 +599,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
 
 /** Takes a string representation of an object key and its value
  *  and updates "obj" to contain that key with that value.
- *  
+ *
  *  Example keys and results if val is 1:
  *    "a" -> {a: 1}
  *    "a[b]" -> {a: {b: 1}}
@@ -584,13 +609,13 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
 
 /** Takes a string representation of an object key and its value
  *  and updates "obj" to contain that key with that value.
- *  
+ *
  *  Example keys and results if val is 1:
  *    "a" -> {a: 1}
  *    "a[b]" -> {a: {b: 1}}
  *    "a[b][0]" -> {a: {b: [1]}}
  *    "a[b.0.c]" -> {a: {'b.0.c': 1}}
- * 
+ *
  * @param {any} val
  * @param {String} key
  * @param {Object} obj
@@ -637,7 +662,7 @@ MongoObject._keyToPosition = function keyToPosition(key, wrapAll) {
  * @method MongoObject._positionToKey
  * @param {String} position
  * @returns {String} The key that this position in an object would affect.
- * 
+ *
  * This is different from MongoObject.prototype.getKeyForPosition in that
  * this method does not depend on the requested position actually being
  * present in any particular MongoObject.
@@ -676,7 +701,7 @@ if (typeof Object.getPrototypeOf !== "function") {
 
 /* Tests whether "obj" is an Object as opposed to
  * something that inherits from Object
- * 
+ *
  * @param {any} obj
  * @returns {Boolean}
  */
@@ -687,7 +712,7 @@ var isBasicObject = function(obj) {
 /* Takes a specific string that uses mongo-style dot notation
  * and returns a generic string equivalent. Replaces all numeric
  * "pieces" with a dollar sign ($).
- * 
+ *
  * @param {type} name
  * @returns {unresolved}
  */

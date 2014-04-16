@@ -1,6 +1,6 @@
-var flat = function(doc) {
+var flat = function(doc, opts) {
   var mDoc = new MongoObject(doc);
-  return mDoc.getFlatObject();
+  return mDoc.getFlatObject(opts);
 };
 
 var passthru = function(doc) {
@@ -43,8 +43,8 @@ Tinytest.add("MongoObject - Round Trip", function(test) {
 
 Tinytest.add("MongoObject - Flat", function(test) {
   // Helper Function
-  function testFlat(o, exp) {
-    var fo = flat(o);
+  function testFlat(o, exp, opts) {
+    var fo = flat(o, opts);
     var jo = JSON.stringify(o);
     var jfo = JSON.stringify(fo);
     var jexp = JSON.stringify(exp);
@@ -60,19 +60,28 @@ Tinytest.add("MongoObject - Flat", function(test) {
   testFlat({a: []}, {a: []});
   testFlat({a: {}}, {a: {}});
   testFlat({a: [1, 2]}, {"a.0": 1, "a.1": 2});
+  testFlat({a: [1, 2]}, {a: [1, 2]}, {keepArrays: true});
   testFlat({a: ["Test1", "Test2"]}, {"a.0": "Test1", "a.1": "Test2"});
+  testFlat({a: ["Test1", "Test2"]}, {a: ["Test1", "Test2"]}, {keepArrays: true});
   testFlat({a: [testDate, testDate]}, {"a.0": testDate, "a.1": testDate});
+  testFlat({a: [testDate, testDate]}, {a: [testDate, testDate]}, {keepArrays: true});
   testFlat({a: {b: 1}}, {"a.b": 1});
   testFlat({a: {b: "Test"}}, {"a.b": "Test"});
   testFlat({a: {b: testDate}}, {"a.b": testDate});
   testFlat({a: {b: []}}, {"a.b": []});
   testFlat({a: {b: {}}}, {"a.b": {}});
   testFlat({a: {b: [1, 2]}}, {"a.b.0": 1, "a.b.1": 2});
+  testFlat({a: {b: [1, 2]}}, {"a.b": [1, 2]}, {keepArrays: true});
   testFlat({a: {b: ["Test1", "Test2"]}}, {"a.b.0": "Test1", "a.b.1": "Test2"});
+  testFlat({a: {b: ["Test1", "Test2"]}}, {"a.b": ["Test1", "Test2"]}, {keepArrays: true});
   testFlat({a: {b: [testDate, testDate]}}, {"a.b.0": testDate, "a.b.1": testDate});
+  testFlat({a: {b: [testDate, testDate]}}, {"a.b": [testDate, testDate]}, {keepArrays: true});
   testFlat({a: {b: [{c: 1}, {c: 2}]}}, {"a.b.0.c": 1, "a.b.1.c": 2});
+  testFlat({a: {b: [{c: 1}, {c: 2}]}}, {"a.b": [{c: 1}, {c: 2}]}, {keepArrays: true});
   testFlat({a: {b: [{c: "Test1"}, {c: "Test2"}]}}, {"a.b.0.c": "Test1", "a.b.1.c": "Test2"});
+  testFlat({a: {b: [{c: "Test1"}, {c: "Test2"}]}}, {"a.b": [{c: "Test1"}, {c: "Test2"}]}, {keepArrays: true});
   testFlat({a: {b: [{c: testDate}, {c: testDate}]}}, {"a.b.0.c": testDate, "a.b.1.c": testDate});
+  testFlat({a: {b: [{c: testDate}, {c: testDate}]}}, {"a.b": [{c: testDate}, {c: testDate}]}, {keepArrays: true});
 });
 
 Tinytest.add("MongoObject - removeValueForPosition", function(test) {
