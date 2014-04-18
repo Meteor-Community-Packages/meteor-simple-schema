@@ -46,15 +46,7 @@ SimpleSchemaValidationContext.prototype.validate = function(doc, options) {
 
   //mark all changed keys as changed
   var changedKeys = _.union(addedKeys, removedKeys);
-  _.each(changedKeys, function(name) {
-    var genericName = SimpleSchema._makeGeneric(name);
-    if (genericName in self._deps) {
-      self._deps[genericName].changed();
-    }
-  });
-  if (changedKeys.length) {
-    self._depsAny.changed();
-  }
+  self._markKeysChanged(changedKeys);
 
   // Return true if it was valid; otherwise, return false
   return self._invalidKeys.length === 0;
@@ -95,11 +87,7 @@ SimpleSchemaValidationContext.prototype.validateOne = function(doc, keyName, opt
   }
 
   //mark key as changed due to new validation (they may be valid now, or invalid in a different way)
-  var genericName = SimpleSchema._makeGeneric(keyName);
-  if (genericName in self._deps) {
-    self._deps[genericName].changed();
-  }
-  self._depsAny.changed();
+  self._markKeysChanged([keyName]);
 
   // Return true if it was valid; otherwise, return false
   return !self._keyIsInvalid(keyName);
@@ -110,12 +98,7 @@ SimpleSchemaValidationContext.prototype.resetValidation = function() {
   var self = this;
   var removedKeys = _.pluck(self._invalidKeys, "name");
   self._invalidKeys = [];
-  _.each(removedKeys, function(name) {
-    var genericName = SimpleSchema._makeGeneric(name);
-    if (genericName in self._deps) {
-      self._deps[genericName].changed();
-    }
-  });
+  self._markKeysChanged(removedKeys);
 };
 
 SimpleSchemaValidationContext.prototype.isValid = function() {
@@ -128,6 +111,36 @@ SimpleSchemaValidationContext.prototype.invalidKeys = function() {
   var self = this;
   self._depsAny.depend();
   return self._invalidKeys;
+};
+
+SimpleSchemaValidationContext.prototype.addInvalidKeys = function(errors) {
+  var self = this;
+
+  if (!errors || !errors.length)
+    return;
+
+  var changedKeys = [];
+  _.each(errors, function (errorObject) {
+    changedKeys.push(errorObject.name);
+    self._invalidKeys.push(errorObject);
+  });
+
+  self._markKeysChanged(changedKeys);
+};
+
+SimpleSchemaValidationContext.prototype._markKeysChanged = function(keys) {
+  var self = this;
+
+  if (!keys || !keys.length)
+    return;
+
+  _.each(keys, function(name) {
+    var genericName = SimpleSchema._makeGeneric(name);
+    if (genericName in self._deps) {
+      self._deps[genericName].changed();
+    }
+  });
+  self._depsAny.changed();
 };
 
 SimpleSchemaValidationContext.prototype._keyIsInvalid = function(name, genericName) {

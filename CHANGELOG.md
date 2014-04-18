@@ -5,6 +5,11 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.3.0
+
+* Add `SimpleSchemaValidationContext.prototype.addInvalidKeys`. See "Manually Adding a Validation Error" in the README.
+* Fix minor issues with filtering
+
 ### 0.2.48
 
 Internal change: Add keepArrays option to mongoObject.getFlatObject, for use by autoform pkg.

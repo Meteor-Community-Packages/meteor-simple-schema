@@ -539,6 +539,46 @@ name (non-generic schema key) as the only argument. The return object will have
 have the same parent object. Works the same way as `field()`. This is helpful
 when you use sub-schemas or when you're dealing with arrays of objects.
 
+### Manually Adding a Validation Error
+
+If you want to reactively display an arbitrary validation error and it is not possible to use a custom validation function (perhaps you have to call a function `onSubmit` or wait for asynchronous results), you can add one or more errors to a validation context at any time by calling `myContext.addInvalidKeys(errors)`, where `errors` is an array of error objects with the following format:
+
+```js
+{name: key, type: errorType, value: anyValue}
+```
+
+* `name`: The schema key as specified in the schema.
+* `type`: The type of error. Any string you want, or one of the following built-in strings:
+    * required
+    * minString
+    * maxString
+    * minNumber
+    * maxNumber
+    * minDate
+    * maxDate
+    * minCount
+    * maxCount
+    * noDecimal
+    * notAllowed
+    * expectedString
+    * expectedNumber
+    * expectedBoolean
+    * expectedArray
+    * expectedObject
+    * expectedConstructor
+    * regEx
+* `value`: Optional. The value that was not valid. Will be used in place of `[value]` placeholder in error messages.
+
+If you use a custom string for `type`, be sure to define a message for it. (See "Customizing Validation Messages").
+
+Example:
+
+```js
+SimpleSchema.messages({wrongPassword: "Wrong password"});
+
+myContext.addInvalidKeys([{name: 'password', type: 'wrongPassword'}]);
+```
+
 ### Other Validation Context Methods
 
 Call `myContext.invalidKeys()` to get the full array of invalid key data. Each object
