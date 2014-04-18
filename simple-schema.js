@@ -537,25 +537,22 @@ SimpleSchema.prototype.allowsKey = function(key) {
     if (schemaKey === key) {
       return true;
     }
+    
+    // Black box handling
+    if (self.schema(schemaKey).blackbox === true) {
+      var kl = schemaKey.length;
+      var compare1 = key.slice(0, kl + 2);
+      var compare2 = compare1.slice(0, -1);
 
-    // If the schema key implies the test key because the schema key
-    // starts with the test key followed by a period, it's allowed.
-    if (schemaKey.substring(0, key.length + 1) === key + ".") {
-      return true;
-    }
+      // If the test key is the black box key + ".$", then the test
+      // key is NOT allowed because black box keys are by definition
+      // only for objects, and not for arrays.
+      if (compare1 === schemaKey + '.$')
+        return false;
 
-    // If the schema key implies the test key because the schema key
-    // starts with the test key and the test key ends with ".$", it's allowed.
-    var lastTwo = key.slice(-2);
-    if (lastTwo === ".$" && key.slice(0, -2) === schemaKey) {
-      return true;
-    }
-
-    // If the schema key is an ancestor of the test key and the 
-    // schema key is a black box, it's allowed
-    if (self.schema(schemaKey).blackbox === true &&
-            key.slice(0, schemaKey.length + 1) === schemaKey + ".") {
-      return true;
+      // Otherwise
+      if (compare2 === schemaKey + '.')
+        return true;
     }
 
     return false;

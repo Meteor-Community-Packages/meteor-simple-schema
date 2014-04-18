@@ -1081,10 +1081,15 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   test.length(sc.invalidKeys(), 1); //with filter
 
   //array string failure
+  sc2.validate({
+    string: ["test"]
+  });
+  test.length(sc2.invalidKeys(), 2); //without filter
+  
   sc = validate(ss, {
     string: ["test"]
   });
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //instance string failure
   sc2.validate({
@@ -1123,10 +1128,15 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   test.length(sc.invalidKeys(), 1); //with filter
 
   //array bool failure
+  sc2.validate({
+    boolean: ["test"]
+  });
+  test.length(sc2.invalidKeys(), 2); //without filter
+  
   sc = validate(ss, {
     boolean: ["test"]
   });
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //instance bool failure
   sc = validate(ss, {
@@ -1160,10 +1170,15 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   test.length(sc.invalidKeys(), 1); //with filter
 
   //array number failure
+  sc2.validate({
+    number: ["test"]
+  });
+  test.length(sc2.invalidKeys(), 2); //without filter
+  
   sc = validate(ss, {
     number: ["test"]
   });
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //instance number failure
   sc = validate(ss, {
@@ -1209,10 +1224,15 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   test.length(sc.invalidKeys(), 1); //with filter
 
   //array date failure
+  sc2.validate({
+    date: ["test"]
+  });
+  test.length(sc2.invalidKeys(), 2); //without filter
+  
   sc = validate(ss, {
     date: ["test"]
   });
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //number date failure
   sc = validate(ss, {
@@ -1283,10 +1303,15 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
   test.length(sc.invalidKeys(), 1); //with filter
 
   //array string failure
+  sc2.validate({$setOnInsert: {
+      string: ["test"]
+    }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
+  test.length(sc2.invalidKeys(), 2); //without filter
+
   sc = validate(ss, {$setOnInsert: {
       string: ["test"]
     }}, true, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //instance string failure
   sc2.validate({$setOnInsert: {
@@ -1325,10 +1350,15 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
   test.length(sc.invalidKeys(), 1); //with filter
 
   //array bool failure
+  sc2.validate({$setOnInsert: {
+      boolean: ["test"]
+    }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
+  test.length(sc2.invalidKeys(), 2); //without filter
+
   sc = validate(ss, {$setOnInsert: {
       boolean: ["test"]
     }}, true, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //instance bool failure
   sc = validate(ss, {$setOnInsert: {
@@ -1362,10 +1392,15 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
   test.length(sc.invalidKeys(), 1); //with filter
 
   //array number failure
+  sc2.validate({$setOnInsert: {
+      number: ["test"]
+    }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
+  test.length(sc2.invalidKeys(), 2); //without filter
+
   sc = validate(ss, {$setOnInsert: {
       number: ["test"]
     }}, true, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //instance number failure
   sc = validate(ss, {$setOnInsert: {
@@ -1405,10 +1440,15 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
   test.length(sc.invalidKeys(), 1); //with filter
 
   //array date failure
+  sc2.validate({$setOnInsert: {
+      date: ["test"]
+    }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
+  test.length(sc2.invalidKeys(), 2); //without filter
+
   sc = validate(ss, {$setOnInsert: {
       date: ["test"]
     }}, true, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //number date failure
   sc = validate(ss, {$setOnInsert: {
@@ -1477,10 +1517,15 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
   test.length(sc.invalidKeys(), 1); //with filter
 
   //array string failure
+  sc2.validate({$set: {
+      string: ["test"]
+    }}, {modifier: true, filter: false, autoConvert: false});
+  test.length(sc2.invalidKeys(), 2); //without filter
+
   sc = validate(ss, {$set: {
       string: ["test"]
     }}, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //instance string failure
   sc2.validate({$set: {
@@ -1519,10 +1564,15 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
   test.length(sc.invalidKeys(), 1); //with filter
 
   //array bool failure
+  sc2.validate({$set: {
+      boolean: ["test"]
+    }}, {modifier: true, filter: false, autoConvert: false});
+  test.length(sc2.invalidKeys(), 2); //without filter
+
   sc = validate(ss, {$set: {
       boolean: ["test"]
     }}, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //instance bool failure
   sc = validate(ss, {$set: {
@@ -1556,10 +1606,15 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
   test.length(sc.invalidKeys(), 1); //with filter
 
   //array number failure
+  sc2.validate({$set: {
+      number: ["test"]
+    }}, {modifier: true, filter: false, autoConvert: false});
+  test.length(sc2.invalidKeys(), 2); //without filter
+
   sc = validate(ss, {$set: {
       number: ["test"]
     }}, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //instance number failure
   sc = validate(ss, {$set: {
@@ -1583,10 +1638,15 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
     }}, true);
   test.length(sc.invalidKeys(), 1);
 
+  sc2.validate({$set: {
+      sub: {number: [29]}
+    }}, {modifier: true, filter: false, autoConvert: false});
+  test.length(sc2.invalidKeys(), 2); //without filter
+
   sc = validate(ss, {$set: {
       sub: {number: [29]}
     }}, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.invalidKeys(), 1); //with filter
 
   /* INSTANCE FAILURES */
 
@@ -1614,10 +1674,15 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
   test.length(sc.invalidKeys(), 1); //with filter
 
   //array date failure
+  sc2.validate({$set: {
+      date: ["test"]
+    }}, {modifier: true, filter: false, autoConvert: false});
+  test.length(sc2.invalidKeys(), 2); //without filter
+
   sc = validate(ss, {$set: {
       date: ["test"]
     }}, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.invalidKeys(), 1); //with filter
 
   //number date failure
   sc = validate(ss, {$set: {
@@ -3614,6 +3679,40 @@ Tinytest.add("SimpleSchema - Required Custom", function (test) {
 
   ctx.validate({$push: {'a': {}}}, {modifier: true});
   test.equal(ctx.invalidKeys().length, 0, 'expected no validation errors');
+});
+
+Tinytest.add("SimpleSchema - AllowsKey", function(test) {
+  function run(key, allowed) {
+    test.equal(ss.allowsKey(key), allowed, 'Incorrect allowsKey result for ' + key);
+  }
+
+  run('minMaxString', true);
+  run('minMaxString.$', false);
+  run('minMaxString.$.foo', false);
+  run('minMaxString.$foo', false);
+  run('minMaxString.foo', false);
+  run('sub', true);
+  run('sub.number', true);
+  run('sub.number.$', false);
+  run('sub.number.$.foo', false);
+  run('sub.number.$foo', false);
+  run('sub.number.foo', false);
+  run('minMaxStringArray', true);
+  run('minMaxStringArray.$', true);
+  run('minMaxStringArray.$.foo', false);
+  run('minMaxStringArray.foo', false);
+  run('customObject', true);
+  run('customObject.$', false);
+  run('customObject.foo', true);
+  run('customObject.foo.$', true);
+  run('customObject.foo.$foo', true);
+  run('customObject.foo.$.$foo', true);
+  run('blackBoxObject', true);
+  run('blackBoxObject.$', false);
+  run('blackBoxObject.foo', true);
+  run('blackBoxObject.foo.$', true);
+  run('blackBoxObject.foo.$foo', true);
+  run('blackBoxObject.foo.$.$foo', true);
 });
 
 /*
