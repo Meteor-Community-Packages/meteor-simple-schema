@@ -542,6 +542,9 @@ name (non-generic schema key) as the only argument. The return object will have
 have the same parent object. Works the same way as `field()`. This is helpful
 when you use sub-schemas or when you're dealing with arrays of objects.
 
+NOTE: If you need to do some custom validation on the server and then display errors back on the client,
+refer to the "Asynchronous Custom Validation on the Client" section.
+
 ### Manually Adding a Validation Error
 
 If you want to reactively display an arbitrary validation error and it is not possible to use a custom validation function (perhaps you have to call a function `onSubmit` or wait for asynchronous results), you can add one or more errors to a validation context at any time by calling `myContext.addInvalidKeys(errors)`, where `errors` is an array of error objects with the following format:
@@ -581,6 +584,33 @@ SimpleSchema.messages({wrongPassword: "Wrong password"});
 
 myContext.addInvalidKeys([{name: 'password', type: 'wrongPassword'}]);
 ```
+
+### Asynchronous Custom Validation on the Client
+
+Validation runs synchronously for many reasons, and likely always will. This makes it difficult to wait for asynchronous results as part of custom validation. Here's one example of how you might validate that a username is unique on the client, without publishing all usernames to every client:
+
+```js
+username: {
+  type: String,
+  regEx: /^[a-z0-9A-Z_]{3,15}$/,
+  unique: true,
+  custom: function () {
+    if (Meteor.isClient && this.isSet) {
+      Meteor.call('accountsIsUsernameAvailable', this.value, function (error, result) {
+        if (!result) {
+          Meteor.users.simpleSchema().namedContext('createUserForm').addInvalidKeys([{name: 'username', type: 'notUnique'}]);
+        }
+      });
+    }
+  }
+}
+```
+
+Note that we're calling our "accountsIsUsernameAvailable" server method and waiting for an asynchronous result, which is a boolean that indicates whether that username is available. If it's taken, we manually invalidate the `username` key with a "notUnique" error.
+
+This doesn't change the fact that validation is synchronous. If you use this with an autoform and there are no validation errors, the form would still be submitted. However, the user creation would fail and a second or two later, the form would display the "notUnique" error, so the end result is very similar to actual asynchronous validation.
+
+You can use a technique similar to this to work around asynchronicity issues in both client and server code.
 
 ### Other Validation Context Methods
 
