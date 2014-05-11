@@ -3715,6 +3715,101 @@ Tinytest.add("SimpleSchema - AllowsKey", function(test) {
   run('blackBoxObject.foo.$.$foo', true);
 });
 
+Tinytest.add("SimpleSchema - RegEx - Email", function (test) {
+  var expr = SimpleSchema.RegEx.Email;
+  var isTrue = function (s) { test.isTrue(expr.test(s), s) };
+  var isFalse = function (s) { test.isFalse(expr.test(s), s) };
+  isTrue("name@web.de");
+  isTrue("name+addition@web.de");
+  isTrue("st#r~ange.e+mail@web.de");
+  isFalse("name@localhost");
+  isFalse("name@192.168.200.5");
+  isFalse("name@BCDF:45AB:1245:75B9:0987:1562:4567:1234");
+  isFalse("name@BCDF:45AB:1245:75B9::0987:1234:1324");
+  isFalse("name@BCDF:45AB:1245:75B9:0987:1234:1324");
+  isFalse("name@::1");
+});
+
+Tinytest.add("SimpleSchema - RegEx - WeakEmail", function (test) {
+  var expr = SimpleSchema.RegEx.WeakEmail;
+  var isTrue = function (s) { test.isTrue(expr.test(s), s) };
+  var isFalse = function (s) { test.isFalse(expr.test(s), s) };
+  isTrue("name@web.de");
+  isTrue("name+addition@web.de");
+  isTrue("st#r~ange.e+mail@web.de");
+  isTrue("name@localhost");
+  isTrue("name@192.168.200.5");
+  isTrue("name@BCDF:45AB:1245:75B9:0987:1562:4567:1234");
+  isTrue("name@BCDF:45AB:1245:75B9::0987:1234:1324");
+  isFalse("name@BCDF:45AB:1245:75B9:0987:1234:1324");
+  isTrue("name@::1");
+});
+
+Tinytest.add("SimpleSchema - RegEx - Domain", function (test) {
+  var expr = SimpleSchema.RegEx.Domain;
+  var isTrue = function (s) { test.isTrue(expr.test(s), s) };
+  var isFalse = function (s) { test.isFalse(expr.test(s), s) };
+  isTrue("domain.com");
+  isFalse("localhost");
+  isFalse("192.168.200.5");
+  isFalse("BCDF:45AB:1245:75B9:0987:1562:4567:1234:AB36");
+});
+
+Tinytest.add("SimpleSchema - RegEx - WeakDomain", function (test) {
+  var expr = SimpleSchema.RegEx.WeakDomain;
+  var isTrue = function (s) { test.isTrue(expr.test(s), s) };
+  var isFalse = function (s) { test.isFalse(expr.test(s), s) };
+  isTrue("domain.com");
+  isTrue("localhost");
+  isTrue("192.168.200.5");
+  isTrue("BCDF:45AB:1245:75B9:0987:1562:4567:1234");
+});
+
+Tinytest.add("SimpleSchema - RegEx - IP (4 and 6)", function (test) {
+  var expr = SimpleSchema.RegEx.IP;
+  var isTrue = function (s) { test.isTrue(expr.test(s), s) };
+  var isFalse = function (s) { test.isFalse(expr.test(s), s) };
+  isFalse("localhost");
+  isTrue("192.168.200.5");
+  isFalse("320.168.200.5");
+  isFalse("192.168.5");
+  isTrue("BCDF:45AB:1245:75B9:0987:1562:4567:1234");
+  isFalse("BCDF:45AB:1245:75B9:0987:1562:4567:1234:AB36");
+  isTrue("BCDF:45AB:1245:75B9::0987:1234:1324");
+  isFalse("BCDF:45AB:1245:75B9:0987:1234:1324");
+  isTrue("::1");
+});
+
+Tinytest.add("SimpleSchema - RegEx - IPv4", function (test) {
+  var expr = SimpleSchema.RegEx.IPv4;
+  var isTrue = function (s) { test.isTrue(expr.test(s), s) };
+  var isFalse = function (s) { test.isFalse(expr.test(s), s) };
+  isFalse("localhost");
+  isTrue("192.168.200.5");
+  isFalse("320.168.200.5");
+  isFalse("192.168.5");
+  isFalse("BCDF:45AB:1245:75B9:0987:1562:4567:1234");
+  isFalse("BCDF:45AB:1245:75B9:0987:1562:4567:1234:AB36");
+  isFalse("BCDF:45AB:1245:75B9::0987:1234:1324");
+  isFalse("BCDF:45AB:1245:75B9:0987:1234:1324");
+  isFalse("::1");
+});
+
+Tinytest.add("SimpleSchema - RegEx - IPv6", function (test) {
+  var expr = SimpleSchema.RegEx.IPv6;
+  var isTrue = function (s) { test.isTrue(expr.test(s), s) };
+  var isFalse = function (s) { test.isFalse(expr.test(s), s) };
+  isFalse("localhost");
+  isFalse("192.168.200.5");
+  isFalse("320.168.200.5");
+  isFalse("192.168.5");
+  isTrue("BCDF:45AB:1245:75B9:0987:1562:4567:1234");
+  isFalse("BCDF:45AB:1245:75B9:0987:1562:4567:1234:AB36");
+  isTrue("BCDF:45AB:1245:75B9::0987:1234:1324");
+  isFalse("BCDF:45AB:1245:75B9:0987:1234:1324");
+  isTrue("::1");
+});
+
 /*
  * END TESTS
  */
