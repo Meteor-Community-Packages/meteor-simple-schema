@@ -397,6 +397,7 @@ the following optional options as its second argument:
 
 * `filter`: Filter properties not found in the schema? True by default.
 * `autoConvert`: Type convert properties into the correct type where possible? True by default.
+* `removeEmptyStrings`: Remove keys in normal object or $set where the value is an empty string? True by default.
 * `getAutoValues`: Run `autoValue` functions and inject automatic and `defaultValue` values? True by default.
 * `isModifier`: Is the first argument a modifier object? False by default.
 * `extendAutoValueContext`: This object will be added to the `this` context of autoValue functions.

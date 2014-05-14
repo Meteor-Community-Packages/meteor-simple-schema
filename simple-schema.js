@@ -1,6 +1,3 @@
-//URL RegEx from https://gist.github.com/dperini/729294
-//http://mathiasbynens.be/demo/url-regex
-
 if (Meteor.isServer) {
   S = Npm.require("string");
 }
@@ -213,7 +210,8 @@ SimpleSchema.RegEx = {
   IP: new RegExp('^(?:' + RX_IPv4 + '|' + RX_IPv6 + ')$'),
   IPv4: new RegExp('^' + RX_IPv4 + '$'),
   IPv6: new RegExp('^' + RX_IPv6 + '$'),
-  
+  // URL RegEx from https://gist.github.com/dperini/729294
+  // http://mathiasbynens.be/demo/url-regex
   Url: /^(?:(?:https?|ftp):\/\/)(?:\S+(?::\S*)?@)?(?:(?!10(?:\.\d{1,3}){3})(?!127(?:\.\d{1,3}){3})(?!169\.254(?:\.\d{1,3}){2})(?!192\.168(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]+-?)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]+-?)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})))(?::\d{2,5})?(?:\/[^\s]*)?$/i,
   // unique id from the random package also used by minimongo
   // character list: https://github.com/meteor/meteor/blob/release/0.8.0/packages/random/random.js#L88
@@ -308,6 +306,7 @@ SimpleSchema.prototype.addValidator = SimpleSchema.prototype.validator = functio
  * @param {Object} [options]
  * @param {Boolean} [options.filter=true] - Do filtering?
  * @param {Boolean} [options.autoConvert=true] - Do automatic type converting?
+ * @param {Boolean} [options.removeEmptyStrings=true] - Remove keys in normal object or $set where the value is an empty string?
  * @param {Boolean} [options.getAutoValues=true] - Inject automatic and default values?
  * @param {Boolean} [options.isModifier=false] - Is doc a modifier object?
  * @param {Object} [options.extendAutoValueContext] - This object will be added to the `this` context of autoValue functions.
@@ -324,6 +323,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
   options = _.extend({
     filter: true,
     autoConvert: true,
+    removeEmptyStrings: true,
     getAutoValues: true,
     isModifier: false,
     extendAutoValueContext: {}
@@ -356,15 +356,27 @@ SimpleSchema.prototype.clean = function(doc, options) {
   });
 
   // Autoconvert values if requested and if possible
-  options.autoConvert && mDoc.forEachNode(function() {
+  (options.autoConvert || options.removeEmptyStrings) && mDoc.forEachNode(function() {
     if (this.genericKey) {
       var def = self._schema[this.genericKey];
       var val = this.value;
       if (def && val !== void 0) {
-        var newVal = typeconvert(val, def.type);
-        if (newVal !== void 0 && newVal !== val) {
-          console.info('SimpleSchema.clean: autoconverted value ' + val + ' from ' + typeof val + ' to ' + typeof newVal + ' for ' + this.genericKey);
-          this.updateValue(newVal);
+        var wasAutoConverted = false;
+        if (options.autoConvert) {
+          var newVal = typeconvert(val, def.type);
+          if (newVal !== void 0 && newVal !== val) {
+            console.info('SimpleSchema.clean: autoconverted value ' + val + ' from ' + typeof val + ' to ' + typeof newVal + ' for ' + this.genericKey);
+            this.updateValue(newVal);
+            wasAutoConverted = true;
+            // remove empty strings
+            if (options.removeEmptyStrings && (!this.operator || this.operator === "$set") && typeof newVal === "string" && !newVal.length) {
+              this.remove();
+            }
+          }
+        }
+        // remove empty strings
+        if (options.removeEmptyStrings && !wasAutoConverted && (!this.operator || this.operator === "$set") && typeof val === "string" && !val.length) {
+          this.remove();
         }
       }
     }

@@ -426,7 +426,7 @@ var reqCust = new SimpleSchema({
  * BEGIN HELPER METHODS
  */
 
-var validate = function(ss, doc, isModifier, isUpsert, skipClean) {
+function validate(ss, doc, isModifier, isUpsert, skipClean) {
   //we will filter, type convert, and validate everything
   //so that we can be sure the filtering and type converting are not invalidating
   //documents that should be valid
@@ -437,7 +437,11 @@ var validate = function(ss, doc, isModifier, isUpsert, skipClean) {
   var context = ss.newContext();
   context.validate(doc, {modifier: isModifier, upsert: isUpsert});
   return context;
-};
+}
+
+function validateNoClean(ss, doc, isModifier, isUpsert) {
+  return validate(ss, doc, isModifier, isUpsert, true);
+}
 
 /*
  * END HELPER METHODS
@@ -902,55 +906,55 @@ Tinytest.add("SimpleSchema - Required Checks - Update - Valid - $set", function(
 });
 
 Tinytest.add("SimpleSchema - Required Checks - Update - Invalid - $set", function(test) {
-  var sc = validate(ssr, {$set: {
-      requiredString: null,
-      requiredBoolean: null,
-      requiredNumber: null,
-      requiredDate: null,
-      requiredEmail: null,
-      requiredUrl: null,
-      requiredObject: null,
-      'optionalObject.requiredString': null
-    }}, true);
-  test.length(sc.invalidKeys(), 8);
+  function t(s, obj, errors) {
+    var sc = validateNoClean(s, obj, true);
+    test.length(sc.invalidKeys(), errors);
+  }
 
-  sc = validate(ssr, {$set: {
-      requiredString: "",
-      requiredBoolean: null,
-      requiredNumber: null,
-      requiredDate: null,
-      requiredEmail: null,
-      requiredUrl: null,
-      requiredObject: null,
-      'optionalObject.requiredString': ""
-    }}, true);
-  test.length(sc.invalidKeys(), 8);
+  t(ssr, {$set: {
+    requiredString: null,
+    requiredBoolean: null,
+    requiredNumber: null,
+    requiredDate: null,
+    requiredEmail: null,
+    requiredUrl: null,
+    requiredObject: null,
+    'optionalObject.requiredString': null
+  }}, 8);
 
-  sc = validate(ssr, {$set: {
-      requiredString: "   ",
-      requiredBoolean: null,
-      requiredNumber: null,
-      requiredDate: null,
-      requiredEmail: null,
-      requiredUrl: null,
-      requiredObject: null,
-      'optionalObject.requiredString': "   "
-    }}, true);
-  test.length(sc.invalidKeys(), 8);
+  t(ssr, {$set: {
+    requiredString: "",
+    requiredBoolean: null,
+    requiredNumber: null,
+    requiredDate: null,
+    requiredEmail: null,
+    requiredUrl: null,
+    requiredObject: null,
+    'optionalObject.requiredString': ""
+  }}, 8);
+
+  t(ssr, {$set: {
+    requiredString: "   ",
+    requiredBoolean: null,
+    requiredNumber: null,
+    requiredDate: null,
+    requiredEmail: null,
+    requiredUrl: null,
+    requiredObject: null,
+    'optionalObject.requiredString': "   "
+  }}, 8);
 
   //array of objects
 
   //name is required
-  sc = validate(friends, {$set: {
-      'friends.1.name': null
-    }}, true);
-  test.length(sc.invalidKeys(), 1);
+  t(friends, {$set: {
+    'friends.1.name': null
+  }}, 1);
 
   //type is required
-  sc = validate(friends, {$set: {
-      friends: [{name: 'Bob'}]
-    }}, true);
-  test.length(sc.invalidKeys(), 1);
+  t(friends, {$set: {
+    friends: [{name: 'Bob'}]
+  }}, 1);
 });
 
 Tinytest.add("SimpleSchema - Required Checks - Update - Valid - $unset", function(test) {
@@ -2842,6 +2846,8 @@ Tinytest.add("SimpleSchema - Cleanup With Modifier Operators", function(test) {
   doTest({string: "This is a string", admin: true}, {string: "This is a string"});
   //type conversion works
   doTest({string: 1}, {string: "1"});
+  //remove empty strings
+  doTest({string: ""}, {});
 
   //WITH CUSTOM OBJECT
 
@@ -2864,6 +2870,8 @@ Tinytest.add("SimpleSchema - Cleanup With Modifier Operators", function(test) {
   doTest({$set: {string: "This is a string", admin: true}}, {$set: {string: "This is a string"}});
   //type conversion works
   doTest({$set: {string: 1}}, {$set: {string: "1"}});
+  //remove empty strings
+  doTest({$set: {string: ""}}, {$set: {}});
 
   //$UNSET
 
