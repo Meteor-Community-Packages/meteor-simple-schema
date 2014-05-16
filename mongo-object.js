@@ -163,7 +163,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
         subkey = subkey.slice(0, -1);
       }
       current = current[subkey];
-      if (!isArray(current) && !isBasicObject(current) && i < ln - 1) {
+      if (!_.isArray(current) && !isBasicObject(current) && i < ln - 1) {
         return;
       }
     }
@@ -208,7 +208,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
         current = current[subkey];
 
         // If we can go no further, then quit
-        if (!isArray(current) && !isBasicObject(current) && i < ln - 1) {
+        if (!_.isArray(current) && !isBasicObject(current) && i < ln - 1) {
           return;
         }
       }
@@ -677,9 +677,7 @@ MongoObject._positionToKey = function positionToKey(position) {
   return key;
 };
 
-var isArray = Array.isArray || function(obj) {
-  return obj.toString() === '[object Array]';
-};
+var isArray = _.isArray;
 
 var isObject = function(obj) {
   return obj === Object(obj);
