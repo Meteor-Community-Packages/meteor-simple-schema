@@ -349,7 +349,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
   // or implied by the schema
   options.filter && mDoc.filterGenericKeys(function(genericKey) {
     var allowed = self.allowsKey(genericKey);
-    if (!allowed) {
+    if (!allowed && SimpleSchema.debug) {
       console.info('SimpleSchema.clean: filtered out value that would have affected key "' + genericKey + '", which is not allowed by the schema');
     }
     return allowed;
@@ -365,7 +365,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
         if (options.autoConvert) {
           var newVal = typeconvert(val, def.type);
           if (newVal !== void 0 && newVal !== val) {
-            console.info('SimpleSchema.clean: autoconverted value ' + val + ' from ' + typeof val + ' to ' + typeof newVal + ' for ' + this.genericKey);
+            SimpleSchema.debug && console.info('SimpleSchema.clean: autoconverted value ' + val + ' from ' + typeof val + ' to ' + typeof newVal + ' for ' + this.genericKey);
             this.updateValue(newVal);
             wasAutoConverted = true;
             // remove empty strings
