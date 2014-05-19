@@ -5,6 +5,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.5.1
+
+Console logging about filtered and autoconverted fields now happens only when `SimpleSchema.debug = true`
+
 ### 0.5.0
 
 * Additional built-in RegEx patterns, including an alternative e-mail pattern. See the readme. (Thanks @Nemo64)
