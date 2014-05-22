@@ -49,11 +49,11 @@ var ssr = new SimpleSchema({
   },
   requiredEmail: {
     type: String,
-    regEx: SchemaRegEx.Email
+    regEx: SimpleSchema.RegEx.Email
   },
   requiredUrl: {
     type: String,
-    regEx: SchemaRegEx.Url
+    regEx: SimpleSchema.RegEx.Url
   },
   requiredObject: {
     type: Object
@@ -193,12 +193,12 @@ var ss = new SimpleSchema({
   },
   email: {
     type: String,
-    regEx: SchemaRegEx.Email,
+    regEx: SimpleSchema.RegEx.Email,
     optional: true
   },
   url: {
     type: String,
-    regEx: SchemaRegEx.Url,
+    regEx: SimpleSchema.RegEx.Url,
     optional: true
   },
   customObject: {

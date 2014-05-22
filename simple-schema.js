@@ -214,9 +214,6 @@ SimpleSchema._makeGeneric = function(name) {
 
 SimpleSchema._depsGlobalMessages = new Deps.Dependency;
 
-// exported for backwards compatibility, deprecated
-SchemaRegEx = SimpleSchema.RegEx;
-
 // Inherit from Match.Where
 // This allow SimpleSchema instance to be recognized as a Match.Where instance as well
 // as a SimpleSchema instance
