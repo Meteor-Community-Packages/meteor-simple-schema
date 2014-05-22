@@ -278,13 +278,6 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
 
     }
 
-    // DEPRECATED: Check value using valusIsAllowed function
-    if (def.valueIsAllowed && !def.valueIsAllowed(val, obj, op)) {
-      console.warn("SimpleSchema: 'valueIsAllowed' is deprecated. Use 'custom' instead.");
-      invalidKeys.push(errorObject("notAllowed", affectedKey, val, def, ss));
-      return;
-    }
-
     // Perform custom validation
     var lastDot = affectedKey.lastIndexOf('.');
     var fieldParentName = lastDot === -1 ? '' : affectedKey.slice(0, lastDot + 1);
@@ -399,7 +392,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
 
     // Loop through object keys
     else if (isBasicObject(val) && (!def || !def.blackbox)) {
-      var presentKeys, requiredKeys, valueIsAllowedKeys, customKeys;
+      var presentKeys, requiredKeys, customKeys;
 
       // Get list of present keys
       presentKeys = _.keys(val);
@@ -410,15 +403,14 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
         // based on the schema, in case any are missing.
         requiredKeys = ss.requiredObjectKeys(affectedKeyGeneric);
 
-        // We want to be sure to call any present valueIsAllowed and custom functions
+        // We want to be sure to call any present custom functions
         // even if the value isn't set, so they can be used for custom
         // required errors, such as basing it on another field's value.
-        valueIsAllowedKeys = ss.valueIsAllowedObjectKeys(affectedKeyGeneric);
         customKeys = ss.customObjectKeys(affectedKeyGeneric);
       }
 
       // Merge the lists
-      var keysToCheck = _.union(presentKeys, requiredKeys || [], valueIsAllowedKeys || [], customKeys || []);
+      var keysToCheck = _.union(presentKeys, requiredKeys || [], customKeys || []);
 
       // If this object is within an array, make sure we check for
       // required as if it's not a modifier

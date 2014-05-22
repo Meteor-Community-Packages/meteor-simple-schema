@@ -105,13 +105,6 @@ var ss = new SimpleSchema({
     optional: true,
     allowedValues: ["tuna", "fish", "salad"]
   },
-  valueIsAllowedString: {
-    type: String,
-    optional: true,
-    valueIsAllowed: function(val) {
-      return val === void 0 || val === null || val === "pumpkin";
-    }
-  },
   allowedStringsArray: {
     type: [String],
     optional: true,
@@ -163,13 +156,6 @@ var ss = new SimpleSchema({
     type: Number,
     optional: true,
     allowedValues: [1, 2, 3]
-  },
-  valueIsAllowedNumber: {
-    type: Number,
-    optional: true,
-    valueIsAllowed: function(val) {
-      return val === void 0 || val === null || val === 1;
-    }
   },
   allowedNumbersArray: {
     type: [Number],
@@ -2284,11 +2270,6 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Insert - Valid", function(t
   test.equal(sc.invalidKeys(), []);
 
   sc = validate(ss, {
-    valueIsAllowedString: "pumpkin"
-  });
-  test.equal(sc.invalidKeys(), []);
-
-  sc = validate(ss, {
     allowedStringsArray: ["tuna", "fish", "salad"]
   });
   test.equal(sc.invalidKeys(), []);
@@ -2303,11 +2284,6 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Insert - Valid", function(t
   /* NUMBER */
   sc = validate(ss, {
     allowedNumbers: 1
-  });
-  test.equal(sc.invalidKeys(), []);
-
-  sc = validate(ss, {
-    valueIsAllowedNumber: 1
   });
   test.equal(sc.invalidKeys(), []);
 
@@ -2331,11 +2307,6 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Insert - Invalid", function
   });
   test.length(sc.invalidKeys(), 1);
 
-  sc = validate(ss, {
-    valueIsAllowedString: "pumpkins"
-  });
-  test.length(sc.invalidKeys(), 1);
-
   //array
   sc = validate(ss, {
     allowedStringsArray: ["tuna", "fish", "sandwich"]
@@ -2352,11 +2323,6 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Insert - Invalid", function
   /* NUMBER */
   sc = validate(ss, {
     allowedNumbers: 4
-  });
-  test.length(sc.invalidKeys(), 1);
-
-  sc = validate(ss, {
-    valueIsAllowedNumber: 2
   });
   test.length(sc.invalidKeys(), 1);
 
@@ -2381,11 +2347,6 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Upsert - Valid - $setOnInse
     }}, true, true);
   test.equal(sc.invalidKeys(), []);
 
-  sc = validate(ss, {$setOnInsert: {
-      valueIsAllowedString: "pumpkin"
-    }}, true, true);
-  test.equal(sc.invalidKeys(), []);
-
   //array
   sc = validate(ss, {$setOnInsert: {
       allowedStringsArray: ["tuna", "fish", "salad"]
@@ -2402,11 +2363,6 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Upsert - Valid - $setOnInse
   /* NUMBER */
   sc = validate(ss, {$setOnInsert: {
       allowedNumbers: 1
-    }}, true, true);
-  test.equal(sc.invalidKeys(), []);
-
-  sc = validate(ss, {$setOnInsert: {
-      valueIsAllowedNumber: 1
     }}, true, true);
   test.equal(sc.invalidKeys(), []);
 
@@ -2431,11 +2387,6 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Upsert - Invalid - $setOnIn
     }}, true, true);
   test.length(sc.invalidKeys(), 1);
 
-  sc = validate(ss, {$setOnInsert: {
-      valueIsAllowedString: "pumpkins"
-    }}, true, true);
-  test.length(sc.invalidKeys(), 1);
-
   //array
   sc = validate(ss, {$setOnInsert: {
       allowedStringsArray: ["tuna", "fish", "sandwich"]
@@ -2452,11 +2403,6 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Upsert - Invalid - $setOnIn
   /* NUMBER */
   sc = validate(ss, {$setOnInsert: {
       allowedNumbers: 4
-    }}, true, true);
-  test.length(sc.invalidKeys(), 1);
-
-  sc = validate(ss, {$setOnInsert: {
-      valueIsAllowedNumber: 2
     }}, true, true);
   test.length(sc.invalidKeys(), 1);
 
@@ -2478,11 +2424,6 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Update - Valid - $set", fun
   /* STRING */
   var sc = validate(ss, {$set: {
       allowedStrings: "tuna"
-    }}, true);
-  test.equal(sc.invalidKeys(), []);
-
-  sc = validate(ss, {$set: {
-      valueIsAllowedString: "pumpkin"
     }}, true);
   test.equal(sc.invalidKeys(), []);
 
@@ -2510,11 +2451,6 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Update - Valid - $set", fun
   test.equal(sc.invalidKeys(), []);
 
   sc = validate(ss, {$set: {
-      valueIsAllowedNumber: 1
-    }}, true);
-  test.equal(sc.invalidKeys(), []);
-
-  sc = validate(ss, {$set: {
       allowedNumbersArray: [1, 2, 3]
     }}, true);
   test.equal(sc.invalidKeys(), []);
@@ -2525,11 +2461,6 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Update - Invalid - $set", f
   /* STRING */
   var sc = validate(ss, {$set: {
       allowedStrings: "tunas"
-    }}, true);
-  test.length(sc.invalidKeys(), 1);
-
-  sc = validate(ss, {$set: {
-      valueIsAllowedString: "pumpkins"
     }}, true);
   test.length(sc.invalidKeys(), 1);
 
@@ -2553,11 +2484,6 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Update - Invalid - $set", f
   /* NUMBER */
   sc = validate(ss, {$set: {
       allowedNumbers: 4
-    }}, true);
-  test.length(sc.invalidKeys(), 1);
-
-  sc = validate(ss, {$set: {
-      valueIsAllowedNumber: 2
     }}, true);
   test.length(sc.invalidKeys(), 1);
 
@@ -3186,74 +3112,6 @@ Tinytest.add("SimpleSchema - Issue 28", function(test) {
       name: "name"
     }}, true);
   test.length(is28sc.invalidKeys(), 0);
-
-});
-
-Tinytest.add("SimpleSchema - Issue 30", function(test) {
-  var is30ss = new SimpleSchema({
-    firstname: {
-      type: String,
-      label: "First name",
-      optional: true
-    },
-    lastname: {
-      type: String,
-      label: "Last name",
-      optional: true,
-      valueIsAllowed: function(val, doc, op) {
-        if (!op) { //insert
-          if ((doc.firstname && doc.firstname.length) && (!val || !val.length)) {
-            return false;
-          } else {
-            return true;
-          }
-        }
-        if (op === "$set") { //update
-          if ((doc.$set.firstname && doc.$set.firstname.length)
-                  && (!val || !val.length)) {
-            return false;
-          } else {
-            return true;
-          }
-        }
-        return false; //allow only inserts and $set
-      }
-    }
-  });
-
-  var is30sc = validate(is30ss, {
-    firstname: "name"
-  });
-  test.equal(is30sc.invalidKeys()[0]["type"], "notAllowed");
-
-  is30sc = validate(is30ss, {
-    firstname: "name",
-    lastname: ""
-  });
-  test.equal(is30sc.invalidKeys()[0]["type"], "notAllowed");
-
-  is30sc = validate(is30ss, {
-    firstname: "name",
-    lastname: "name"
-  });
-  test.equal(is30sc.invalidKeys(), []);
-
-  is30sc = validate(is30ss, {$set: {
-      firstname: "name"
-    }}, true);
-  test.equal(is30sc.invalidKeys()[0]["type"], "notAllowed");
-
-  is30sc = validate(is30ss, {$set: {
-      firstname: "name",
-      lastname: ""
-    }}, true);
-  test.equal(is30sc.invalidKeys()[0]["type"], "notAllowed");
-
-  is30sc = validate(is30ss, {$set: {
-      firstname: "name",
-      lastname: "name"
-    }}, true);
-  test.equal(is30sc.invalidKeys(), []);
 
 });
 

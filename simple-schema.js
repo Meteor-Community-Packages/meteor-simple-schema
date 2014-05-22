@@ -14,7 +14,6 @@ var schemaDefinition = {
   minCount: Match.Optional(Number),
   maxCount: Match.Optional(Number),
   allowedValues: Match.Optional([Match.Any]),
-  valueIsAllowed: Match.Optional(Function), //TODO deprecate this in favor of custom?
   decimal: Match.Optional(Boolean),
   regEx: Match.Optional(Match.OneOf(RegExp, [RegExp])),
   custom: Match.Optional(Function),
@@ -28,7 +27,6 @@ SimpleSchema = function(schemas, options) {
   var self = this;
   var firstLevelSchemaKeys = [];
   var requiredSchemaKeys = [], firstLevelRequiredSchemaKeys = [];
-  var valueIsAllowedSchemaKeys = [], firstLevelValueIsAllowedSchemaKeys = [];
   var customSchemaKeys = [], firstLevelCustomSchemaKeys = [];
   var fieldNameRoot;
   options = options || {};
@@ -108,10 +106,6 @@ SimpleSchema = function(schemas, options) {
         firstLevelRequiredSchemaKeys.push(fieldNameRoot);
       }
 
-      if (definition.valueIsAllowed) {
-        firstLevelValueIsAllowedSchemaKeys.push(fieldNameRoot);
-      }
-
       if (definition.custom) {
         firstLevelCustomSchemaKeys.push(fieldNameRoot);
       }
@@ -119,10 +113,6 @@ SimpleSchema = function(schemas, options) {
 
     if (!definition.optional) {
       requiredSchemaKeys.push(fieldName);
-    }
-
-    if (definition.valueIsAllowed) {
-      valueIsAllowedSchemaKeys.push(fieldName);
     }
 
     if (definition.custom) {
@@ -160,10 +150,6 @@ SimpleSchema = function(schemas, options) {
   self._requiredSchemaKeys = requiredSchemaKeys;
   self._firstLevelRequiredSchemaKeys = firstLevelRequiredSchemaKeys;
   self._requiredObjectKeys = getObjectKeys(self._schema, requiredSchemaKeys);
-  //valueIsAllowed
-  self._valueIsAllowedSchemaKeys = valueIsAllowedSchemaKeys;
-  self._firstLevelValueIsAllowedSchemaKeys = firstLevelValueIsAllowedSchemaKeys;
-  self._valueIsAllowedObjectKeys = getObjectKeys(self._schema, valueIsAllowedSchemaKeys);
   //custom
   self._customSchemaKeys = customSchemaKeys;
   self._firstLevelCustomSchemaKeys = firstLevelCustomSchemaKeys;
@@ -625,18 +611,6 @@ SimpleSchema.prototype.firstLevelSchemaKeys = function() {
   return this._firstLevelSchemaKeys;
 };
 
-SimpleSchema.prototype.valueIsAllowedObjectKeys = function(keyPrefix) {
-  var self = this;
-  if (!keyPrefix) {
-    return self._firstLevelValueIsAllowedSchemaKeys;
-  }
-  return self._valueIsAllowedObjectKeys[keyPrefix + "."] || [];
-};
-
-SimpleSchema.prototype.valueIsAllowedSchemaKeys = function() {
-  return this._valueIsAllowedSchemaKeys;
-};
-
 SimpleSchema.prototype.customObjectKeys = function(keyPrefix) {
   var self = this;
   if (!keyPrefix) {
@@ -785,9 +759,6 @@ var adjustArrayFields = function(schema) {
       if (typeof def.allowedValues !== "undefined") {
         schema[itemKey].allowedValues = def.allowedValues;
       }
-      if (typeof def.valueIsAllowed !== "undefined") {
-        schema[itemKey].valueIsAllowed = def.valueIsAllowed;
-      }
       if (typeof def.decimal !== "undefined") {
         schema[itemKey].decimal = def.decimal;
       }
@@ -796,7 +767,7 @@ var adjustArrayFields = function(schema) {
       }
       // Remove copied options and adjust type
       def.type = Array;
-      _.each(['min', 'max', 'allowedValues', 'valueIsAllowed', 'decimal', 'regEx'], function(k) {
+      _.each(['min', 'max', 'allowedValues', 'decimal', 'regEx'], function(k) {
         deleteIfPresent(def, k);
       });
     }
