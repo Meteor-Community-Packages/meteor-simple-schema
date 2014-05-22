@@ -535,10 +535,10 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
   }
   if (def.type === Date || def.type === [Date]) {
     if (typeof min !== "undefined") {
-      message = message.replace("[min]", dateToDateString(min));
+      message = message.replace("[min]", Utility.dateToDateString(min));
     }
     if (typeof max !== "undefined") {
-      message = message.replace("[max]", dateToDateString(max));
+      message = message.replace("[max]", Utility.dateToDateString(max));
     }
   } else {
     if (typeof min !== "undefined") {
@@ -623,6 +623,10 @@ SimpleSchema.prototype.customSchemaKeys = function() {
   return this._customSchemaKeys;
 };
 
+/*
+ * PRIVATE FUNCTIONS
+ */
+
 //called by clean()
 var typeconvert = function(value, type) {
   if (_.isArray(value) || (_.isObject(value) && !(value instanceof Date)))
@@ -646,32 +650,6 @@ var typeconvert = function(value, type) {
     return value;
   }
   return value;
-};
-
-//tests whether it's an Object as opposed to something that inherits from Object
-var isBasicObject = function(obj) {
-  return _.isObject(obj) && Object.getPrototypeOf(obj) === Object.prototype;
-};
-
-looksLikeModifier = function(obj) {
-  for (var key in obj) {
-    if (obj.hasOwnProperty(key) && key.substring(0, 1) === "$") {
-      return true;
-    }
-  }
-  return false;
-};
-
-var dateToDateString = function(date) {
-  var m = (date.getUTCMonth() + 1);
-  if (m < 10) {
-    m = "0" + m;
-  }
-  var d = date.getUTCDate();
-  if (d < 10) {
-    d = "0" + d;
-  }
-  return date.getUTCFullYear() + '-' + m + '-' + d;
 };
 
 var mergeSchemas = function(schemas) {
@@ -768,7 +746,7 @@ var adjustArrayFields = function(schema) {
       // Remove copied options and adjust type
       def.type = Array;
       _.each(['min', 'max', 'allowedValues', 'decimal', 'regEx'], function(k) {
-        deleteIfPresent(def, k);
+        Utility.deleteIfPresent(def, k);
       });
     }
   });
@@ -866,12 +844,6 @@ var inflectedLabel = function(fieldName) {
   if (label === "_id")
     return "ID";
   return S(label).humanize().s;
-};
-
-var deleteIfPresent = function(obj, key) {
-  if (key in obj) {
-    delete obj[key];
-  }
 };
 
 /**
@@ -1006,15 +978,9 @@ function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
       runAV.call({
         key: (key || MongoObject._positionToKey(position)) + keySuffix,
         value: mDoc.getValueForPosition(position + positionSuffix),
-        operator: extractOp(position),
+        operator: Utility.extractOp(position),
         position: position + positionSuffix
       }, func);
     });
   });
 }
-
-// Extracts operator piece, if present, from position string
-var extractOp = function extractOp(position) {
-  var firstPositionPiece = position.slice(0, position.indexOf("["));
-  return (firstPositionPiece.substring(0, 1) === "$") ? firstPositionPiece : null;
-};

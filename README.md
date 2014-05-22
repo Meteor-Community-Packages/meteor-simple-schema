@@ -285,11 +285,6 @@ or is `Array`.
 An array of values that are allowed. A key will be invalid if its value
 is not one of these.
 
-### valueIsAllowed
-
-Deprecated. Use the `custom` option and return "notAllowed" if the value
-is not allowed.
-
 ### regEx
 
 Any regular expression that must be matched for the key to be valid, or

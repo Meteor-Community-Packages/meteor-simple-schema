@@ -3045,21 +3045,15 @@ Tinytest.add("SimpleSchema - RegEx and Messages", function(test) {
   var c1 = testSchema.newContext();
   c1.validate({one: "BBB"});
   test.length(c1.invalidKeys(), 1);
-
-  var err = c1.invalidKeys()[0] || {};
-  test.equal(err.message, 'Global Message Three');
+  test.equal(c1.keyErrorMessage("one"), 'Global Message Three');
 
   c1.validate({one: "AAA"});
   test.length(c1.invalidKeys(), 1);
-
-  err = c1.invalidKeys()[0] || {};
-  test.equal(err.message, 'Global Message Four');
+  test.equal(c1.keyErrorMessage("one"), 'Global Message Four');
 
   c1.validate({one: "CCC"});
   test.length(c1.invalidKeys(), 1);
-
-  err = c1.invalidKeys()[0] || {};
-  test.equal(err.message, 'Global Message Three');
+  test.equal(c1.keyErrorMessage("one"), 'Global Message Three');
 
   c1.validate({one: "ACB"});
   test.length(c1.invalidKeys(), 0);
@@ -3075,21 +3069,15 @@ Tinytest.add("SimpleSchema - RegEx and Messages", function(test) {
   c1 = testSchema.newContext();
   c1.validate({one: "BBB"});
   test.length(c1.invalidKeys(), 1);
-
-  err = c1.invalidKeys()[0] || {};
-  test.equal(err.message, 'Message Three');
+  test.equal(c1.keyErrorMessage("one"), 'Message Three');
 
   c1.validate({one: "AAA"});
   test.length(c1.invalidKeys(), 1);
-
-  err = c1.invalidKeys()[0] || {};
-  test.equal(err.message, 'Message Four');
+  test.equal(c1.keyErrorMessage("one"), 'Message Four');
 
   c1.validate({one: "CCC"});
   test.length(c1.invalidKeys(), 1);
-
-  err = c1.invalidKeys()[0] || {};
-  test.equal(err.message, 'Message Three');
+  test.equal(c1.keyErrorMessage("one"), 'Message Three');
 
   c1.validate({one: "ACB"});
   test.length(c1.invalidKeys(), 0);

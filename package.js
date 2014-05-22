@@ -1,4 +1,5 @@
 Package.describe({
+  name: "simple-schema",
   summary: "A simple schema validation object with reactivity. Used by collection2 and autoform."
 });
 
@@ -9,7 +10,12 @@ Npm.depends({
 Package.on_use(function(api) {
   api.use(['deps', 'underscore', 'check'], ['client', 'server']);
   api.add_files('string.js', 'client');
-  api.add_files(['mongo-object.js', 'simple-schema.js', 'simple-schema-context.js'], ['client', 'server']);
+  api.add_files([
+    'mongo-object.js',
+    'simple-schema-utility.js',
+    'simple-schema.js',
+    'simple-schema-context.js'
+  ]);
 
   if (typeof api.export !== "undefined") {
     //backwards compatibility with pre-0.6.5 meteor

@@ -204,7 +204,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
       // Get a list of all keys in $set and $setOnInsert combined, for use later
       setKeys = setKeys.concat(_.keys(obj.$set || {})).concat(_.keys(obj.$setOnInsert || {}));
     }
-  } else if (looksLikeModifier(obj)) {
+  } else if (Utility.looksLikeModifier(obj)) {
     throw new Error("When the validation object contains mongo operators, you must set the modifier option to true");
   }
 
@@ -227,7 +227,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
 
     // Get the schema for this key, marking invalid if there isn't one.
     if (!def) {
-      invalidKeys.push(errorObject("keyNotInSchema", affectedKey, val, def, ss));
+      invalidKeys.push(Utility.errorObject("keyNotInSchema", affectedKey, val, def, ss));
       return;
     }
 
@@ -241,17 +241,17 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
       if (
         op === "$unset" ||
         op === "$rename" ||
-        ((!op || (op === "$set" && isUpsert) || strictRequiredCheck) && isBlankNullOrUndefined(val)) ||
-        (op && isBlankOrNull(val))
+        ((!op || (op === "$set" && isUpsert) || strictRequiredCheck) && Utility.isBlankNullOrUndefined(val)) ||
+        (op && Utility.isBlankOrNull(val))
         ) {
-        invalidKeys.push(errorObject("required", affectedKey, null, def, ss));
+        invalidKeys.push(Utility.errorObject("required", affectedKey, null, def, ss));
         return;
       }
     }
 
     // For $rename, make sure that the new name is allowed by the schema
     if (op === "$rename" && typeof val === "string" && !ss.allowsKey(val)) {
-      invalidKeys.push(errorObject("keyNotInSchema", val, null, null, ss));
+      invalidKeys.push(Utility.errorObject("keyNotInSchema", val, null, null, ss));
       return;
     }
 
@@ -261,18 +261,18 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
     }
 
     // Value checks are not necessary for null or undefined values
-    if (isSet(val)) {
+    if (Utility.isNotNullOrUndefined(val)) {
 
       // Check that value is of the correct type
       var typeError = doTypeChecks(def, val, op);
       if (typeError) {
-        invalidKeys.push(errorObject(typeError, affectedKey, val, def, ss));
+        invalidKeys.push(Utility.errorObject(typeError, affectedKey, val, def, ss));
         return;
       }
 
       // Check value against allowedValues array
       if (def.allowedValues && !_.contains(def.allowedValues, val)) {
-        invalidKeys.push(errorObject("notAllowed", affectedKey, val, def, ss));
+        invalidKeys.push(Utility.errorObject("notAllowed", affectedKey, val, def, ss));
         return;
       }
 
@@ -311,7 +311,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
         }
       }, extendedCustomContext || {}), affectedKeyGeneric, val, def, op); //pass args for backwards compatibility; don't use them
       if (typeof errorType === "string") {
-        invalidKeys.push(errorObject(errorType, affectedKey, val, def, ss));
+        invalidKeys.push(Utility.errorObject(errorType, affectedKey, val, def, ss));
         return false;
       }
       return true;
@@ -336,7 +336,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
         // We can simply jump forward and pretend like the $each array
         // is the array for the field. This has the added benefit of
         // skipping past any $slice, which we also don't care about.
-        if (isBasicObject(val) && "$each" in val) {
+        if (Utility.isBasicObject(val) && "$each" in val) {
           val = val.$each;
         } else {
           affectedKey = affectedKey + ".0";
@@ -391,7 +391,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
     }
 
     // Loop through object keys
-    else if (isBasicObject(val) && (!def || !def.blackbox)) {
+    else if (Utility.isBasicObject(val) && (!def || !def.blackbox)) {
       var presentKeys, requiredKeys, customKeys;
 
       // Get list of present keys
@@ -418,14 +418,14 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
 
       // Check all keys in the merged list
       _.each(keysToCheck, function(key) {
-        if (shouldCheck(key)) {
+        if (Utility.shouldCheck(key)) {
           // We can skip the required check for keys that are ancestors
           // of those in $set or $setOnInsert because they will be created
           // by MongoDB while setting.
           skipRequiredCheck = _.some(setKeys, function(sk) {
             return (sk.slice(0, key.length + 1) === key + ".");
           });
-          checkObj(val[key], appendAffectedKey(affectedKey, key), operator, adjusted, skipRequiredCheck, strictRequiredCheck);
+          checkObj(val[key], Utility.appendAffectedKey(affectedKey, key), operator, adjusted, skipRequiredCheck, strictRequiredCheck);
         }
       });
     }
@@ -507,7 +507,7 @@ var doTypeChecks = function(def, keyValue, op) {
 
   // Object checks
   else if (expectedType === Object) {
-    if (!isBasicObject(keyValue)) {
+    if (!Utility.isBasicObject(keyValue)) {
       return "expectedObject";
     }
   }
@@ -524,7 +524,7 @@ var doTypeChecks = function(def, keyValue, op) {
   }
 
   // Constructor function checks
-  else if (expectedType instanceof Function || safariBugFix(expectedType)) {
+  else if (expectedType instanceof Function || Utility.safariBugFix(expectedType)) {
 
     // Generic constructor checks
     if (!(keyValue instanceof expectedType)) {
@@ -541,62 +541,4 @@ var doTypeChecks = function(def, keyValue, op) {
     }
   }
 
-};
-
-/*
- * HELPERS
- */
-
-var appendAffectedKey = function(affectedKey, key) {
-  if (key === "$each") {
-    return affectedKey;
-  } else {
-    return (affectedKey ? affectedKey + "." + key : key);
-  }
-};
-
-var shouldCheck = function(key) {
-  if (key === "$pushAll") {
-    throw new Error("$pushAll is not supported; use $push + $each");
-  }
-  return !_.contains(["$pull", "$pullAll", "$pop", "$slice"], key);
-};
-
-var isBlank = function(str) {
-  if (typeof str !== "string") {
-    return false;
-  }
-  return (/^\s*$/).test(str);
-};
-
-var isBlankNullOrUndefined = function(str) {
-  return (str === void 0 || str === null || isBlank(str));
-};
-
-var isBlankOrNull = function(str) {
-  return (str === null || isBlank(str));
-};
-
-var errorObject = function(errorType, keyName, keyValue, def, ss) {
-  // TODO when we're sure nothing relies on the `message` prop anymore, retire it
-  // We should be getting error message dynamically from keyErrorMessage method
-  return {name: keyName, type: errorType, value: keyValue, message: ss.messageForError(errorType, keyName, def, keyValue)};
-};
-
-// Tests whether it's an Object as opposed to something that inherits from Object
-var isBasicObject = function(obj) {
-  return _.isObject(obj) && Object.getPrototypeOf(obj) === Object.prototype;
-};
-
-// The latest Safari returns false for Uint8Array, etc. instanceof Function
-// unlike other browsers.
-var safariBugFix = function(type) {
-  return (typeof Uint8Array !== "undefined" && type === Uint8Array)
-          || (typeof Uint16Array !== "undefined" && type === Uint16Array)
-          || (typeof Uint32Array !== "undefined" && type === Uint32Array)
-          || (typeof Uint8ClampedArray !== "undefined" && type === Uint8ClampedArray);
-};
-
-var isSet = function(val) {
-  return val !== void 0 && val !== null;
 };
