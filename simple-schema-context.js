@@ -309,7 +309,7 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
             operator: keyInfo.operator
           };
         }
-      }, extendedCustomContext || {}), affectedKeyGeneric, val, def, op); //pass args for backwards compatibility; don't use them
+      }, extendedCustomContext || {}));
       if (typeof errorType === "string") {
         invalidKeys.push(Utility.errorObject(errorType, affectedKey, val, def, ss));
         return false;
@@ -344,31 +344,14 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
         checkAllRequired = adjusted = true;
       }
 
+      if (ss.keyIsInBlackBox(affectedKey)) {
+        return;
+      }
+
       // Make a generic version of the affected key, and use that
       // to get the schema for this key.
       affectedKeyGeneric = SimpleSchema._makeGeneric(affectedKey);
-      def = ss.schema(affectedKeyGeneric);
-
-      // We didn't find a schema for our key, so check if the key
-      // is a nested dot-syntax key inside of a blackbox object
-      if (!def) {
-        var parentPath = affectedKeyGeneric, lastDot;
-
-        // Iterate the dot-syntax hierarchy until we find a key in our schema
-        do {
-          lastDot = parentPath.lastIndexOf('.');
-          if (lastDot !== -1) {
-            parentPath = parentPath.slice(0, lastDot); // Remove last path component
-            def = ss.schema(parentPath);
-          }
-        } while (lastDot !== -1 && !def);
-
-        if (!def || !def.blackbox) {
-          def = null;
-        } else {
-          return; // The key points inside of a black box so our validation attempt ends
-        }
-      }
+      def = ss.getDefinition(affectedKey);
 
       // Perform validation for this key
       if (!keyToValidate || keyToValidate === affectedKey || keyToValidate === affectedKeyGeneric) {
@@ -451,23 +434,13 @@ var doValidation = function(obj, isModifier, isUpsert, keyToValidate, ss, extend
 var doTypeChecks = function(def, keyValue, op) {
   var expectedType = def.type;
 
-  // If min/max are functions, call them
-  var min = def.min;
-  var max = def.max;
-  if (typeof min === "function") {
-    min = min();
-  }
-  if (typeof max === "function") {
-    max = max();
-  }
-
   // String checks
   if (expectedType === String) {
     if (typeof keyValue !== "string") {
       return "expectedString";
-    } else if (max !== null && max < keyValue.length) {
+    } else if (def.max !== null && def.max < keyValue.length) {
       return "maxString";
-    } else if (min !== null && min > keyValue.length) {
+    } else if (def.min !== null && def.min > keyValue.length) {
       return "minString";
     } else if (def.regEx instanceof RegExp && !def.regEx.test(keyValue)) {
       return "regEx";
@@ -489,9 +462,9 @@ var doTypeChecks = function(def, keyValue, op) {
   else if (expectedType === Number) {
     if (typeof keyValue !== "number" || isNaN(keyValue)) {
       return "expectedNumber";
-    } else if (op !== "$inc" && max !== null && max < keyValue) {
+    } else if (op !== "$inc" && def.max !== null && def.max < keyValue) {
       return "maxNumber";
-    } else if (op !== "$inc" && min !== null && min > keyValue) {
+    } else if (op !== "$inc" && def.min !== null && def.min > keyValue) {
       return "minNumber";
     } else if (!def.decimal && keyValue.toString().indexOf(".") > -1) {
       return "noDecimal";
@@ -533,9 +506,9 @@ var doTypeChecks = function(def, keyValue, op) {
 
     // Date checks
     else if (expectedType === Date) {
-      if (_.isDate(min) && min.getTime() > keyValue.getTime()) {
+      if (_.isDate(def.min) && def.min.getTime() > keyValue.getTime()) {
         return "minDate";
-      } else if (_.isDate(max) && max.getTime() < keyValue.getTime()) {
+      } else if (_.isDate(def.max) && def.max.getTime() < keyValue.getTime()) {
         return "maxDate";
       }
     }

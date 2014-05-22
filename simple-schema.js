@@ -383,6 +383,53 @@ SimpleSchema.prototype.schema = function(key) {
   }
 };
 
+// Returns the evaluated definition for one key in the schema
+// key = non-generic key
+// [propList] = props to include in the result, for performance
+// [functionContext] = used for evaluating schema options that are functions
+SimpleSchema.prototype.getDefinition = function(key, propList, functionContext) {
+  var self = this;
+  var defs = self.schema(key);
+  if (!defs)
+    return;
+
+  if (_.isArray(propList)) {
+    defs = _.pick(defs, propList);
+  } else {
+    defs = _.clone(defs);
+  }
+
+  // For any options that support specifying a function,
+  // evaluate the functions.
+  _.each(['min', 'max', 'minCount', 'maxCount', 'allowedValues', 'optional', 'label'], function (prop) {
+    if (_.isFunction(defs[prop])) {
+      defs[prop] = defs[prop].call(functionContext || {});
+    }
+  });
+
+  // Inflect label if not defined
+  defs["label"] = defs["label"] || inflectedLabel(key);
+
+  return defs;
+};
+
+// Check if the key is a nested dot-syntax key inside of a blackbox object
+SimpleSchema.prototype.keyIsInBlackBox = function(key) {
+  var self = this;
+  var parentPath = SimpleSchema._makeGeneric(key), lastDot, def;
+
+  // Iterate the dot-syntax hierarchy until we find a key in our schema
+  do {
+    lastDot = parentPath.lastIndexOf('.');
+    if (lastDot !== -1) {
+      parentPath = parentPath.slice(0, lastDot); // Remove last path component
+      def = self.getDefinition(parentPath);
+    }
+  } while (lastDot !== -1 && !def);
+
+  return !!(def && def.blackbox);
+};
+
 // Use to dynamically change the schema labels.
 SimpleSchema.prototype.labels = function(labels) {
   var self = this;
@@ -400,24 +447,25 @@ SimpleSchema.prototype.labels = function(labels) {
 
 // should be used to safely get a label as string
 SimpleSchema.prototype.label = function(key) {
-  var self = this
-  key = SimpleSchema._makeGeneric(key);
-  var def = self.schema(key);
-  // if there is no field defined use all fields
+  var self = this;
+  
+  // Get all labels
   if (key == null) {
     var result = {};
-    _.each(def, function(def, fieldName) {
+    _.each(self.schema(), function(def, fieldName) {
       result[fieldName] = self.label(fieldName);
     });
     return result;
-    // if a field was defined get that
-  } else if (def != null) {
-    self._depsLabels[key] && self._depsLabels[key].depend();
-    var label = def.label;
-    return _.isFunction(label) ? label.call(def) : (label || inflectedLabel(key));
-  } else {
-    return null;
   }
+
+  // Get label for one field
+  var def = self.getDefinition(key);
+  if (def) {
+    self._depsLabels[key] && self._depsLabels[key].depend();
+    return def.label;
+  }
+
+  return null;
 };
 
 // Global messages
