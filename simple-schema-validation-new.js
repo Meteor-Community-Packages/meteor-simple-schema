@@ -1,4 +1,4 @@
-doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate, ss, extendedCustomContext) {
+doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate, ss, extendedCustomContext) {
   var setKeys = [];
 
   // First do some basic checks of the object, and throw errors if necessary
@@ -19,6 +19,13 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
 
       // Get a list of all keys in $set and $setOnInsert combined, for use later
       setKeys = setKeys.concat(_.keys(obj.$set || {})).concat(_.keys(obj.$setOnInsert || {}));
+    
+      // We use a LocalCollection to figure out what the resulting doc
+      // would be in a worst case scenario. Then we validate that doc
+      // so that we don't have to validate the modifier object directly.
+      console.log("BEFORE", obj);
+      obj = convertModifierToDoc(obj, ss.schema(), isUpsert);
+      console.log("AFTER", obj);
     }
   } else if (Utility.looksLikeModifier(obj)) {
     throw new Error("When the validation object contains mongo operators, you must set the modifier option to true");
@@ -247,6 +254,41 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
 
   return invalidKeys;
 };
+
+function convertModifierToDoc(mod, schema, isUpsert) {
+  // Create unmanaged LocalCollection as scratchpad
+  var t = new Meteor.Collection(null);
+
+  // LocalCollections are in memory, and it seems
+  // that it's fine to use them synchronously on 
+  // either client or server
+  var id;
+  if (isUpsert) {
+    // We assume upserts will be inserts (conservative
+    // validation of requiredness)
+    id = Random.id();
+    t.upsert({_id: id}, mod);
+  } else {
+    // Create a ficticious existing document
+    var fakeDoc = {};
+    // _.each(schema, function (def, fieldName) {
+    //   fakeDoc[fieldName] = "TODO";
+    // });
+    id = t.insert(fakeDoc);
+    // Now update it with the modifier
+    t.update(id, mod);
+  }
+  
+  var doc = t.findOne(id);
+  // We're done with it
+  t.remove(id);
+  // Currently we don't validate _id unless it is
+  // explicitly added to the schema
+  if (!schema._id) {
+    delete doc._id;
+  }
+  return doc;
+}
 
 function doTypeChecks(def, keyValue, op) {
   var expectedType = def.type;

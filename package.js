@@ -8,13 +8,14 @@ Npm.depends({
 });
 
 Package.on_use(function(api) {
-  api.use(['deps', 'underscore', 'check'], ['client', 'server']);
+  api.use(['deps', 'underscore', 'check', 'random'], ['client', 'server']);
   api.add_files('string.js', 'client');
   api.add_files([
     'mongo-object.js',
     'simple-schema-utility.js',
     'simple-schema.js',
     'simple-schema-validation.js',
+    'simple-schema-validation-new.js',
     'simple-schema-context.js'
   ]);
 

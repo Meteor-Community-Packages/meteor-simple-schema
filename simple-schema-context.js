@@ -93,6 +93,12 @@ SimpleSchemaValidationContext.prototype.validateOne = function(doc, keyName, opt
   return !self._keyIsInvalid(keyName);
 };
 
+function doValidation(obj, isModifier, isUpsert, keyToValidate, ss, extendedCustomContext) {
+  var useOld = true; //for now this can be manually changed to try the experimental method, which doesn't yet work properly
+  var func = useOld ? doValidation1 : doValidation2;
+  return func(obj, isModifier, isUpsert, keyToValidate, ss, extendedCustomContext);
+}
+
 //reset the invalidKeys array
 SimpleSchemaValidationContext.prototype.resetValidation = function() {
   var self = this;
