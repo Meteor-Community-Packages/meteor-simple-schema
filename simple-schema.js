@@ -135,15 +135,15 @@ SimpleSchema = function(schemas, options) {
     // skip this.
     if (options.defineBuiltInRegExMessages !== false) {
       if (definition.regEx === SimpleSchema.RegEx.Email) {
-        overrideMessages['regEx ' + fieldName] = "[label] must be a valid e-mail address";
+        overrideMessages['regEx ' + fieldName] = SimpleSchema._globalMessages.email;
       } else if (definition.regEx === SimpleSchema.RegEx.Url) {
-        overrideMessages['regEx ' + fieldName] = "[label] must be a valid URL";
+        overrideMessages['regEx ' + fieldName] = SimpleSchema._globalMessages.url;
       } else if (_.isArray(definition.regEx)) {
         _.each(definition.regEx, function(re, i) {
           if (re === SimpleSchema.RegEx.Email) {
-            overrideMessages['regEx.' + i + ' ' + fieldName] = "[label] must be a valid e-mail address";
+            overrideMessages['regEx.' + i + ' ' + fieldName] = SimpleSchema._globalMessages.email;
           } else if (re === SimpleSchema.RegEx.Url) {
-            overrideMessages['regEx.' + i + ' ' + fieldName] = "[label] must be a valid URL";
+            overrideMessages['regEx.' + i + ' ' + fieldName] = SimpleSchema._globalMessages.url;
           }
         });
       }
@@ -458,6 +458,8 @@ SimpleSchema._globalMessages = {
   expectedObject: "[label] must be an object",
   expectedConstructor: "[label] must be a [type]",
   regEx: "[label] failed regular expression validation",
+  email: "[label] must be a valid e-mail address",
+  url: "[label] must be a valid e-mail URL",
   keyNotInSchema: "[label] is not allowed by the schema"
 };
 
