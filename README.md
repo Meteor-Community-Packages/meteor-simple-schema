@@ -1,7 +1,59 @@
-simple-schema [![Build Status](https://travis-ci.org/aldeed/meteor-simple-schema.png?branch=master)](https://travis-ci.org/aldeed/meteor-simple-schema)
+simple-schema
 =========================
 
+[![Build Status](https://travis-ci.org/aldeed/meteor-simple-schema.png?branch=master)](https://travis-ci.org/aldeed/meteor-simple-schema)
+
 A simple, reactive schema validation smart package for Meteor. It's used by the [collection2](https://github.com/aldeed/meteor-collection2) and [autoform](https://github.com/aldeed/meteor-autoform) packages, but you can use it by itself, too.
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](http://doctoc.herokuapp.com/)*
+
+- [Basic Usage](#basic-usage)
+  - [Example](#example)
+  - [Combining SimpleSchemas](#combining-simpleschemas)
+- [Schema Keys](#schema-keys)
+- [Schema Rules](#schema-rules)
+  - [type](#type)
+  - [label](#label)
+  - [optional](#optional)
+  - [min/max](#minmax)
+  - [decimal](#decimal)
+  - [minCount/maxCount](#mincountmaxcount)
+  - [allowedValues](#allowedvalues)
+  - [valueIsAllowed](#valueisallowed)
+  - [regEx](#regex)
+  - [blackbox](#blackbox)
+  - [custom](#custom)
+  - [defaultValue](#defaultvalue)
+  - [autoValue](#autovalue)
+- [The Object](#the-object)
+- [Cleaning Data](#cleaning-data)
+- [Validating Data](#validating-data)
+  - [Named Validation Contexts](#named-validation-contexts)
+  - [Unnamed Validation Contexts](#unnamed-validation-contexts)
+  - [Validating an Object](#validating-an-object)
+  - [Validating Only One Key in an Object](#validating-only-one-key-in-an-object)
+  - [Validation Options](#validation-options)
+  - [Validating Using check() or Match.test()](#validating-using-check-or-matchtest)
+  - [Custom Validation](#custom-validation)
+  - [Manually Adding a Validation Error](#manually-adding-a-validation-error)
+  - [Asynchronous Custom Validation on the Client](#asynchronous-custom-validation-on-the-client)
+  - [Other Validation Context Methods](#other-validation-context-methods)
+  - [Other SimpleSchema Methods](#other-simpleschema-methods)
+- [Customizing Validation Messages](#customizing-validation-messages)
+- [Dates](#dates)
+- [Collection2 and AutoForm](#collection2-and-autoform)
+- [Best Practice Code Examples](#best-practice-code-examples)
+  - [Make a field conditionally required](#make-a-field-conditionally-required)
+  - [Validate one key against another](#validate-one-key-against-another)
+- [Debug Mode](#debug-mode)
+- [Extending the Schema Options](#extending-the-schema-options)
+- [License](#license)
+- [Contributing](#contributing)
+  - [Thanks](#thanks)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Basic Usage
 
@@ -816,6 +868,19 @@ Set `SimpleSchema.debug = true` in your app before creating any named
 validation contexts to cause all named validation contexts to automatically
 log all invalid key errors to the browser console. This can be helpful while
 developing an app to figure out why certain actions are failing validation.
+
+## Extending the Schema Options
+
+You may find at some point that there is something extra you would really like to define within a schema for your package or app. However, if you add unrecognized options to your schema definition, you will get an error. To inform SimpleSchema about your custom option and avoid the error, you need to call `SimpleSchema.extendOptions`. By way of example, here is how the `collection2` package adds the additional schema options it provides:
+
+```js
+SimpleSchema.extendOptions({
+  index: Match.Optional(Match.OneOf(Number, String, Boolean)),
+  unique: Match.Optional(Boolean),
+  denyInsert: Match.Optional(Boolean),
+  denyUpdate: Match.Optional(Boolean)
+});
+```
 
 ## License
 
