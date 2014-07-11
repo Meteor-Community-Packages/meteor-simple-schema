@@ -429,7 +429,7 @@ and operator properties for that field.
 have the same parent object. Works the same way as `field()`. This is helpful
 when you use sub-schemas or when you're dealing with arrays of objects.
 
-Refer to the collection2 package documentation for examples.
+Refer to the [collection2 package documentation](https://github.com/aldeed/meteor-collection2#autovalue) for examples.
 
 ## The Object
 
