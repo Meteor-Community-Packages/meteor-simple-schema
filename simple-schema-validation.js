@@ -14,7 +14,7 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
         return (k.substring(0, 1) === "$");
       });
       if (!allKeysAreOperators) {
-        throw new Error("When the modifier option is true, all validation object keys must be operators");
+        throw new Error("When the modifier option is true, all validation object keys must be operators. Did you forget `$set`?");
       }
 
       // Get a list of all keys in $set and $setOnInsert combined, for use later
