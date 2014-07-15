@@ -3512,6 +3512,23 @@ Tinytest.add("SimpleSchema - DefaultValues", function(test) {
 
 });
 
+Tinytest.add("SimpleSchema - Optional regEx with check", function(test) {
+  try {
+    // None of these should throw an error
+    check({}, ss);
+    check({url: null, email: null}, ss);
+    check({url: "http://meteor.com", email: null}, ss);
+    check({url: null, email: "foo@meteor.com"}, ss);
+    check({url: null}, ss);
+    check({email: null}, ss);
+    check({url: "http://meteor.com"}, ss);
+    check({email: "foo@meteor.com"}, ss);
+    test.isTrue(true);
+  } catch (err) {
+    test.isTrue(false);
+  }
+});
+
 Tinytest.add("SimpleSchema - Optional Custom", function(test) {
   var ctx = optCust.namedContext();
   // Ensure that custom validation runs even when the optional
