@@ -2796,8 +2796,8 @@ Tinytest.add("SimpleSchema - Cleanup With Modifier Operators", function(test) {
   doTest({$set: {string: "This is a string", admin: true}}, {$set: {string: "This is a string"}});
   //type conversion works
   doTest({$set: {string: 1}}, {$set: {string: "1"}});
-  //remove empty strings
-  doTest({$set: {string: ""}}, {$set: {}});
+  //move empty strings to $unset
+  doTest({$set: {string: ""}}, {$set: {}, $unset: {string: ""}});
 
   //$UNSET
 

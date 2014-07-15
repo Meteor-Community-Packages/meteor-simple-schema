@@ -359,7 +359,13 @@ SimpleSchema.prototype.clean = function(doc, options) {
         }
         // remove empty strings
         if (options.removeEmptyStrings && !wasAutoConverted && (!this.operator || this.operator === "$set") && typeof val === "string" && !val.length) {
+          // For a document, we remove any fields that are being set to an empty string
           this.remove();
+          // For a modifier, we $unset any fields that are being set to an empty string
+          if (this.operator === "$set") {
+            var p = this.position.replace("$set", "$unset");
+            mDoc.setValueForPosition(p, "");
+          }
         }
       }
     }
