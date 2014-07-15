@@ -399,10 +399,9 @@ An `autoValue` function is passed the document or modifier as its only argument,
 but you will generally not need it. Instead, the function context provides a
 variety of properties and methods to help you determine what you should return.
 
-If an `autoValue` function returns `undefined`, the field's value will be
-whatever the document or modifier says it should be. Any other return value will
-be used as the field's value. You may also return special pseudo-modifier objects
-for update operations. Examples are `{$inc: 1}` and `{$push: new Date}`.
+If an `autoValue` function does not return anything (i.e., returns `undefined`), the field's value will be whatever the document or modifier says it should be. If that field is already in the document or modifier, it stays in the document or modifier with the same value. If it's not in the document or modifier, it's still not there. If you don't want it to be in the doc or modifier, you must call `this.unset()`.
+
+Any other return value will be used as the field's value. You may also return special pseudo-modifier objects for update operations. Examples are `{$inc: 1}` and `{$push: new Date}`.
 
 The following properties and methods are available in `this` for an `autoValue`
 function:
