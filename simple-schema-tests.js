@@ -3370,6 +3370,22 @@ Tinytest.add("SimpleSchema - AutoValues", function(test) {
   test.length(o.updatesHistory, 1);
   test.equal(o.updatesHistory[0].content, 'Hello world!', 'expected updatesHistory.content to be "Hello world!"');
 
+  // $each in pseudo modifier
+  var eachAV = new SimpleSchema({
+    psuedoEach: {
+      type: [String],
+      optional: true,
+      autoValue: function() {
+        if (this.isSet && this.operator === "$set") {
+          return {$push: {$each: this.value}}
+        }
+      }
+    }
+  });
+  var o = {$set: {psuedoEach: ["foo", "bar"]}};
+  eachAV.clean(o);
+  test.equal(o, {$set: {}, $push: {psuedoEach: {$each: ["foo", "bar"]}}});
+
   // autoValues in object in array with modifier
   o = {$push: {avArrayOfObjects: {a: "b"}}};
   autoValues.clean(o, {isModifier: true});
