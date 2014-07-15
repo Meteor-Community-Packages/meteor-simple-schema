@@ -2603,6 +2603,18 @@ Tinytest.add("SimpleSchema - Validate with the Match API", function(test) {
   }
 });
 
+Tinytest.add("SimpleSchema - Validate Typed Arrays", function(test) {
+  var taS = new SimpleSchema({
+    ta: {
+      type: Uint8Array
+    }
+  });
+
+  var bin = new Uint8Array(100000000);
+  var ctx = validate(taS, {ta: bin});
+  test.length(ctx.invalidKeys(), 0);
+});
+
 Tinytest.add("SimpleSchema - Extend Schema Definition", function(test) {
   try {
     var ssWithUnique = new SimpleSchema({
