@@ -3026,10 +3026,11 @@ Tinytest.add("SimpleSchema - RegEx and Messages", function(test) {
 
   // global
   SimpleSchema.messages({
-    'regEx': 'Global Message One',
-    'regEx one': 'Global Message Two',
-    'regEx.0 one': 'Global Message Three',
-    'regEx.1 one': 'Global Message Four'
+    'regEx one': [
+      {msg: 'Global Message Two'},
+      {exp: /^A/, msg: 'Global Message Three'},
+      {exp: /B$/, msg: 'Global Message Four'}
+    ]
   });
 
   var testSchema = new SimpleSchema({
@@ -3060,10 +3061,11 @@ Tinytest.add("SimpleSchema - RegEx and Messages", function(test) {
 
   // schema-specific messages
   testSchema.messages({
-    'regEx': 'Message One',
-    'regEx one': 'Message Two',
-    'regEx.0 one': 'Message Three',
-    'regEx.1 one': 'Message Four'
+    'regEx one': [
+      {msg: 'Message Two'},
+      {exp: /^A/, msg: 'Message Three'},
+      {exp: /B$/, msg: 'Message Four'}
+    ]
   });
 
   c1 = testSchema.newContext();
@@ -3081,6 +3083,94 @@ Tinytest.add("SimpleSchema - RegEx and Messages", function(test) {
 
   c1.validate({one: "ACB"});
   test.length(c1.invalidKeys(), 0);
+});
+
+Tinytest.add("SimpleSchema - Built-In RegEx and Messages", function(test) {
+
+  var testSchema = new SimpleSchema({
+    email: {
+      type: String,
+      regEx: SimpleSchema.RegEx.Email,
+      optional: true
+    },
+    weakEmail: {
+      type: String,
+      regEx: SimpleSchema.RegEx.WeakEmail,
+      optional: true
+    },
+    domain: {
+      type: String,
+      regEx: SimpleSchema.RegEx.Domain,
+      optional: true
+    },
+    weakDomain: {
+      type: String,
+      regEx: SimpleSchema.RegEx.WeakDomain,
+      optional: true
+    },
+    ip: {
+      type: String,
+      regEx: SimpleSchema.RegEx.IP,
+      optional: true
+    },
+    ip4: {
+      type: String,
+      regEx: SimpleSchema.RegEx.IPv4,
+      optional: true
+    },
+    ip6: {
+      type: String,
+      regEx: SimpleSchema.RegEx.IPv6,
+      optional: true
+    },
+    url: {
+      type: String,
+      regEx: SimpleSchema.RegEx.Url,
+      optional: true
+    },
+    id: {
+      type: String,
+      regEx: SimpleSchema.RegEx.Id,
+      optional: true
+    }
+  });
+
+  var c1 = testSchema.newContext();
+  c1.validate({email: "foo"});
+  test.length(c1.invalidKeys(), 1);
+  test.equal(c1.keyErrorMessage("email"), "Email must be a valid e-mail address");
+
+  c1.validate({weakEmail: "foo"});
+  test.length(c1.invalidKeys(), 1);
+  test.equal(c1.keyErrorMessage("weakEmail"), "Weak email must be a valid e-mail address");
+
+  c1.validate({domain: "foo"});
+  test.length(c1.invalidKeys(), 1);
+  test.equal(c1.keyErrorMessage("domain"), "Domain must be a valid domain");
+
+  c1.validate({weakDomain: "///jioh779&%"});
+  test.length(c1.invalidKeys(), 1);
+  test.equal(c1.keyErrorMessage("weakDomain"), "Weak domain must be a valid domain");
+
+  c1.validate({ip: "foo"});
+  test.length(c1.invalidKeys(), 1);
+  test.equal(c1.keyErrorMessage("ip"), "Ip must be a valid IPv4 or IPv6 address");
+
+  c1.validate({ip4: "foo"});
+  test.length(c1.invalidKeys(), 1);
+  test.equal(c1.keyErrorMessage("ip4"), "Ip4 must be a valid IPv4 address");
+
+  c1.validate({ip6: "foo"});
+  test.length(c1.invalidKeys(), 1);
+  test.equal(c1.keyErrorMessage("ip6"), "Ip6 must be a valid IPv6 address");
+
+  c1.validate({url: "foo"});
+  test.length(c1.invalidKeys(), 1);
+  test.equal(c1.keyErrorMessage("url"), "Url must be a valid URL");
+
+  c1.validate({id: "%#$%"});
+  test.length(c1.invalidKeys(), 1);
+  test.equal(c1.keyErrorMessage("id"), "Id must be a valid alphanumeric ID");
 });
 
 Tinytest.add("SimpleSchema - Issue 28", function(test) {
