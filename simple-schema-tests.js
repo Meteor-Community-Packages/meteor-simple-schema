@@ -2869,6 +2869,17 @@ Tinytest.add("SimpleSchema - Cleanup With Modifier Operators", function(test) {
   //type conversion works
   doTest({$pull: {allowedNumbersArray: "1"}}, {$pull: {allowedNumbersArray: 1}});
 
+  //$PULL with query2
+
+  //when you clean a good object it's still good
+  doTest({$pull: {allowedNumbersArray: {$in: [1]}}}, {$pull: {allowedNumbersArray: {$in: [1]}}});
+  //when you clean a bad object it's now good
+  doTest({$pull: {allowedNumbersArray: {$in: [1]}, admin: {$in: [1]}}}, {$pull: {allowedNumbersArray: {$in: [1]}}});
+  //type conversion does not work within query2
+  doTest({$pull: {allowedNumbersArray: {$in: ["1"]}}}, {$pull: {allowedNumbersArray: {$in: ["1"]}}});
+  //more tests
+  doTest({$pull: {allowedNumbersArray: {foo: {$in: [1]}}}}, {$pull: {allowedNumbersArray: {foo: {$in: [1]}}}});
+
   //$POP
 
   //when you clean a good object it's still good
