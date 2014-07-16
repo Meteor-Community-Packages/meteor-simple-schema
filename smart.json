@@ -3,7 +3,7 @@
   "description": "A simple schema validation object with reactivity. Used by collection2 and autoform.",
   "homepage": "https://github.com/priyadarshy/meteor-simple-schema",
   "author": "Ashutosh Priyadarshy www.siftnet.com",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "git": "https://github.com/priyadarshy/meteor-simple-schema.git",
   "packages": {}
 }
