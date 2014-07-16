@@ -5,6 +5,12 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.7.0
+
+* Pass `blankStringsAllowed` into Utility functions to allow "" to pass
+  validation in the case that a Schema requires a string type but the
+  user accepts "" a valid String.
+
 ### 0.6.0
 
 BREAKING CHANGES!
