@@ -12,17 +12,17 @@ Utility = {
 		}
 		return !_.contains(["$pull", "$pullAll", "$pop", "$slice"], key);
 	},
-	isBlank: function isBlank(str) {
+	isBlank: function isBlank(str, blankStringsAllowed) {
 		if (typeof str !== "string") {
 			return false;
 		}
-		return (/^\s*$/).test(str);
+		return blankStringsAllowed ? !(/^.*$/).test(str) : (/^\s*$/).test(str);
 	},
-	isBlankNullOrUndefined: function isBlankNullOrUndefined(str) {
-		return (str === void 0 || str === null || Utility.isBlank(str));
+	isBlankNullOrUndefined: function isBlankNullOrUndefined(str, blankStringsAllowed) {
+		return (str === void 0 || str === null || Utility.isBlank(str, blankStringsAllowed));
 	},
-	isBlankOrNull: function isBlankOrNull(str) {
-		return (str === null || Utility.isBlank(str));
+	isBlankOrNull: function isBlankOrNull(str, blankStringsAllowed) {
+		return (str === null || Utility.isBlank(str, blankStringsAllowed));
 	},
 	errorObject: function errorObject(errorType, keyName, keyValue, def, ss) {
 	  return {name: keyName, type: errorType, value: keyValue};
