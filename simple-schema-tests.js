@@ -3116,11 +3116,6 @@ Tinytest.add("SimpleSchema - Built-In RegEx and Messages", function(test) {
       regEx: SimpleSchema.RegEx.Email,
       optional: true
     },
-    weakEmail: {
-      type: String,
-      regEx: SimpleSchema.RegEx.WeakEmail,
-      optional: true
-    },
     domain: {
       type: String,
       regEx: SimpleSchema.RegEx.Domain,
@@ -3162,10 +3157,6 @@ Tinytest.add("SimpleSchema - Built-In RegEx and Messages", function(test) {
   c1.validate({email: "foo"});
   test.length(c1.invalidKeys(), 1);
   test.equal(c1.keyErrorMessage("email"), "Email must be a valid e-mail address");
-
-  c1.validate({weakEmail: "foo"});
-  test.length(c1.invalidKeys(), 1);
-  test.equal(c1.keyErrorMessage("weakEmail"), "Weak email must be a valid e-mail address");
 
   c1.validate({domain: "foo"});
   test.length(c1.invalidKeys(), 1);
@@ -3722,27 +3713,12 @@ Tinytest.add("SimpleSchema - RegEx - Email", function (test) {
   isTrue("name@web.de");
   isTrue("name+addition@web.de");
   isTrue("st#r~ange.e+mail@web.de");
-  isFalse("name@localhost");
-  isFalse("name@192.168.200.5");
+  isTrue("name@localhost");
+  isTrue("name@192.168.200.5");
   isFalse("name@BCDF:45AB:1245:75B9:0987:1562:4567:1234");
   isFalse("name@BCDF:45AB:1245:75B9::0987:1234:1324");
   isFalse("name@BCDF:45AB:1245:75B9:0987:1234:1324");
   isFalse("name@::1");
-});
-
-Tinytest.add("SimpleSchema - RegEx - WeakEmail", function (test) {
-  var expr = SimpleSchema.RegEx.WeakEmail;
-  var isTrue = function (s) { test.isTrue(expr.test(s), s) };
-  var isFalse = function (s) { test.isFalse(expr.test(s), s) };
-  isTrue("name@web.de");
-  isTrue("name+addition@web.de");
-  isTrue("st#r~ange.e+mail@web.de");
-  isTrue("name@localhost");
-  isTrue("name@192.168.200.5");
-  isTrue("name@BCDF:45AB:1245:75B9:0987:1562:4567:1234");
-  isTrue("name@BCDF:45AB:1245:75B9::0987:1234:1324");
-  isFalse("name@BCDF:45AB:1245:75B9:0987:1234:1324");
-  isTrue("name@::1");
 });
 
 Tinytest.add("SimpleSchema - RegEx - Domain", function (test) {

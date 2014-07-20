@@ -142,10 +142,6 @@ SimpleSchema.extendOptions = function(options) {
   _.extend(schemaDefinition, options);
 };
 
-// regex for email validation after RFC 5322
-// the obsolete double quotes and square brackets are left out
-// read: http://www.regular-expressions.info/email.html
-var RX_MAIL_NAME = '[a-z0-9!#$%&\'*+\\/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&\'*+\\/=?^_`{|}~-]+)*';
 // this domain regex matches all domains that have at least one .
 // sadly IPv4 Adresses will be caught too but technically those are valid domains
 // this expression is extracted from the original RFC 5322 mail expression
@@ -164,8 +160,10 @@ var RX_IPv6 = '(?:(?:[\\dA-Fa-f]{1,4}(?::|$)){8}' // full adress
 var RX_WEAK_DOMAIN = '(?:' + [RX_NAME_DOMAIN,RX_IPv4,RX_IPv6].join('|') + ')';
 
 SimpleSchema.RegEx = {
-  Email: new RegExp('^' + RX_MAIL_NAME + '@' + RX_DOMAIN + '$'),
-  WeakEmail: new RegExp('^' + RX_MAIL_NAME + '@' + RX_WEAK_DOMAIN + '$'),
+  // We use the RegExp suggested by W3C in http://www.w3.org/TR/html5/forms.html#valid-e-mail-address
+  // This is probably the same logic used by most browsers when type=email, which is our goal. It is
+  // a very permissive expression. Some apps may wish to be more strict and can write their own RegExp.
+  Email: /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
   
   Domain: new RegExp('^' + RX_DOMAIN + '$'),
   WeakDomain: new RegExp('^' + RX_WEAK_DOMAIN + '$'),
