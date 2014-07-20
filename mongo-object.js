@@ -28,21 +28,30 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
 
     var affectedKeyIsBlackBox = false;
     var affectedKeyGeneric;
+    var stop = false;
     if (affectedKey) {
 
       // Adjust for $push and $addToSet and $pull and $pop
-      if (!adjusted && (operator === "$push" || operator === "$addToSet" || operator === "$pull" || operator === "$pop")) {
-        // Adjust for $each
-        // We can simply jump forward and pretend like the $each array
-        // is the array for the field. This has the added benefit of
-        // skipping past any $slice, which we also don't care about.
-        if (isBasicObject(val) && "$each" in val) {
-          val = val.$each;
-          currentPosition = currentPosition + "[$each]";
-        } else {
+      if (!adjusted) {
+        if (operator === "$push" || operator === "$addToSet" || operator === "$pop") {
+          // Adjust for $each
+          // We can simply jump forward and pretend like the $each array
+          // is the array for the field. This has the added benefit of
+          // skipping past any $slice, which we also don't care about.
+          if (isBasicObject(val) && "$each" in val) {
+            val = val.$each;
+            currentPosition = currentPosition + "[$each]";
+          } else {
+            affectedKey = affectedKey + ".0";
+          }
+          adjusted = true;
+        } else if (operator === "$pull") {
           affectedKey = affectedKey + ".0";
+          if (isBasicObject(val)) {
+            stop = true;
+          }
+          adjusted = true;
         }
-        adjusted = true;
       }
 
       // Make generic key
@@ -60,6 +69,9 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
         isWithinArray && self._positionsInsideArrays.push(currentPosition);
       }
     }
+
+    if (stop)
+      return;
 
     // Loop through arrays
     if (_.isArray(val) && !_.isEmpty(val)) {

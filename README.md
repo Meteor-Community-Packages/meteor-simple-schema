@@ -399,10 +399,9 @@ An `autoValue` function is passed the document or modifier as its only argument,
 but you will generally not need it. Instead, the function context provides a
 variety of properties and methods to help you determine what you should return.
 
-If an `autoValue` function returns `undefined`, the field's value will be
-whatever the document or modifier says it should be. Any other return value will
-be used as the field's value. You may also return special pseudo-modifier objects
-for update operations. Examples are `{$inc: 1}` and `{$push: new Date}`.
+If an `autoValue` function does not return anything (i.e., returns `undefined`), the field's value will be whatever the document or modifier says it should be. If that field is already in the document or modifier, it stays in the document or modifier with the same value. If it's not in the document or modifier, it's still not there. If you don't want it to be in the doc or modifier, you must call `this.unset()`.
+
+Any other return value will be used as the field's value. You may also return special pseudo-modifier objects for update operations. Examples are `{$inc: 1}` and `{$push: new Date}`.
 
 The following properties and methods are available in `this` for an `autoValue`
 function:
@@ -424,7 +423,7 @@ and operator properties for that field.
 have the same parent object. Works the same way as `field()`. This is helpful
 when you use sub-schemas or when you're dealing with arrays of objects.
 
-Refer to the collection2 package documentation for examples.
+Refer to the [collection2 package documentation](https://github.com/aldeed/meteor-collection2#autovalue) for examples.
 
 ## The Object
 
@@ -735,16 +734,19 @@ You can also specify override messages for specific fields:
 }
 ```
 
-You can also specify override messages for specific regular expressions:
+For the `regEx` error type, you must specify a special message array of objects:
 
 ```js
 {
-  "regEx.0": message,
-  "regEx.0 schemaKey": message
+  "regEx": [
+    {msg: "Default Message"},
+    {exp: SimpleSchema.RegEx.Url, msg: "You call that a URL?"}
+  ],
+  "regEx schemaKey": [
+    {exp: SimpleSchema.RegEx.Url, msg: "It's very important that you enter a valid URL here"}
+  ]
 }
 ```
-
-Where `regEx.0` means the first regular expression in the regEx array for the schemaKey.
 
 The message is a string. It can contain a number of different placeholders indicated by square brackets:
 * `[label]` will be replaced with the field label
@@ -759,24 +761,36 @@ By way of example, here is what it would look like if you defined the default er
 
 ```js
 SimpleSchema.messages({
-    required: "[label] is required",
-    minString: "[label] must be at least [min] characters",
-    maxString: "[label] cannot exceed [max] characters",
-    minNumber: "[label] must be at least [min]",
-    maxNumber: "[label] cannot exceed [max]",
-    minDate: "[label] must be on or before [min]",
-    maxDate: "[label] cannot be after [max]",
-    minCount: "You must specify at least [minCount] values",
-    maxCount: "You cannot specify more than [maxCount] values",
-    noDecimal: "[label] must be an integer",
-    notAllowed: "[value] is not an allowed value",
-    expectedString: "[label] must be a string",
-    expectedNumber: "[label] must be a number",
-    expectedBoolean: "[label] must be a boolean",
-    expectedArray: "[label] must be an array",
-    expectedObject: "[label] must be an object",
-    expectedConstructor: "[label] must be a [type]",
-    regEx: "[label] failed regular expression validation"
+  required: "[label] is required",
+  minString: "[label] must be at least [min] characters",
+  maxString: "[label] cannot exceed [max] characters",
+  minNumber: "[label] must be at least [min]",
+  maxNumber: "[label] cannot exceed [max]",
+  minDate: "[label] must be on or before [min]",
+  maxDate: "[label] cannot be after [max]",
+  minCount: "You must specify at least [minCount] values",
+  maxCount: "You cannot specify more than [maxCount] values",
+  noDecimal: "[label] must be an integer",
+  notAllowed: "[value] is not an allowed value",
+  expectedString: "[label] must be a string",
+  expectedNumber: "[label] must be a number",
+  expectedBoolean: "[label] must be a boolean",
+  expectedArray: "[label] must be an array",
+  expectedObject: "[label] must be an object",
+  expectedConstructor: "[label] must be a [type]",
+  regEx: [
+    {msg: "[label] failed regular expression validation"},
+    {exp: SimpleSchema.RegEx.Email, msg: "[label] must be a valid e-mail address"},
+    {exp: SimpleSchema.RegEx.WeakEmail, msg: "[label] must be a valid e-mail address"},
+    {exp: SimpleSchema.RegEx.Domain, msg: "[label] must be a valid domain"},
+    {exp: SimpleSchema.RegEx.WeakDomain, msg: "[label] must be a valid domain"},
+    {exp: SimpleSchema.RegEx.IP, msg: "[label] must be a valid IPv4 or IPv6 address"},
+    {exp: SimpleSchema.RegEx.IPv4, msg: "[label] must be a valid IPv4 address"},
+    {exp: SimpleSchema.RegEx.IPv6, msg: "[label] must be a valid IPv6 address"},
+    {exp: SimpleSchema.RegEx.Url, msg: "[label] must be a valid URL"},
+    {exp: SimpleSchema.RegEx.Id, msg: "[label] must be a valid alphanumeric ID"}
+  ],
+  keyNotInSchema: "[label] is not allowed by the schema"
 });
 ```
 

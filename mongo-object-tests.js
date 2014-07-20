@@ -41,6 +41,11 @@ Tinytest.add("MongoObject - Round Trip", function(test) {
 
 });
 
+Tinytest.add("MongoObject - TypedArrays", function (test) {
+  var mo = new MongoObject({foo: new Uint8Array(10)});
+  test.isUndefined(mo._affectedKeys["foo.0"]);
+});
+
 Tinytest.add("MongoObject - Flat", function(test) {
   // Helper Function
   function testFlat(o, exp, opts) {

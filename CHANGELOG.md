@@ -5,6 +5,17 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.6.0
+
+BREAKING CHANGES!
+
+* `regEx` messages must now be defined in a different way. Refer to the README.
+* Removed support for `valueIsAllowed` option. Use `custom` instead.
+* Remove `SchemaRegEx` exported variable. Use `SimpleSchema.RegEx` instead.
+* Internal code reorg and cleanup
+* When `removeEmptyStrings` option is enabled during cleaning, empty strings in `$set` are now translated to `$unset`.
+* `$pull` operators that include a `query2` are now properly cleaned
+
 ### 0.5.1
 
 Console logging about filtered and autoconverted fields now happens only when `SimpleSchema.debug = true`

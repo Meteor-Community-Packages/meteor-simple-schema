@@ -57,7 +57,6 @@ SimpleSchema = function(schemas, options) {
   self._depsMessages = new Deps.Dependency;
   self._depsLabels = {};
 
-  var overrideMessages = {};
   _.each(self._schema, function(definition, fieldName) {
     // Validate the field definition
     if (!Match.test(definition, schemaDefinition)) {
@@ -119,30 +118,8 @@ SimpleSchema = function(schemas, options) {
       customSchemaKeys.push(fieldName);
     }
 
-    // Set up nicer error messages for the built-in regEx.
-    // Users will need to override these at the schema-specific level,
-    // which could be undesirable, so we provide an option to
-    // skip this.
-    if (options.defineBuiltInRegExMessages !== false) {
-      if (definition.regEx === SimpleSchema.RegEx.Email) {
-        overrideMessages['regEx ' + fieldName] = "[label] must be a valid e-mail address";
-      } else if (definition.regEx === SimpleSchema.RegEx.Url) {
-        overrideMessages['regEx ' + fieldName] = "[label] must be a valid URL";
-      } else if (_.isArray(definition.regEx)) {
-        _.each(definition.regEx, function(re, i) {
-          if (re === SimpleSchema.RegEx.Email) {
-            overrideMessages['regEx.' + i + ' ' + fieldName] = "[label] must be a valid e-mail address";
-          } else if (re === SimpleSchema.RegEx.Url) {
-            overrideMessages['regEx.' + i + ' ' + fieldName] = "[label] must be a valid URL";
-          }
-        });
-      }
-    }
-
   });
   
-  // Set override messages
-  self.messages(overrideMessages);
 
   // Cache these lists
   self._firstLevelSchemaKeys = firstLevelSchemaKeys;
@@ -359,7 +336,13 @@ SimpleSchema.prototype.clean = function(doc, options) {
         }
         // remove empty strings
         if (options.removeEmptyStrings && !wasAutoConverted && (!this.operator || this.operator === "$set") && typeof val === "string" && !val.length) {
+          // For a document, we remove any fields that are being set to an empty string
           this.remove();
+          // For a modifier, we $unset any fields that are being set to an empty string
+          if (this.operator === "$set") {
+            var p = this.position.replace("$set", "$unset");
+            mDoc.setValueForPosition(p, "");
+          }
         }
       }
     }
@@ -488,7 +471,18 @@ SimpleSchema._globalMessages = {
   expectedArray: "[label] must be an array",
   expectedObject: "[label] must be an object",
   expectedConstructor: "[label] must be a [type]",
-  regEx: "[label] failed regular expression validation",
+  regEx: [
+    {msg: "[label] failed regular expression validation"},
+    {exp: SimpleSchema.RegEx.Email, msg: "[label] must be a valid e-mail address"},
+    {exp: SimpleSchema.RegEx.WeakEmail, msg: "[label] must be a valid e-mail address"},
+    {exp: SimpleSchema.RegEx.Domain, msg: "[label] must be a valid domain"},
+    {exp: SimpleSchema.RegEx.WeakDomain, msg: "[label] must be a valid domain"},
+    {exp: SimpleSchema.RegEx.IP, msg: "[label] must be a valid IPv4 or IPv6 address"},
+    {exp: SimpleSchema.RegEx.IPv4, msg: "[label] must be a valid IPv4 address"},
+    {exp: SimpleSchema.RegEx.IPv6, msg: "[label] must be a valid IPv6 address"},
+    {exp: SimpleSchema.RegEx.Url, msg: "[label] must be a valid URL"},
+    {exp: SimpleSchema.RegEx.Id, msg: "[label] must be a valid alphanumeric ID"}
+  ],
   keyNotInSchema: "[label] is not allowed by the schema"
 };
 
@@ -509,57 +503,88 @@ SimpleSchema.prototype.messages = function(messages) {
 // def and value arguments to fill in placeholders in the error messages.
 SimpleSchema.prototype.messageForError = function(type, key, def, value) {
   var self = this;
+  def = def || self.schema(key) || {};
+
+  // Adjust for complex types, currently only regEx,
+  // where we might have regEx.1 meaning the second
+  // expression in the array.
+  var firstTypePeriod = type.indexOf("."), index = null;
+  if (firstTypePeriod !== -1) {
+    index = type.substring(firstTypePeriod + 1);
+    index = parseInt(index, 10);
+    type = type.substring(0, firstTypePeriod);
+  }
+
+  // Which regExp is it?
+  var regExpMatch;
+  if (type === "regEx") {
+    if (index != null && !isNaN(index)) {
+      regExpMatch = def.regEx[index];
+    } else {
+      regExpMatch = def.regEx;
+    }
+    if (regExpMatch) {
+      regExpMatch = regExpMatch.toString();
+    }
+  }
 
   // Prep some strings to be used when finding the correct message for this error
   var typePlusKey = type + " " + key;
   var genericKey = SimpleSchema._makeGeneric(key);
   var typePlusGenKey = type + " " + genericKey;
-  var firstTypePeriod = type.indexOf(".");
-  var genType;
-  var genTypePlusKey;
-  var genTypePlusGenKey;
-  if (firstTypePeriod !== -1) {
-    genType = type.substring(0, firstTypePeriod);
-    genTypePlusKey = genType + " " + key;
-    genTypePlusGenKey = genType + " " + genericKey;
-  }
 
   // reactively update when message templates or labels are changed
   SimpleSchema._depsGlobalMessages.depend();
   self._depsMessages.depend();
   self._depsLabels[key] && self._depsLabels[key].depend();
 
+  // Prep a function that finds the correct message for regEx errors
+  function findRegExError(message) {
+    if (type !== "regEx" || !_.isArray(message)) {
+      return message;
+    }
+    // Parse regEx messages, which are provided in a special object array format
+    // [{exp: RegExp, msg: "Foo"}]
+    // Where `exp` is optional
+
+    var msgObj;
+    // First see if there's one where exp matches this expression
+    if (regExpMatch) {
+      msgObj = _.find(message, function (o) {
+        return o.exp && o.exp.toString() === regExpMatch;
+      });
+    }
+
+    // If not, see if there's a default message defined
+    if (!msgObj) {
+      msgObj = _.findWhere(message, {exp: null});
+      if (!msgObj) {
+        msgObj = _.findWhere(message, {exp: void 0});
+      }
+    }
+
+    return msgObj ? msgObj.msg : null;
+  }
+
   // Try finding the correct message to use at various levels, from most
   // specific to least specific.
-  // 
-  // (1) Use schema-specific message for specific key, specific type
-  // (2) Use schema-specific message for generic key, specific type
-  // (3) Use schema-specific message for specific type
-  var message = self._messages[typePlusKey] || self._messages[typePlusGenKey] || self._messages[type];
-  // (4) Use schema-specific message for specific key, general type
-  // (5) Use schema-specific message for generic key, general type
-  // (6) Use schema-specific message for general type
-  if (!message && genType) {
-    message = self._messages[genTypePlusKey] || self._messages[genTypePlusGenKey] || self._messages[genType];
-  }
-  // (7) Use global message for specific key, specific type
-  // (8) Use global message for generic key, specific type
-  // (9) Use global message for specific type
+  var message = self._messages[typePlusKey] ||                  // (1) Use schema-specific message for specific key
+                self._messages[typePlusGenKey] ||               // (2) Use schema-specific message for generic key
+                self._messages[type];                           // (3) Use schema-specific message for type
+  message = findRegExError(message);
+
   if (!message) {
-    message = SimpleSchema._globalMessages[typePlusKey] || SimpleSchema._globalMessages[typePlusGenKey] || SimpleSchema._globalMessages[type];
+    message = SimpleSchema._globalMessages[typePlusKey] ||      // (4) Use global message for specific key
+              SimpleSchema._globalMessages[typePlusGenKey] ||   // (5) Use global message for generic key
+              SimpleSchema._globalMessages[type];               // (6) Use global message for type
+    message = findRegExError(message);
   }
-  // (10) Use global message for specific key, general type
-  // (11) Use global message for generic key, general type
-  // (12) Use global message for general type
-  if (!message && genType) {
-    message = SimpleSchema._globalMessages[genTypePlusKey] || SimpleSchema._globalMessages[genTypePlusGenKey] || SimpleSchema._globalMessages[genType];
-  }
+
   if (!message) {
     return "Unknown validation error";
   }
 
   // Now replace all placeholders in the message with the correct values
-  def = def || self.schema(key) || {};
   message = message.replace("[label]", self.label(key));
   if (typeof def.minCount !== "undefined") {
     message = message.replace("[minCount]", def.minCount);

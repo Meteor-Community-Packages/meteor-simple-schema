@@ -2603,6 +2603,18 @@ Tinytest.add("SimpleSchema - Validate with the Match API", function(test) {
   }
 });
 
+Tinytest.add("SimpleSchema - Validate Typed Arrays", function(test) {
+  var taS = new SimpleSchema({
+    ta: {
+      type: Uint8Array
+    }
+  });
+
+  var bin = new Uint8Array(100000000);
+  var ctx = validate(taS, {ta: bin});
+  test.length(ctx.invalidKeys(), 0);
+});
+
 Tinytest.add("SimpleSchema - Extend Schema Definition", function(test) {
   try {
     var ssWithUnique = new SimpleSchema({
@@ -2796,8 +2808,8 @@ Tinytest.add("SimpleSchema - Cleanup With Modifier Operators", function(test) {
   doTest({$set: {string: "This is a string", admin: true}}, {$set: {string: "This is a string"}});
   //type conversion works
   doTest({$set: {string: 1}}, {$set: {string: "1"}});
-  //remove empty strings
-  doTest({$set: {string: ""}}, {$set: {}});
+  //move empty strings to $unset
+  doTest({$set: {string: ""}}, {$set: {}, $unset: {string: ""}});
 
   //$UNSET
 
@@ -2868,6 +2880,17 @@ Tinytest.add("SimpleSchema - Cleanup With Modifier Operators", function(test) {
   doTest({$pull: {allowedNumbersArray: 1, admin: 1}}, {$pull: {allowedNumbersArray: 1}});
   //type conversion works
   doTest({$pull: {allowedNumbersArray: "1"}}, {$pull: {allowedNumbersArray: 1}});
+
+  //$PULL with query2
+
+  //when you clean a good object it's still good
+  doTest({$pull: {allowedNumbersArray: {$in: [1]}}}, {$pull: {allowedNumbersArray: {$in: [1]}}});
+  //when you clean a bad object it's now good
+  doTest({$pull: {allowedNumbersArray: {$in: [1]}, admin: {$in: [1]}}}, {$pull: {allowedNumbersArray: {$in: [1]}}});
+  //type conversion does not work within query2
+  doTest({$pull: {allowedNumbersArray: {$in: ["1"]}}}, {$pull: {allowedNumbersArray: {$in: ["1"]}}});
+  //more tests
+  doTest({$pull: {allowedNumbersArray: {foo: {$in: [1]}}}}, {$pull: {allowedNumbersArray: {foo: {$in: [1]}}}});
 
   //$POP
 
@@ -3026,10 +3049,11 @@ Tinytest.add("SimpleSchema - RegEx and Messages", function(test) {
 
   // global
   SimpleSchema.messages({
-    'regEx': 'Global Message One',
-    'regEx one': 'Global Message Two',
-    'regEx.0 one': 'Global Message Three',
-    'regEx.1 one': 'Global Message Four'
+    'regEx one': [
+      {msg: 'Global Message Two'},
+      {exp: /^A/, msg: 'Global Message Three'},
+      {exp: /B$/, msg: 'Global Message Four'}
+    ]
   });
 
   var testSchema = new SimpleSchema({
@@ -3060,10 +3084,11 @@ Tinytest.add("SimpleSchema - RegEx and Messages", function(test) {
 
   // schema-specific messages
   testSchema.messages({
-    'regEx': 'Message One',
-    'regEx one': 'Message Two',
-    'regEx.0 one': 'Message Three',
-    'regEx.1 one': 'Message Four'
+    'regEx one': [
+      {msg: 'Message Two'},
+      {exp: /^A/, msg: 'Message Three'},
+      {exp: /B$/, msg: 'Message Four'}
+    ]
   });
 
   c1 = testSchema.newContext();
@@ -3081,6 +3106,94 @@ Tinytest.add("SimpleSchema - RegEx and Messages", function(test) {
 
   c1.validate({one: "ACB"});
   test.length(c1.invalidKeys(), 0);
+});
+
+Tinytest.add("SimpleSchema - Built-In RegEx and Messages", function(test) {
+
+  var testSchema = new SimpleSchema({
+    email: {
+      type: String,
+      regEx: SimpleSchema.RegEx.Email,
+      optional: true
+    },
+    weakEmail: {
+      type: String,
+      regEx: SimpleSchema.RegEx.WeakEmail,
+      optional: true
+    },
+    domain: {
+      type: String,
+      regEx: SimpleSchema.RegEx.Domain,
+      optional: true
+    },
+    weakDomain: {
+      type: String,
+      regEx: SimpleSchema.RegEx.WeakDomain,
+      optional: true
+    },
+    ip: {
+      type: String,
+      regEx: SimpleSchema.RegEx.IP,
+      optional: true
+    },
+    ip4: {
+      type: String,
+      regEx: SimpleSchema.RegEx.IPv4,
+      optional: true
+    },
+    ip6: {
+      type: String,
+      regEx: SimpleSchema.RegEx.IPv6,
+      optional: true
+    },
+    url: {
+      type: String,
+      regEx: SimpleSchema.RegEx.Url,
+      optional: true
+    },
+    id: {
+      type: String,
+      regEx: SimpleSchema.RegEx.Id,
+      optional: true
+    }
+  });
+
+  var c1 = testSchema.newContext();
+  c1.validate({email: "foo"});
+  test.length(c1.invalidKeys(), 1);
+  test.equal(c1.keyErrorMessage("email"), "Email must be a valid e-mail address");
+
+  c1.validate({weakEmail: "foo"});
+  test.length(c1.invalidKeys(), 1);
+  test.equal(c1.keyErrorMessage("weakEmail"), "Weak email must be a valid e-mail address");
+
+  c1.validate({domain: "foo"});
+  test.length(c1.invalidKeys(), 1);
+  test.equal(c1.keyErrorMessage("domain"), "Domain must be a valid domain");
+
+  c1.validate({weakDomain: "///jioh779&%"});
+  test.length(c1.invalidKeys(), 1);
+  test.equal(c1.keyErrorMessage("weakDomain"), "Weak domain must be a valid domain");
+
+  c1.validate({ip: "foo"});
+  test.length(c1.invalidKeys(), 1);
+  test.equal(c1.keyErrorMessage("ip"), "Ip must be a valid IPv4 or IPv6 address");
+
+  c1.validate({ip4: "foo"});
+  test.length(c1.invalidKeys(), 1);
+  test.equal(c1.keyErrorMessage("ip4"), "Ip4 must be a valid IPv4 address");
+
+  c1.validate({ip6: "foo"});
+  test.length(c1.invalidKeys(), 1);
+  test.equal(c1.keyErrorMessage("ip6"), "Ip6 must be a valid IPv6 address");
+
+  c1.validate({url: "foo"});
+  test.length(c1.invalidKeys(), 1);
+  test.equal(c1.keyErrorMessage("url"), "Url must be a valid URL");
+
+  c1.validate({id: "%#$%"});
+  test.length(c1.invalidKeys(), 1);
+  test.equal(c1.keyErrorMessage("id"), "Id must be a valid alphanumeric ID");
 });
 
 Tinytest.add("SimpleSchema - Issue 28", function(test) {
@@ -3268,6 +3381,22 @@ Tinytest.add("SimpleSchema - AutoValues", function(test) {
   test.equal(o.firstWord, 'Hello', 'expected firstWord to be "Hello"');
   test.length(o.updatesHistory, 1);
   test.equal(o.updatesHistory[0].content, 'Hello world!', 'expected updatesHistory.content to be "Hello world!"');
+
+  // $each in pseudo modifier
+  var eachAV = new SimpleSchema({
+    psuedoEach: {
+      type: [String],
+      optional: true,
+      autoValue: function() {
+        if (this.isSet && this.operator === "$set") {
+          return {$push: {$each: this.value}}
+        }
+      }
+    }
+  });
+  var o = {$set: {psuedoEach: ["foo", "bar"]}};
+  eachAV.clean(o);
+  test.equal(o, {$set: {}, $push: {psuedoEach: {$each: ["foo", "bar"]}}});
 
   // autoValues in object in array with modifier
   o = {$push: {avArrayOfObjects: {a: "b"}}};
@@ -3510,6 +3639,23 @@ Tinytest.add("SimpleSchema - DefaultValues", function(test) {
           {isModifier: true}
   );
 
+});
+
+Tinytest.add("SimpleSchema - Optional regEx with check", function(test) {
+  try {
+    // None of these should throw an error
+    check({}, ss);
+    check({url: null, email: null}, ss);
+    check({url: "http://meteor.com", email: null}, ss);
+    check({url: null, email: "foo@meteor.com"}, ss);
+    check({url: null}, ss);
+    check({email: null}, ss);
+    check({url: "http://meteor.com"}, ss);
+    check({email: "foo@meteor.com"}, ss);
+    test.isTrue(true);
+  } catch (err) {
+    test.isTrue(false);
+  }
 });
 
 Tinytest.add("SimpleSchema - Optional Custom", function(test) {
