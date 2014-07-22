@@ -3649,6 +3649,41 @@ Tinytest.add("SimpleSchema - Optional regEx with check", function(test) {
   }
 });
 
+Tinytest.add("SimpleSchema - Optional regEx in subobject", function (test) {
+  var ts = new SimpleSchema({
+    foo: {
+      type: Object,
+      optional: true
+    },
+    'foo.url': {
+      type: String,
+      regEx: SimpleSchema.RegEx.Url,
+      optional: true
+    }
+  });
+
+  var c = ts.namedContext();
+
+  var isValid = c.validate({});
+  test.isTrue(isValid);
+
+  isValid = c.validate({foo: {}});
+  test.isTrue(isValid);
+
+  isValid = c.validate({foo: {url: null}});
+  test.isTrue(isValid);
+
+  isValid = c.validate({$set: {foo: {}}}, {modifier: true});
+  test.isTrue(isValid);
+
+  isValid = c.validate({$set: {'foo.url': null}}, {modifier: true});
+  test.isTrue(isValid);
+
+  isValid = c.validate({$unset: {'foo.url': ""}}, {modifier: true});
+  test.isTrue(isValid);
+
+});
+
 Tinytest.add("SimpleSchema - Optional Custom", function(test) {
   var ctx = optCust.namedContext();
   // Ensure that custom validation runs even when the optional
