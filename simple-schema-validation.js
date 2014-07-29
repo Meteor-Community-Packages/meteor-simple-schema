@@ -57,8 +57,8 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
       if (
         op === "$unset" ||
         op === "$rename" ||
-        ((!op || (op === "$set" && isUpsert) || strictRequiredCheck) && Utility.isBlankNullOrUndefined(val)) ||
-        (op && Utility.isBlankOrNull(val))
+        ((!op || (op === "$set" && isUpsert) || strictRequiredCheck) && Utility.isBlankNullOrUndefined(val, extendedCustomContext.requiredAllowsEmptyStrings)) ||
+        (op && Utility.isBlankOrNull(val, extendedCustomContext.requiredAllowsEmptyStrings))
         ) {
         invalidKeys.push(Utility.errorObject("required", affectedKey, null, def, ss));
         return;

@@ -1,6 +1,6 @@
 Package.describe({
-  name: "simple-schema",
-  summary: "A simple schema validation object with reactivity. Used by collection2 and autoform."
+  name: "siftnet-simple-schema",
+  summary: "A simple schema validation object with reactivity. Used by collection2 and autoform. Allows empty strings to pass the required test."
 });
 
 Npm.depends({
