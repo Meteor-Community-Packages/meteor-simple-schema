@@ -210,6 +210,10 @@ var ss = new SimpleSchema({
     type: Object,
     optional: true,
     blackbox: true
+  },
+  oid: {
+    type: [Meteor.Collection.ObjectID],
+    optional: true
   }
 });
 
@@ -2786,6 +2790,9 @@ Tinytest.add("SimpleSchema - Cleanup With Modifier Operators", function(test) {
   doTest({string: 1}, {string: "1"});
   //remove empty strings
   doTest({string: ""}, {});
+  //mongo objectID
+  var oid = new Meteor.Collection.ObjectID();
+  doTest({oid: [oid]}, {oid: [oid]});
 
   //WITH CUSTOM OBJECT
 
