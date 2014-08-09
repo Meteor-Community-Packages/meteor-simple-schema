@@ -5,6 +5,14 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 0.7.0
+
+BREAKING CHANGES!
+
+* `SimpleSchema.RegEx.WeakEmail` has been removed, and `SimpleSchema.RegEx.Email` is now the regular expression recommended by W3C [here](http://www.w3.org/TR/html5/forms.html#valid-e-mail-address). This is a very permissive expression used by most browsers when `type=email`.
+* Empty strings no longer cause a "required" error. If you don't want empty strings to be considered valid for a required key, be sure to clean your object before validating it.
+* Fixed issue where `$set`ting an object property to an object that does not include all required properties was incorrectly considered to be valid.
+
 ### 0.6.0
 
 BREAKING CHANGES!
