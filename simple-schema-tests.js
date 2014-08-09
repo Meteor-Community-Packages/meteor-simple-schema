@@ -3684,6 +3684,22 @@ Tinytest.add("SimpleSchema - Optional regEx in subobject", function (test) {
 
 });
 
+Tinytest.add("SimpleSchema - Issue #123", function (test) {
+  var userSchema = new SimpleSchema({
+    "profile": {
+      type: Object
+    },
+    "profile.name": {
+      type: String
+    }
+  });
+
+  var c = userSchema.namedContext();
+
+  var isValid = c.validate({$set: {"profile": {}}}, {modifier: true});
+  test.isFalse(isValid);
+});
+
 Tinytest.add("SimpleSchema - Optional Custom", function(test) {
   var ctx = optCust.namedContext();
   // Ensure that custom validation runs even when the optional
