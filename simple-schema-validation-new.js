@@ -1,5 +1,4 @@
 doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate, ss, extendedCustomContext) {
-  var setKeys = [];
 
   // First do some basic checks of the object, and throw errors if necessary
   if (!_.isObject(obj)) {
@@ -17,29 +16,13 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
         throw new Error("When the modifier option is true, all validation object keys must be operators");
       }
 
-      // Get a list of all keys in $set and $setOnInsert combined, for use later
-      setKeys = setKeys.concat(_.keys(obj.$set || {})).concat(_.keys(obj.$setOnInsert || {}));
-    
       // We use a LocalCollection to figure out what the resulting doc
       // would be in a worst case scenario. Then we validate that doc
       // so that we don't have to validate the modifier object directly.
-      console.log("BEFORE", obj);
       obj = convertModifierToDoc(obj, ss.schema(), isUpsert);
-      console.log("AFTER", obj);
     }
   } else if (Utility.looksLikeModifier(obj)) {
     throw new Error("When the validation object contains mongo operators, you must set the modifier option to true");
-  }
-
-  // If this is an upsert, add all the $setOnInsert keys to $set;
-  // since we don't know whether it will be an insert or update, we'll
-  // validate upserts as if they will be an insert.
-  if ("$setOnInsert" in obj) {
-    if (isUpsert) {
-      obj.$set = obj.$set || {};
-      obj.$set = _.extend(obj.$set, obj.$setOnInsert);
-    }
-    delete obj.$setOnInsert;
   }
 
   var invalidKeys = [];
@@ -61,26 +44,10 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
     //   not be null or an empty string, but undefined is OK.
     // * If the operator is $unset or $rename, it's invalid.
     if (!skipRequiredCheck && !def.optional) {
-      if (
-        op === "$unset" ||
-        op === "$rename" ||
-        ((!op || (op === "$set" && isUpsert) || strictRequiredCheck) && Utility.isBlankNullOrUndefined(val)) ||
-        (op && Utility.isBlankOrNull(val))
-        ) {
+      if (Utility.isBlankNullOrUndefined(val)) {
         invalidKeys.push(Utility.errorObject("required", affectedKey, null, def, ss));
         return;
       }
-    }
-
-    // For $rename, make sure that the new name is allowed by the schema
-    if (op === "$rename" && typeof val === "string" && !ss.allowsKey(val)) {
-      invalidKeys.push(Utility.errorObject("keyNotInSchema", val, null, null, ss));
-      return;
-    }
-
-    // No further checking necessary for $unset or $rename
-    if (_.contains(["$unset", "$rename"], op)) {
-      return;
     }
 
     // Value checks are not necessary for null or undefined values
@@ -142,30 +109,10 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
   }
 
   // The recursive function
-  function checkObj(val, affectedKey, operator, adjusted, skipRequiredCheck, strictRequiredCheck) {
-    var affectedKeyGeneric, def, checkAllRequired = false;
-
-    // Adjust for first-level modifier operators
-    if (!operator && affectedKey && affectedKey.substring(0, 1) === "$") {
-      operator = affectedKey;
-      affectedKey = null;
-    }
+  function checkObj(val, affectedKey, skipRequiredCheck, strictRequiredCheck) {
+    var affectedKeyGeneric, def;
 
     if (affectedKey) {
-
-      // Adjust for $push and $addToSet
-      if (!adjusted && (operator === "$push" || operator === "$addToSet")) {
-        // Adjust for $each
-        // We can simply jump forward and pretend like the $each array
-        // is the array for the field. This has the added benefit of
-        // skipping past any $slice, which we also don't care about.
-        if (Utility.isBasicObject(val) && "$each" in val) {
-          val = val.$each;
-        } else {
-          affectedKey = affectedKey + ".0";
-        }
-        checkAllRequired = adjusted = true;
-      }
 
       // When we hit a blackbox key, we don't progress any further
       if (ss.keyIsInBlackBox(affectedKey)) {
@@ -179,7 +126,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
 
       // Perform validation for this key
       if (!keyToValidate || keyToValidate === affectedKey || keyToValidate === affectedKeyGeneric) {
-        validate(val, affectedKey, affectedKeyGeneric, def, operator, skipRequiredCheck, strictRequiredCheck);
+        validate(val, affectedKey, affectedKeyGeneric, def, null, skipRequiredCheck, strictRequiredCheck);
       }
     }
 
@@ -193,7 +140,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
     // Loop through arrays
     if (_.isArray(val)) {
       _.each(val, function(v, i) {
-        checkObj(v, affectedKey + '.' + i, operator, adjusted);
+        checkObj(v, affectedKey + '.' + i);
       });
     }
 
@@ -204,17 +151,14 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
       // Get list of present keys
       presentKeys = _.keys(val);
 
-      if (!isModifier || operator === "$set" || checkAllRequired) {
+      // For required checks, we want to also loop through all keys expected
+      // based on the schema, in case any are missing.
+      requiredKeys = ss.requiredObjectKeys(affectedKeyGeneric);
 
-        // For required checks, we want to also loop through all keys expected
-        // based on the schema, in case any are missing.
-        requiredKeys = ss.requiredObjectKeys(affectedKeyGeneric);
-
-        // We want to be sure to call any present custom functions
-        // even if the value isn't set, so they can be used for custom
-        // required errors, such as basing it on another field's value.
-        customKeys = ss.customObjectKeys(affectedKeyGeneric);
-      }
+      // We want to be sure to call any present custom functions
+      // even if the value isn't set, so they can be used for custom
+      // required errors, such as basing it on another field's value.
+      customKeys = ss.customObjectKeys(affectedKeyGeneric);
 
       // Merge the lists
       var keysToCheck = _.union(presentKeys, requiredKeys || [], customKeys || []);
@@ -226,13 +170,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
       // Check all keys in the merged list
       _.each(keysToCheck, function(key) {
         if (Utility.shouldCheck(key)) {
-          // We can skip the required check for keys that are ancestors
-          // of those in $set or $setOnInsert because they will be created
-          // by MongoDB while setting.
-          skipRequiredCheck = _.some(setKeys, function(sk) {
-            return (sk.slice(0, key.length + 1) === key + ".");
-          });
-          checkObj(val[key], Utility.appendAffectedKey(affectedKey, key), operator, adjusted, skipRequiredCheck, strictRequiredCheck);
+          checkObj(val[key], Utility.appendAffectedKey(affectedKey, key), skipRequiredCheck, strictRequiredCheck);
         }
       });
     }
@@ -269,11 +207,43 @@ function convertModifierToDoc(mod, schema, isUpsert) {
     id = Random.id();
     t.upsert({_id: id}, mod);
   } else {
+    var mDoc = new MongoObject(mod);
     // Create a ficticious existing document
-    var fakeDoc = {};
-    // _.each(schema, function (def, fieldName) {
-    //   fakeDoc[fieldName] = "TODO";
-    // });
+    var fakeDoc = new MongoObject({});
+    _.each(schema, function (def, fieldName) {
+      var setVal;
+      // Prefill doc with empty arrays to avoid the
+      // mongodb issue where it does not understand
+      // that numeric pieces should create arrays.
+      if (def.type === Array && mDoc.affectsGenericKey(fieldName)) {
+        setVal = [];
+      }
+      // Set dummy values for required fields because
+      // we assume any existing data would be valid.
+      else if (!def.optional) {
+        // TODO correct value type based on schema type
+        if (def.type === Boolean)
+          setVal = true;
+        else if (def.type === Number)
+          setVal = def.min || 0;
+        else if (def.type === Date)
+          setVal = def.min || new Date;
+        else if (def.type === Array)
+          setVal = [];
+        else if (def.type === Object)
+          setVal = {};
+        else
+          setVal = "0";
+      }
+
+      if (setVal !== void 0) {
+        var key = fieldName.replace(/\.\$/g, ".0");
+        var pos = MongoObject._keyToPosition(key, false);
+        fakeDoc.setValueForPosition(pos, setVal);
+      }
+    });
+    fakeDoc = fakeDoc.getObject();
+    // Insert fake doc into local scratch collection
     id = t.insert(fakeDoc);
     // Now update it with the modifier
     t.update(id, mod);
