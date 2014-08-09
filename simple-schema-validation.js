@@ -21,20 +21,19 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
     }
 
     // Check for missing required values. The general logic is this:
-    // * If there's no operator, or if the operator is $set and it's an upsert,
-    //   val must not be undefined, null, or an empty string.
-    // * If there is an operator other than $unset or $rename, val must
-    //   not be null or an empty string, but undefined is OK.
     // * If the operator is $unset or $rename, it's invalid.
+    // * If the value is null, it's invalid.
+    // * If the value is undefined and one of the following are true, it's invalid:
+    //     * We're validating a key of a sub-object.
+    //     * We're validating a key of an object that is an array item.
+    //     * We're validating a document (as opposed to a modifier).
+    //     * We're validating a key under the $set operator in a modifier, and it's an upsert.
     if (!skipRequiredCheck && !def.optional) {
       if (
-        (op === "$unset" && typeof val !== "undefined") ||
-        (op === "$rename" && typeof val !== "undefined") ||
-        (isInArrayItemObject && Utility.isBlankNullOrUndefined(val)) ||
-        (isInSubObject && Utility.isBlankNullOrUndefined(val)) ||
-        (!op && Utility.isBlankNullOrUndefined(val)) ||
-        (op === "$set" && isUpsert && Utility.isBlankNullOrUndefined(val)) ||
-        (op && Utility.isBlankOrNull(val))
+        val === null ||
+        op === "$unset" ||
+        op === "$rename" ||
+        (val === void 0 && (isInArrayItemObject || isInSubObject || !op || op === "$set"))
         ) {
         invalidKeys.push(Utility.errorObject("required", affectedKey, null, def, ss));
         return;

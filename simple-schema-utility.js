@@ -12,18 +12,6 @@ Utility = {
 		}
 		return !_.contains(["$pull", "$pullAll", "$pop", "$slice"], key);
 	},
-	isBlank: function isBlank(str) {
-		if (typeof str !== "string") {
-			return false;
-		}
-		return (/^\s*$/).test(str);
-	},
-	isBlankNullOrUndefined: function isBlankNullOrUndefined(str) {
-		return (str === void 0 || str === null || Utility.isBlank(str));
-	},
-	isBlankOrNull: function isBlankOrNull(str) {
-		return (str === null || Utility.isBlank(str));
-	},
 	errorObject: function errorObject(errorType, keyName, keyValue, def, ss) {
 	  return {name: keyName, type: errorType, value: keyValue};
 	},

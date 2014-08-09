@@ -473,10 +473,10 @@ Tinytest.add("SimpleSchema - Required Checks - Insert - Valid", function(test) {
 });
 
 Tinytest.add("SimpleSchema - Required Checks - Insert - Invalid", function(test) {
-  var sc = validate(ssr, {});
+  var sc = validateNoClean(ssr, {});
   test.length(sc.invalidKeys(), 8);
 
-  sc = validate(ssr, {
+  sc = validateNoClean(ssr, {
     requiredString: null,
     requiredBoolean: null,
     requiredNumber: null,
@@ -490,7 +490,7 @@ Tinytest.add("SimpleSchema - Required Checks - Insert - Invalid", function(test)
   });
   test.length(sc.invalidKeys(), 9);
 
-  sc = validate(ssr, {
+  sc = validateNoClean(ssr, {
     requiredString: null,
     requiredBoolean: null,
     requiredNumber: null,
@@ -502,7 +502,7 @@ Tinytest.add("SimpleSchema - Required Checks - Insert - Invalid", function(test)
   });
   test.length(sc.invalidKeys(), 9);
 
-  sc = validate(ssr, {
+  sc = validateNoClean(ssr, {
     requiredString: null,
     requiredBoolean: null,
     requiredNumber: null,
@@ -514,7 +514,7 @@ Tinytest.add("SimpleSchema - Required Checks - Insert - Invalid", function(test)
   });
   test.length(sc.invalidKeys(), 8);
 
-  sc = validate(ssr, {
+  sc = validateNoClean(ssr, {
     requiredString: void 0,
     requiredBoolean: void 0,
     requiredNumber: void 0,
@@ -528,7 +528,7 @@ Tinytest.add("SimpleSchema - Required Checks - Insert - Invalid", function(test)
   });
   test.length(sc.invalidKeys(), 9);
 
-  sc = validate(ssr, {
+  sc = validateNoClean(ssr, {
     requiredString: "",
     requiredBoolean: null,
     requiredNumber: null,
@@ -540,9 +540,9 @@ Tinytest.add("SimpleSchema - Required Checks - Insert - Invalid", function(test)
       requiredString: ""
     }
   });
-  test.length(sc.invalidKeys(), 9);
+  test.length(sc.invalidKeys(), 7);
 
-  sc = validate(ssr, {
+  sc = validateNoClean(ssr, {
     requiredString: "   ",
     requiredBoolean: null,
     requiredNumber: null,
@@ -554,10 +554,10 @@ Tinytest.add("SimpleSchema - Required Checks - Insert - Invalid", function(test)
       requiredString: "   "
     }
   });
-  test.length(sc.invalidKeys(), 9);
+  test.length(sc.invalidKeys(), 7);
 
   //array of objects
-  sc = validate(friends, {
+  sc = validateNoClean(friends, {
     friends: [{name: 'Bob'}],
     enemies: [{}]
   });
@@ -672,11 +672,11 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Valid - Combined", funct
 });
 
 Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - $set", function(test) {
-  var sc = validate(ssr, {$set: {}}, true, true, true);
+  var sc = validateNoClean(ssr, {$set: {}}, true, true, true);
   test.length(sc.invalidKeys(), 8);
 
   // should be no different with some missing
-  sc = validate(ssr, {$set: {
+  sc = validateNoClean(ssr, {$set: {
       requiredEmail: null,
       requiredUrl: null,
       requiredObject: null,
@@ -684,7 +684,7 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - $set", functio
     }}, true, true, true);
   test.length(sc.invalidKeys(), 9);
 
-  sc = validate(ssr, {$set: {
+  sc = validateNoClean(ssr, {$set: {
       requiredString: null,
       requiredBoolean: null,
       requiredNumber: null,
@@ -696,7 +696,7 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - $set", functio
     }}, true, true, true);
   test.length(sc.invalidKeys(), 9);
 
-  sc = validate(ssr, {$set: {
+  sc = validateNoClean(ssr, {$set: {
       requiredString: void 0,
       requiredBoolean: void 0,
       requiredNumber: void 0,
@@ -708,7 +708,7 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - $set", functio
     }}, true, true, true);
   test.length(sc.invalidKeys(), 9);
 
-  sc = validate(ssr, {$set: {
+  sc = validateNoClean(ssr, {$set: {
       requiredString: "",
       requiredBoolean: null,
       requiredNumber: null,
@@ -718,9 +718,9 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - $set", functio
       requiredObject: null,
       'optionalObject.requiredString': ""
     }}, true, true, true);
-  test.length(sc.invalidKeys(), 9);
+  test.length(sc.invalidKeys(), 7);
 
-  sc = validate(ssr, {$set: {
+  sc = validateNoClean(ssr, {$set: {
       requiredString: "   ",
       requiredBoolean: null,
       requiredNumber: null,
@@ -730,14 +730,14 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - $set", functio
       requiredObject: null,
       'optionalObject.requiredString': "   "
     }}, true, true, true);
-  test.length(sc.invalidKeys(), 9);
+  test.length(sc.invalidKeys(), 7);
 });
 
 Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - $setOnInsert", function(test) {
-  var sc = validate(ssr, {$setOnInsert: {}}, true, true, true);
+  var sc = validateNoClean(ssr, {$setOnInsert: {}}, true, true, true);
   test.length(sc.invalidKeys(), 8);
 
-  sc = validate(ssr, {$setOnInsert: {
+  sc = validateNoClean(ssr, {$setOnInsert: {
       requiredString: null,
       requiredBoolean: null,
       requiredNumber: null,
@@ -749,7 +749,7 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - $setOnInsert",
     }}, true, true, true);
   test.length(sc.invalidKeys(), 9);
 
-  sc = validate(ssr, {$setOnInsert: {
+  sc = validateNoClean(ssr, {$setOnInsert: {
       requiredString: void 0,
       requiredBoolean: void 0,
       requiredNumber: void 0,
@@ -761,7 +761,7 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - $setOnInsert",
     }}, true, true, true);
   test.length(sc.invalidKeys(), 9);
 
-  sc = validate(ssr, {$setOnInsert: {
+  sc = validateNoClean(ssr, {$setOnInsert: {
       requiredString: "",
       requiredBoolean: null,
       requiredNumber: null,
@@ -771,9 +771,9 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - $setOnInsert",
       requiredObject: null,
       'optionalObject.requiredString': ""
     }}, true, true, true);
-  test.length(sc.invalidKeys(), 9);
+  test.length(sc.invalidKeys(), 7);
 
-  sc = validate(ssr, {$setOnInsert: {
+  sc = validateNoClean(ssr, {$setOnInsert: {
       requiredString: "   ",
       requiredBoolean: null,
       requiredNumber: null,
@@ -783,10 +783,10 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - $setOnInsert",
       requiredObject: null,
       'optionalObject.requiredString': "   "
     }}, true, true, true);
-  test.length(sc.invalidKeys(), 9);
+  test.length(sc.invalidKeys(), 7);
 
   //array of objects
-  sc = validate(friends, {$setOnInsert: {
+  sc = validateNoClean(friends, {$setOnInsert: {
       friends: [{name: 'Bob'}],
       enemies: []
     }}, true, true, true);
@@ -796,10 +796,10 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - $setOnInsert",
 Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - Combined", function(test) {
   //some in $set and some in $setOnInsert, make sure they're merged for validation purposes
 
-  var sc = validate(ssr, {$setOnInsert: {}, $set: {}}, true, true, true);
+  var sc = validateNoClean(ssr, {$setOnInsert: {}, $set: {}}, true, true, true);
   test.length(sc.invalidKeys(), 8);
 
-  sc = validate(ssr, {
+  sc = validateNoClean(ssr, {
     $set: {
       requiredString: null,
       requiredBoolean: null,
@@ -815,7 +815,7 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - Combined", fun
   }, true, true, true);
   test.length(sc.invalidKeys(), 9);
 
-  sc = validate(ssr, {
+  sc = validateNoClean(ssr, {
     $set: {
       requiredString: void 0,
       requiredBoolean: void 0,
@@ -831,7 +831,7 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - Combined", fun
   }, true, true, true);
   test.length(sc.invalidKeys(), 9);
 
-  sc = validate(ssr, {
+  sc = validateNoClean(ssr, {
     $set: {
       requiredString: "",
       requiredBoolean: null,
@@ -845,9 +845,22 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - Combined", fun
       'optionalObject.requiredString': ""
     }
   }, true, true, true);
-  test.length(sc.invalidKeys(), 9);
+  var requiredErrorCount = _.reduce(sc.invalidKeys(), function (memo, errorObj) {
+    if (errorObj.type === "required") {
+      memo++;
+    }
+    return memo;
+  }, 0);
+  test.equal(requiredErrorCount, 5);
+  var regExErrorCount = _.reduce(sc.invalidKeys(), function (memo, errorObj) {
+    if (errorObj.type === "regEx") {
+      memo++;
+    }
+    return memo;
+  }, 0);
+  test.equal(regExErrorCount, 2);
 
-  sc = validate(ssr, {
+  sc = validateNoClean(ssr, {
     $set: {
       requiredString: "   ",
       requiredBoolean: null,
@@ -861,26 +874,27 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - Combined", fun
       'optionalObject.requiredString': "   "
     }
   }, true, true, true);
-  test.length(sc.invalidKeys(), 9);
+  var requiredErrorCount = _.reduce(sc.invalidKeys(), function (memo, errorObj) {
+    if (errorObj.type === "required") {
+      memo++;
+    }
+    return memo;
+  }, 0);
+  test.equal(requiredErrorCount, 5);
+  var regExErrorCount = _.reduce(sc.invalidKeys(), function (memo, errorObj) {
+    if (errorObj.type === "regEx") {
+      memo++;
+    }
+    return memo;
+  }, 0);
+  test.equal(regExErrorCount, 2);
 });
 
 Tinytest.add("SimpleSchema - Required Checks - Update - Valid - $set", function(test) {
-  var sc = validate(ssr, {$set: {}}, true);
+  var sc = validateNoClean(ssr, {$set: {}}, true);
   test.equal(sc.invalidKeys(), []); //would not cause DB changes, so should not be an error
 
-  sc = validate(ssr, {$set: {
-      requiredString: void 0,
-      requiredBoolean: void 0,
-      requiredNumber: void 0,
-      requiredDate: void 0,
-      requiredEmail: void 0,
-      requiredUrl: void 0,
-      requiredObject: void 0,
-      'optionalObject.requiredString': void 0
-    }}, true);
-  test.equal(sc.invalidKeys(), []); //would not cause DB changes, so should not be an error
-
-  sc = validate(ssr, {$set: {
+  sc = validateNoClean(ssr, {$set: {
       requiredString: "test",
       requiredBoolean: true,
       requiredNumber: 1,
@@ -892,7 +906,7 @@ Tinytest.add("SimpleSchema - Required Checks - Update - Valid - $set", function(
     }}, true);
   test.equal(sc.invalidKeys(), []);
 
-  sc = validate(ssr, {$set: {
+  sc = validateNoClean(ssr, {$set: {
       requiredString: "test",
       requiredBoolean: true,
       requiredNumber: 1,
@@ -907,12 +921,12 @@ Tinytest.add("SimpleSchema - Required Checks - Update - Valid - $set", function(
   test.equal(sc.invalidKeys(), []);
 
   //array of objects
-  sc = validate(friends, {$set: {
+  sc = validateNoClean(friends, {$set: {
       'friends.1.name': "Bob"
     }}, true);
   test.equal(sc.invalidKeys(), []);
 
-  sc = validate(friends, {$set: {
+  sc = validateNoClean(friends, {$set: {
       friends: [{name: 'Bob', type: 'good'}]
     }}, true);
   test.equal(sc.invalidKeys(), []);
@@ -923,6 +937,18 @@ Tinytest.add("SimpleSchema - Required Checks - Update - Invalid - $set", functio
     var sc = validateNoClean(s, obj, true);
     test.length(sc.invalidKeys(), errors);
   }
+
+  // MongoDB will set the props to `undefined`
+  t(ssr, {$set: {
+    requiredString: void 0,
+    requiredBoolean: void 0,
+    requiredNumber: void 0,
+    requiredDate: void 0,
+    requiredEmail: void 0,
+    requiredUrl: void 0,
+    requiredObject: void 0,
+    'optionalObject.requiredString': void 0
+  }}, 9);
 
   t(ssr, {$set: {
     requiredString: null,
@@ -944,7 +970,7 @@ Tinytest.add("SimpleSchema - Required Checks - Update - Invalid - $set", functio
     requiredUrl: null,
     requiredObject: null,
     'optionalObject.requiredString': ""
-  }}, 9);
+  }}, 7);
 
   t(ssr, {$set: {
     requiredString: "   ",
@@ -955,7 +981,7 @@ Tinytest.add("SimpleSchema - Required Checks - Update - Invalid - $set", functio
     requiredUrl: null,
     requiredObject: null,
     'optionalObject.requiredString': "   "
-  }}, 9);
+  }}, 7);
 
   //array of objects
 
@@ -971,33 +997,33 @@ Tinytest.add("SimpleSchema - Required Checks - Update - Invalid - $set", functio
 });
 
 Tinytest.add("SimpleSchema - Required Checks - Update - Valid - $unset", function(test) {
-  var sc = validate(ssr, {$unset: {}}, true);
+  var sc = validateNoClean(ssr, {$unset: {}}, true);
   test.equal(sc.invalidKeys(), []); //would not cause DB changes, so should not be an error
 
   //make sure an optional can be unset when others are required
   //retest with various values to be sure the value is ignored
-  sc = validate(ssr, {$unset: {
+  sc = validateNoClean(ssr, {$unset: {
       anOptionalOne: 1
     }}, true);
   test.equal(sc.invalidKeys(), []);
 
-  sc = validate(ssr, {$unset: {
+  sc = validateNoClean(ssr, {$unset: {
       anOptionalOne: null
     }}, true);
   test.equal(sc.invalidKeys(), []);
 
-  sc = validate(ssr, {$unset: {
+  sc = validateNoClean(ssr, {$unset: {
       anOptionalOne: ""
     }}, true);
   test.equal(sc.invalidKeys(), []);
 
   //array of objects
-  sc = validate(friends, {$unset: {
+  sc = validateNoClean(friends, {$unset: {
       'friends.1.a.b': ""
     }}, true);
   test.equal(sc.invalidKeys(), []);
 
-  sc = validate(friends, {$unset: {
+  sc = validateNoClean(friends, {$unset: {
       'friends.1.a.b': 1,
       'friends.2.a.b': 1,
       'friends.3.a.b': 1
@@ -1007,7 +1033,7 @@ Tinytest.add("SimpleSchema - Required Checks - Update - Valid - $unset", functio
 });
 
 Tinytest.add("SimpleSchema - Required Checks - Update - Invalid - $unset", function(test) {
-  var sc = validate(ssr, {$unset: {
+  var sc = validateNoClean(ssr, {$unset: {
       requiredString: 1,
       requiredBoolean: 1,
       requiredNumber: 1,
@@ -1018,12 +1044,12 @@ Tinytest.add("SimpleSchema - Required Checks - Update - Invalid - $unset", funct
   test.length(sc.invalidKeys(), 6);
 
   //array of objects
-  sc = validate(friends, {$unset: {
+  sc = validateNoClean(friends, {$unset: {
       'friends.1.name': 1
     }}, true);
   test.length(sc.invalidKeys(), 1);
 
-  sc = validate(friends, {$unset: {
+  sc = validateNoClean(friends, {$unset: {
       'friends.1.name': 1,
       'friends.2.name': 1,
       'friends.3.name': 1
