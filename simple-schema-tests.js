@@ -3795,6 +3795,29 @@ Tinytest.add("SimpleSchema - Required Custom", function (test) {
   test.equal(ctx.invalidKeys().length, 0, 'expected no validation errors');
 });
 
+Tinytest.add("SimpleSchema - Clean and Validate Object with Prototype", function (test) {
+  var opS = new SimpleSchema({
+    foo: {
+      type: Number
+    }
+  });
+
+  var CustObj = function (o) {
+    _.extend(this, o);
+  };
+  CustObj.prototype.bar = function () {
+    return 20;
+  };
+
+  var testObj = new CustObj({foo: 1, baz: "Remove Me"});
+  opS.clean(testObj);
+  test.instanceOf(testObj, CustObj);
+  var c = opS.namedContext();
+  var valid = c.validate(testObj);
+  test.isTrue(valid);
+  test.length(c.invalidKeys(), 0);
+});
+
 Tinytest.add("SimpleSchema - AllowsKey", function(test) {
   function run(key, allowed) {
     test.equal(ss.allowsKey(key), allowed, 'Incorrect allowsKey result for ' + key);
