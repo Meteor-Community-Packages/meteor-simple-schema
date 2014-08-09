@@ -675,6 +675,15 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - $set", functio
   var sc = validate(ssr, {$set: {}}, true, true, true);
   test.length(sc.invalidKeys(), 8);
 
+  // should be no different with some missing
+  sc = validate(ssr, {$set: {
+      requiredEmail: null,
+      requiredUrl: null,
+      requiredObject: null,
+      'optionalObject.requiredString': null
+    }}, true, true, true);
+  test.length(sc.invalidKeys(), 9);
+
   sc = validate(ssr, {$set: {
       requiredString: null,
       requiredBoolean: null,
@@ -878,7 +887,21 @@ Tinytest.add("SimpleSchema - Required Checks - Update - Valid - $set", function(
       requiredDate: (new Date()),
       requiredEmail: "test123@sub.example.edu",
       requiredUrl: "http://google.com",
-      requiredObject: {},
+      'requiredObject.requiredNumber': 1,
+      'optionalObject.requiredString': "test"
+    }}, true);
+  test.equal(sc.invalidKeys(), []);
+
+  sc = validate(ssr, {$set: {
+      requiredString: "test",
+      requiredBoolean: true,
+      requiredNumber: 1,
+      requiredDate: (new Date()),
+      requiredEmail: "test123@sub.example.edu",
+      requiredUrl: "http://google.com",
+      requiredObject: {
+        requiredNumber: 1
+      },
       'optionalObject.requiredString': "test"
     }}, true);
   test.equal(sc.invalidKeys(), []);
@@ -910,7 +933,7 @@ Tinytest.add("SimpleSchema - Required Checks - Update - Invalid - $set", functio
     requiredUrl: null,
     requiredObject: null,
     'optionalObject.requiredString': null
-  }}, 8);
+  }}, 9);
 
   t(ssr, {$set: {
     requiredString: "",
@@ -921,7 +944,7 @@ Tinytest.add("SimpleSchema - Required Checks - Update - Invalid - $set", functio
     requiredUrl: null,
     requiredObject: null,
     'optionalObject.requiredString': ""
-  }}, 8);
+  }}, 9);
 
   t(ssr, {$set: {
     requiredString: "   ",
@@ -932,7 +955,7 @@ Tinytest.add("SimpleSchema - Required Checks - Update - Invalid - $set", functio
     requiredUrl: null,
     requiredObject: null,
     'optionalObject.requiredString': "   "
-  }}, 8);
+  }}, 9);
 
   //array of objects
 
@@ -3692,6 +3715,7 @@ Tinytest.add("SimpleSchema - Optional regEx in subobject", function (test) {
 });
 
 Tinytest.add("SimpleSchema - Issue #123", function (test) {
+  // With $set
   var userSchema = new SimpleSchema({
     "profile": {
       type: Object
@@ -3704,6 +3728,21 @@ Tinytest.add("SimpleSchema - Issue #123", function (test) {
   var c = userSchema.namedContext();
 
   var isValid = c.validate({$set: {"profile": {}}}, {modifier: true});
+  test.isFalse(isValid);
+
+  // With $push
+  var userSchema = new SimpleSchema({
+    "profile": {
+      type: [Object]
+    },
+    "profile.$.name": {
+      type: String
+    }
+  });
+
+  var c = userSchema.namedContext();
+
+  var isValid = c.validate({$push: {"profile": {}}}, {modifier: true});
   test.isFalse(isValid);
 });
 

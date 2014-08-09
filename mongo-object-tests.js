@@ -56,7 +56,7 @@ Tinytest.add("MongoObject - Flat", function(test) {
     test.equal(jfo, jexp, "Object " + jo + " was flattened to " + jfo + " but should have been " + jexp);
   }
 
-  // Round Trip Tests
+  // Flatten Tests
   var testDate = new Date;
   testFlat({}, {});
   testFlat({a: 1}, {a: 1});
