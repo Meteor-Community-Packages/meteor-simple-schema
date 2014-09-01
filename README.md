@@ -21,9 +21,9 @@ A simple, reactive schema validation smart package for Meteor. It's used by the 
   - [decimal](#decimal)
   - [minCount/maxCount](#mincountmaxcount)
   - [allowedValues](#allowedvalues)
-  - [valueIsAllowed](#valueisallowed)
   - [regEx](#regex)
   - [blackbox](#blackbox)
+  - [trim](#trim)
   - [custom](#custom)
   - [defaultValue](#defaultvalue)
   - [autoValue](#autovalue)
@@ -374,6 +374,11 @@ the server. Alternatively, if you don't care about losing the custom type,
 you can explicitly set `blackbox: true` for a custom object type instead of
 using a transformation.
 
+### trim
+
+Set to `false` if the string value for this key should not be trimmed (i.e., leading and trailing spaces should be kept).
+Otherwise, all strings are trimmed when you call `mySimpleSchema.clean()`.
+
 ### custom
 
 Refer to the "Custom Validation" section.
@@ -444,6 +449,7 @@ the following optional options as its second argument:
 * `filter`: Filter properties not found in the schema? True by default.
 * `autoConvert`: Type convert properties into the correct type where possible? True by default.
 * `removeEmptyStrings`: Remove keys in normal object or $set where the value is an empty string? True by default.
+* `trimStrings`: Remove all leading and trailing spaces from string values. True by default.
 * `getAutoValues`: Run `autoValue` functions and inject automatic and `defaultValue` values? True by default.
 * `isModifier`: Is the first argument a modifier object? False by default.
 * `extendAutoValueContext`: This object will be added to the `this` context of autoValue functions.

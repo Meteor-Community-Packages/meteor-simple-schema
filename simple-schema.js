@@ -19,7 +19,8 @@ var schemaDefinition = {
   custom: Match.Optional(Function),
   blackbox: Match.Optional(Boolean),
   autoValue: Match.Optional(Function),
-  defaultValue: Match.Optional(Match.Any)
+  defaultValue: Match.Optional(Match.Any),
+  trim: Match.Optional(Boolean)
 };
 
 //exported
@@ -300,10 +301,10 @@ SimpleSchema.prototype.clean = function(doc, options) {
           }
           return; // no reason to do more
         }
-        if (def && val !== void 0) {
+        if (val !== void 0) {
           // Autoconvert values if requested and if possible
           var wasAutoConverted = false;
-          if (options.autoConvert) {
+          if (options.autoConvert && def) {
             var newVal = typeconvert(val, def.type);
             if (newVal !== void 0 && newVal !== val) {
               // remove empty strings
@@ -339,7 +340,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
               }
             }
             // trim strings
-            else if (options.trimStrings && typeof val === "string") {
+            else if (options.trimStrings && typeof val === "string" && (!def || (def && def.trim !== false))) {
               this.updateValue(S(val).trim().s);
             }
           }
