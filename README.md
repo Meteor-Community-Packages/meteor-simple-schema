@@ -173,10 +173,10 @@ For example:
 ```js
 MySchema = new SimpleSchema({
     "mailingAddress.street": {
-        type: String,
+        type: String
     },
     "mailingAddress.city": {
-        type: String,
+        type: String
     }
 });
 ```
@@ -186,10 +186,10 @@ To indicate the presence of an array, use a `$`:
 ```js
 MySchema = new SimpleSchema({
     "addresses.$.street": {
-        type: String,
+        type: String
     },
     "addresses.$.city": {
-        type: String,
+        type: String
     }
 });
 ```
@@ -212,10 +212,10 @@ MySchema = new SimpleSchema({
         maxCount: 4
     },
     "addresses.$.street": {
-        type: String,
+        type: String
     },
     "addresses.$.city": {
-        type: String,
+        type: String
     }
 });
 ```
