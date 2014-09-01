@@ -806,9 +806,12 @@ var adjustArrayFields = function(schema) {
       if (typeof def.regEx !== "undefined") {
         schema[itemKey].regEx = def.regEx;
       }
+      if (typeof def.blackbox !== "undefined") {
+        schema[itemKey].blackbox = def.blackbox;
+      }
       // Remove copied options and adjust type
       def.type = Array;
-      _.each(['min', 'max', 'allowedValues', 'decimal', 'regEx'], function(k) {
+      _.each(['min', 'max', 'allowedValues', 'decimal', 'regEx', 'blackbox'], function(k) {
         Utility.deleteIfPresent(def, k);
       });
     }
