@@ -5,6 +5,16 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 1.0.0
+
+* Internal support for specifying many of the schema options as functions. Still largely untested, so not yet documented.
+* Removed some API functions from the `SimpleSchema` prototype: `requiredObjectKeys`, `requiredSchemaKeys`, `firstLevelSchemaKeys`, `customObjectKeys`. If you were using them, you should be able to use the new `objectKeys` function instead.
+* When you filter an object by calling `mySimpleSchema.clean` with the `filter: true` option, it no longer filters out `$unset` keys that aren't defined in the schema. This is helpful in a case where you've changed the schema, removing a key, and now you want to run some conversion code to unset that key in documents where it already exists.
+* Calling `mySimpleSchema.clean` now trims string values by default. To skip this, use the `trimStrings: false` option when you call `clean`. You can also set `trim: false` for any key in the schema definition to indicate that string values for that key must never be trimmed. This is useful for a property that stores a password or markdown or anything else where leading and trailing spaces may matter.
+* Added `getErrorObject` function to `SimpleSchemaValidationContext` prototype. Mainly intended to be used by collection2 and autoform packages, but can be used anywhere you want to have an `Error` object that reflects the invalid schema context.
+* Made `blackbox: true` work (and apply to all array item objects) when `type: [Object]`.
+* Bump to 1.0.0 version to begin following semantic versioning standards more precisely.
+
 ### 0.7.0
 
 BREAKING CHANGES!
