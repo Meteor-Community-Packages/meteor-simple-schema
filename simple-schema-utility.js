@@ -31,9 +31,9 @@ Utility = {
     return val !== void 0 && val !== null;
   },
   // Extracts operator piece, if present, from position string
-    extractOp: function extractOp(position) {
-      var firstPositionPiece = position.slice(0, position.indexOf("["));
-      return (firstPositionPiece.substring(0, 1) === "$") ? firstPositionPiece : null;
+  extractOp: function extractOp(position) {
+    var firstPositionPiece = position.slice(0, position.indexOf("["));
+    return (firstPositionPiece.substring(0, 1) === "$") ? firstPositionPiece : null;
   },
   deleteIfPresent: function deleteIfPresent(obj, key) {
     if (key in obj) {

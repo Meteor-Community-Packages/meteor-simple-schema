@@ -152,22 +152,14 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
 
     // Loop through object keys
     else if (Utility.isBasicObject(val) && (!def || !def.blackbox)) {
-      var presentKeys, requiredKeys, customKeys;
 
       // Get list of present keys
-      presentKeys = _.keys(val);
+      var presentKeys = _.keys(val);
 
-      // For required checks, we want to also loop through all keys expected
-      // based on the schema, in case any are missing.
-      requiredKeys = ss.requiredObjectKeys(affectedKeyGeneric);
-
-      // We want to be sure to call any present custom functions
-      // even if the value isn't set, so they can be used for custom
-      // required errors, such as basing it on another field's value.
-      customKeys = ss.customObjectKeys(affectedKeyGeneric);
-
-      // Merge the lists
-      var keysToCheck = _.union(presentKeys, requiredKeys || [], customKeys || []);
+      // Check all present keys plus all keys defined by the schema.
+      // This allows us to detect extra keys not allowed by the schema plus
+      // any missing required keys, and to run any custom functions for other keys.
+      var keysToCheck = _.union(presentKeys, ss.objectKeys(affectedKeyGeneric));
 
       // If this object is within an array, make sure we check for
       // required as if it's not a modifier
@@ -209,11 +201,10 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
       }
       if (Utility.shouldCheck(op)) {
         // For an upsert, missing props would not be set if an insert is performed,
-        // so we add null keys to the modifier to force the "required" checks to fail
+        // so we add null keys to the modifier to force any "required" checks to fail
         if (isUpsert && op === "$set") {
           var blankObj = {};
-          var keys = _.union(ss.requiredObjectKeys(), ss.customObjectKeys());
-          _.each(keys, function (extraKey) {
+          _.each(ss.objectKeys(), function (extraKey) {
             blankObj[extraKey] = null;
           });
           opObj = _.extend({}, blankObj, opObj);

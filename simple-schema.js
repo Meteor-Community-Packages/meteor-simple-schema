@@ -26,8 +26,6 @@ var schemaDefinition = {
 SimpleSchema = function(schemas, options) {
   var self = this;
   var firstLevelSchemaKeys = [];
-  var requiredSchemaKeys = [], firstLevelRequiredSchemaKeys = [];
-  var customSchemaKeys = [], firstLevelCustomSchemaKeys = [];
   var fieldNameRoot;
   options = options || {};
   schemas = schemas || {};
@@ -101,36 +99,13 @@ SimpleSchema = function(schemas, options) {
 
     if (!_.contains(firstLevelSchemaKeys, fieldNameRoot)) {
       firstLevelSchemaKeys.push(fieldNameRoot);
-      if (!definition.optional) {
-        firstLevelRequiredSchemaKeys.push(fieldNameRoot);
-      }
-
-      if (definition.custom) {
-        firstLevelCustomSchemaKeys.push(fieldNameRoot);
-      }
     }
-
-    if (!definition.optional) {
-      requiredSchemaKeys.push(fieldName);
-    }
-
-    if (definition.custom) {
-      customSchemaKeys.push(fieldName);
-    }
-
   });
   
 
   // Cache these lists
   self._firstLevelSchemaKeys = firstLevelSchemaKeys;
-  //required
-  self._requiredSchemaKeys = requiredSchemaKeys;
-  self._firstLevelRequiredSchemaKeys = firstLevelRequiredSchemaKeys;
-  self._requiredObjectKeys = getObjectKeys(self._schema, requiredSchemaKeys);
-  //custom
-  self._customSchemaKeys = customSchemaKeys;
-  self._firstLevelCustomSchemaKeys = firstLevelCustomSchemaKeys;
-  self._customObjectKeys = getObjectKeys(self._schema, customSchemaKeys);
+  self._objectKeys = getObjectKeys(self._schema, self._schemaKeys);
 
   // We will store named validation contexts here
   self._validationContexts = {};
@@ -501,7 +476,9 @@ SimpleSchema.prototype.messages = function(messages) {
 // def and value arguments to fill in placeholders in the error messages.
 SimpleSchema.prototype.messageForError = function(type, key, def, value) {
   var self = this;
-  def = def || self.schema(key) || {};
+
+  // We proceed even if we can't get a definition because it might be a keyNotInSchema error
+  def = def || self.getDefinition(key, ['regEx', 'label', 'minCount', 'maxCount', 'min', 'max', 'type']) || {};
 
   // Adjust for complex types, currently only regEx,
   // where we might have regEx.1 meaning the second
@@ -583,24 +560,31 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
   }
 
   // Now replace all placeholders in the message with the correct values
-  message = message.replace("[label]", self.label(key));
+
+  // [label]
+  self._depsLabels[key] && self._depsLabels[key].depend(); // React to label changes
+  message = message.replace("[label]", def.label);
+
+  // [minCount]
   if (typeof def.minCount !== "undefined") {
     message = message.replace("[minCount]", def.minCount);
   }
+
+  // [maxCount]
   if (typeof def.maxCount !== "undefined") {
     message = message.replace("[maxCount]", def.maxCount);
   }
+
+  // [value]
   if (value !== void 0 && value !== null) {
     message = message.replace("[value]", value.toString());
+  } else {
+    message = message.replace("[value]", 'null');
   }
+
+  // [min] and [max]
   var min = def.min;
   var max = def.max;
-  if (typeof min === "function") {
-    min = min();
-  }
-  if (typeof max === "function") {
-    max = max();
-  }
   if (def.type === Date || def.type === [Date]) {
     if (typeof min !== "undefined") {
       message = message.replace("[min]", Utility.dateToDateString(min));
@@ -616,6 +600,8 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
       message = message.replace("[max]", max);
     }
   }
+
+  // [type]
   if (def.type instanceof Function) {
     message = message.replace("[type]", def.type.name);
   }
@@ -663,32 +649,14 @@ SimpleSchema.prototype.newContext = function() {
   return new SimpleSchemaValidationContext(this);
 };
 
-SimpleSchema.prototype.requiredObjectKeys = function(keyPrefix) {
+// Returns all the child keys for the object identified by the generic prefix,
+// or all the top level keys if no prefix is supplied.
+SimpleSchema.prototype.objectKeys = function(keyPrefix) {
   var self = this;
   if (!keyPrefix) {
-    return self._firstLevelRequiredSchemaKeys;
+    return self._firstLevelSchemaKeys;
   }
-  return self._requiredObjectKeys[keyPrefix + "."] || [];
-};
-
-SimpleSchema.prototype.requiredSchemaKeys = function() {
-  return this._requiredSchemaKeys;
-};
-
-SimpleSchema.prototype.firstLevelSchemaKeys = function() {
-  return this._firstLevelSchemaKeys;
-};
-
-SimpleSchema.prototype.customObjectKeys = function(keyPrefix) {
-  var self = this;
-  if (!keyPrefix) {
-    return self._firstLevelCustomSchemaKeys;
-  }
-  return self._customObjectKeys[keyPrefix + "."] || [];
-};
-
-SimpleSchema.prototype.customSchemaKeys = function() {
-  return this._customSchemaKeys;
+  return self._objectKeys[keyPrefix + "."] || [];
 };
 
 /*

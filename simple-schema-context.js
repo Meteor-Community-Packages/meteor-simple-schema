@@ -149,37 +149,37 @@ SimpleSchemaValidationContext.prototype._markKeysChanged = function(keys) {
   self._depsAny.changed();
 };
 
-SimpleSchemaValidationContext.prototype._keyIsInvalid = function(name, genericName) {
+SimpleSchemaValidationContext.prototype._getInvalidKeyObject = function(name, genericName) {
   var self = this;
   genericName = genericName || SimpleSchema._makeGeneric(name);
-  var specificIsInvalid = !!_.findWhere(self._invalidKeys, {name: name});
-  var genericIsInvalid = (genericName !== name) ? (!!_.findWhere(self._invalidKeys, {name: genericName})) : false;
-  return specificIsInvalid || genericIsInvalid;
+
+  var errorObj = _.findWhere(self._invalidKeys, {name: name});
+  if (!errorObj) {
+    errorObj = _.findWhere(self._invalidKeys, {name: genericName});
+  }
+  return errorObj;
 };
 
+SimpleSchemaValidationContext.prototype._keyIsInvalid = function(name, genericName) {
+  return !!this._getInvalidKeyObject(name, genericName);
+};
+
+// Like the internal one, but with deps
 SimpleSchemaValidationContext.prototype.keyIsInvalid = function(name) {
   var self = this, genericName = SimpleSchema._makeGeneric(name);
-  self._deps[genericName].depend();
+  self._deps[genericName] && self._deps[genericName].depend();
+
   return self._keyIsInvalid(name, genericName);
 };
 
 SimpleSchemaValidationContext.prototype.keyErrorMessage = function(name) {
   var self = this, genericName = SimpleSchema._makeGeneric(name);
-  var ss = self._simpleSchema;
-  self._deps[genericName].depend();
+  self._deps[genericName] && self._deps[genericName].depend();
   
-  var errorObj = _.findWhere(self._invalidKeys, {name: name});
+  var errorObj = self._getInvalidKeyObject(name, genericName);
   if (!errorObj) {
-    errorObj = _.findWhere(self._invalidKeys, {name: genericName});
-    if (!errorObj) {
-      return "";
-    }
-  }
-
-  var def = ss.schema(genericName);
-  if (!def) {
     return "";
   }
   
-  return ss.messageForError(errorObj.type, errorObj.name, def, errorObj.value);
+  return self._simpleSchema.messageForError(errorObj.type, errorObj.name, null, errorObj.value);
 };
