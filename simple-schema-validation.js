@@ -203,11 +203,12 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
         // For an upsert, missing props would not be set if an insert is performed,
         // so we add null keys to the modifier to force any "required" checks to fail
         if (isUpsert && op === "$set") {
-          var blankObj = {};
-          _.each(ss.objectKeys(), function (extraKey) {
-            blankObj[extraKey] = null;
+          var presentKeys = _.keys(opObj);
+          _.each(ss.objectKeys(), function (schemaKey) {
+            if (!_.contains(presentKeys, schemaKey)) {
+              checkObj(void 0, schemaKey, op, setKeys);
+            }
           });
-          opObj = _.extend({}, blankObj, opObj);
         }
         _.each(opObj, function (v, k) {
           if (op === "$push" || op === "$addToSet") {
