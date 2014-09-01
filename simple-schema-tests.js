@@ -512,6 +512,19 @@ Tinytest.add("SimpleSchema - Required Checks - Insert - Invalid", function(test)
     requiredObject: null,
     optionalObject: null
   });
+  // we should not get an error about optionalObject.requiredString because the whole object is null
+  test.length(sc.invalidKeys(), 8);
+  
+  sc = validateNoClean(ssr, {
+    requiredString: null,
+    requiredBoolean: null,
+    requiredNumber: null,
+    requiredDate: null,
+    requiredEmail: null,
+    requiredUrl: null,
+    requiredObject: null
+  });
+  // we should not get an error about optionalObject.requiredString because the whole object is missing
   test.length(sc.invalidKeys(), 8);
 
   sc = validateNoClean(ssr, {
