@@ -2985,6 +2985,55 @@ Tinytest.add("SimpleSchema - Clean", function(test) {
 
 });
 
+Tinytest.add("SimpleSchema - Clean - trimStrings", function(test) {
+
+  function doTest(isModifier, given, expected) {
+    var cleanObj = ss.clean(given, {
+      filter: false,
+      autoConvert: false,
+      removeEmptyStrings: false,
+      trimStrings: true,
+      getAutoValues: false,
+      isModifier: isModifier
+    });
+    test.equal(cleanObj, expected);
+  }
+
+  //DOC
+  doTest(false, {string: "    This is a string    "}, {string: "This is a string"});
+
+  //$SET
+  doTest(true, {$set: {string: "    This is a string    "}}, {$set: {string: "This is a string"}});
+
+  //$UNSET
+  doTest(true, {$unset: {string: "    This is a string    "}}, {$unset: {string: "This is a string"}});
+
+  //$SETONINSERT
+  doTest(true, {$setOnInsert: {string: "    This is a string    "}}, {$setOnInsert: {string: "This is a string"}});
+
+  //$ADDTOSET
+  doTest(true, {$addToSet: {minMaxStringArray: "    This is a string    "}}, {$addToSet: {minMaxStringArray: "This is a string"}});
+
+  //$ADDTOSET WITH EACH
+  doTest(true, {$addToSet: {minMaxStringArray: {$each: ["    This is a string    "]}}}, {$addToSet: {minMaxStringArray: {$each: ["This is a string"]}}});
+
+  //$PUSH
+  doTest(true, {$push: {minMaxStringArray: "    This is a string    "}}, {$push: {minMaxStringArray: "This is a string"}});
+
+  //$PUSH WITH EACH
+  doTest(true, {$push: {minMaxStringArray: {$each: ["    This is a string    "]}}}, {$push: {minMaxStringArray: {$each: ["This is a string"]}}});
+
+  //$PULL
+  doTest(true, {$pull: {minMaxStringArray: "    This is a string    "}}, {$pull: {minMaxStringArray: "This is a string"}});
+
+  //$POP
+  doTest(true, {$pop: {minMaxStringArray: "    This is a string    "}}, {$pop: {minMaxStringArray: "This is a string"}});
+
+  //$PULLALL
+  doTest(true, {$pullAll: {minMaxStringArray: ["    This is a string    "]}}, {$pullAll: {minMaxStringArray: ["This is a string"]}});
+
+});
+
 Tinytest.add("SimpleSchema - Custom Types", function(test) {
   var peopleSchema = new SimpleSchema({
     name: {

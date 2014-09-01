@@ -240,6 +240,7 @@ SimpleSchema.prototype.addValidator = SimpleSchema.prototype.validator = functio
  * @param {Boolean} [options.filter=true] - Do filtering?
  * @param {Boolean} [options.autoConvert=true] - Do automatic type converting?
  * @param {Boolean} [options.removeEmptyStrings=true] - Remove keys in normal object or $set where the value is an empty string?
+ * @param {Boolean} [options.trimStrings=true] - Trim string values?
  * @param {Boolean} [options.getAutoValues=true] - Inject automatic and default values?
  * @param {Boolean} [options.isModifier=false] - Is doc a modifier object?
  * @param {Object} [options.extendAutoValueContext] - This object will be added to the `this` context of autoValue functions.
@@ -257,6 +258,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
     filter: true,
     autoConvert: true,
     removeEmptyStrings: true,
+    trimStrings: true,
     getAutoValues: true,
     isModifier: false,
     extendAutoValueContext: {}
@@ -279,7 +281,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
   var mDoc = new MongoObject(doc, self._blackboxKeys);
 
   // Clean loop
-  if (options.filter || options.autoConvert || options.removeEmptyStrings) {
+  if (options.filter || options.autoConvert || options.removeEmptyStrings || options.trimStrings) {
     mDoc.forEachNode(function() {
       var gKey = this.genericKey;
       if (gKey) {
@@ -304,23 +306,41 @@ SimpleSchema.prototype.clean = function(doc, options) {
           if (options.autoConvert) {
             var newVal = typeconvert(val, def.type);
             if (newVal !== void 0 && newVal !== val) {
-              SimpleSchema.debug && console.info('SimpleSchema.clean: autoconverted value ' + val + ' from ' + typeof val + ' to ' + typeof newVal + ' for ' + this.genericKey);
-              this.updateValue(newVal);
-              wasAutoConverted = true;
               // remove empty strings
               if (options.removeEmptyStrings && (!this.operator || this.operator === "$set") && typeof newVal === "string" && !newVal.length) {
-                this.remove();
+                // For a document, we remove any fields that are being set to an empty string
+                newVal = void 0;
+                // For a modifier, we $unset any fields that are being set to an empty string
+                if (this.operator === "$set") {
+                  var p = this.position.replace("$set", "$unset");
+                  mDoc.setValueForPosition(p, "");
+                }
               }
+              // trim strings
+              else if (options.trimStrings && typeof newVal === "string") {
+                newVal = S(newVal).trim().s;
+              }
+
+              // Change value; if undefined, will remove it
+              SimpleSchema.debug && console.info('SimpleSchema.clean: autoconverted value ' + val + ' from ' + typeof val + ' to ' + typeof newVal + ' for ' + gKey);
+              this.updateValue(newVal);
+              wasAutoConverted = true;
             }
           }
-          // remove empty strings
-          if (options.removeEmptyStrings && !wasAutoConverted && (!this.operator || this.operator === "$set") && typeof val === "string" && !val.length) {
-            // For a document, we remove any fields that are being set to an empty string
-            this.remove();
-            // For a modifier, we $unset any fields that are being set to an empty string
-            if (this.operator === "$set") {
-              var p = this.position.replace("$set", "$unset");
-              mDoc.setValueForPosition(p, "");
+          if (!wasAutoConverted) {
+            // remove empty strings
+            if (options.removeEmptyStrings && (!this.operator || this.operator === "$set") && typeof val === "string" && !val.length) {
+              // For a document, we remove any fields that are being set to an empty string
+              this.remove();
+              // For a modifier, we $unset any fields that are being set to an empty string
+              if (this.operator === "$set") {
+                var p = this.position.replace("$set", "$unset");
+                mDoc.setValueForPosition(p, "");
+              }
+            }
+            // trim strings
+            else if (options.trimStrings && typeof val === "string") {
+              this.updateValue(S(val).trim().s);
             }
           }
         }
