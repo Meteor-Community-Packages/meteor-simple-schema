@@ -2822,7 +2822,7 @@ Tinytest.add("SimpleSchema - Multiple Contexts", function(test) {
   test.length(ssContext2.invalidKeys(), 0);
 });
 
-Tinytest.add("SimpleSchema - Cleanup With Modifier Operators", function(test) {
+Tinytest.add("SimpleSchema - Clean", function(test) {
 
   function doTest(given, expected) {
     var cleanObj = ss.clean(given);
@@ -2868,11 +2868,14 @@ Tinytest.add("SimpleSchema - Cleanup With Modifier Operators", function(test) {
   doTest({$set: {string: ""}}, {$set: {}, $unset: {string: ""}});
 
   //$UNSET
+  // We don't want the filter option to apply to $unset operator because it should be fine
+  // to unset anything. For example, the schema might have changed and now we're running some
+  // server conversion to unset properties that are no longer part of the schema.
 
   //when you clean a good object it's still good
   doTest({$unset: {string: null}}, {$unset: {string: null}});
-  //when you clean a bad object it's now good
-  doTest({$unset: {string: null, admin: null}}, {$unset: {string: null}});
+  //when you clean an object with extra unset keys, they stay there
+  doTest({$unset: {string: null, admin: null}}, {$unset: {string: null, admin: null}});
 
   //$SETONINSERT
 
