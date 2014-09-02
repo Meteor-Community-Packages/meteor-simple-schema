@@ -445,7 +445,8 @@ SimpleSchema.prototype.label = function(key) {
   // Get label for one field
   var def = self.getDefinition(key);
   if (def) {
-    self._depsLabels[key] && self._depsLabels[key].depend();
+    var genericKey = SimpleSchema._makeGeneric(key);
+    self._depsLabels[genericKey] && self._depsLabels[genericKey].depend();
     return def.label;
   }
 
