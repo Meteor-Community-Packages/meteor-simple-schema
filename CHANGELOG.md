@@ -5,6 +5,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 1.0.2
+
+Fix label reactivity when calling `label` method with a key that contains a specific index piece (like ".0.")
+
 ### 1.0.1
 
 Minor fix
