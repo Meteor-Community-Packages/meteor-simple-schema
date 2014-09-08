@@ -6,11 +6,11 @@
     ],
     [
       "deps",
-      "1.0.1"
+      "1.0.3"
     ],
     [
       "ejson",
-      "1.0.0"
+      "1.0.1"
     ],
     [
       "json",
@@ -18,11 +18,15 @@
     ],
     [
       "meteor",
-      "1.0.2"
+      "1.0.3"
     ],
     [
       "random",
       "1.0.0"
+    ],
+    [
+      "tracker",
+      "1.0.2"
     ],
     [
       "underscore",
@@ -30,6 +34,6 @@
     ]
   ],
   "pluginDependencies": [],
-  "toolVersion": "meteor-tool@1.0.26",
+  "toolVersion": "meteor-tool@1.0.28",
   "format": "1.0"
 }
