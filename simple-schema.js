@@ -289,7 +289,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
         var def = self._schema[gKey];
         var val = this.value;
         // Filter out props if necessary
-        if (options.filter && !def && this.operator !== "$unset") {
+        if (options.filter && !def && this.operator !== "$unset" && !self.allowsKey(this.genericKey)) {
           // XXX Special handling for $each; maybe this could be made nicer
           if (this.position.slice(-7) === "[$each]") {
             mDoc.removeValueForPosition(this.position.slice(0, -7));
