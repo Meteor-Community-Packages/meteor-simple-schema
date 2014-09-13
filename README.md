@@ -3,12 +3,13 @@ simple-schema
 
 [![Build Status](https://travis-ci.org/aldeed/meteor-simple-schema.png?branch=master)](https://travis-ci.org/aldeed/meteor-simple-schema)
 
-A simple, reactive schema validation smart package for Meteor. It's used by the [collection2](https://github.com/aldeed/meteor-collection2) and [autoform](https://github.com/aldeed/meteor-autoform) packages, but you can use it by itself, too.
+A simple, reactive schema validation smart package for Meteor. It's used by the [Collection2](https://github.com/aldeed/meteor-collection2) and [AutoForm](https://github.com/aldeed/meteor-autoform) packages, but you can use it by itself, too.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](http://doctoc.herokuapp.com/)*
 
+- [Installation](#installation)
 - [Basic Usage](#basic-usage)
   - [Example](#example)
   - [Combining SimpleSchemas](#combining-simpleschemas)
@@ -55,11 +56,17 @@ A simple, reactive schema validation smart package for Meteor. It's used by the 
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
+## Installation
+
+In your Meteor app directory, enter:
+
+```
+$ meteor add aldeed:simple-schema
+```
+
 ## Basic Usage
 
-If you're using the `autoform` or `collection2` package, you define your schema
-as part of constructing those objects. Otherwise, create one or more SimpleSchema
-instances and then use them to validate objects.
+Create one or more SimpleSchema instances and then use them to validate objects. By adding the `aldeed:collection2` package to your app, you can attach them to collections to get automatic validation of your insert and update operations. By adding the `aldeed:autoform` package to your app, you can attach them to forms, making it easy to both generate and validate the forms from your schema.
 
 ### Example
 
@@ -428,7 +435,7 @@ and operator properties for that field.
 have the same parent object. Works the same way as `field()`. This is helpful
 when you use sub-schemas or when you're dealing with arrays of objects.
 
-Refer to the [collection2 package documentation](https://github.com/aldeed/meteor-collection2#autovalue) for examples.
+Refer to the [aldeed:collection2 package documentation](https://github.com/aldeed/meteor-collection2#autovalue) for examples.
 
 ## The Object
 
@@ -474,7 +481,7 @@ mySchema.clean(obj);
 //obj is now potentially changed
 ```
 
-NOTE: The `collection2` package always calls `clean` before every insert, update,
+NOTE: The Collection2 package always calls `clean` before every insert, update,
 or upsert.
 
 ## Validating Data
@@ -823,8 +830,8 @@ and usually just makes sense.
 ## Collection2 and AutoForm
 
 This all becomes pretty great when put to use in the
-[collection2](https://github.com/aldeed/meteor-collection2)
-and [autoform](https://github.com/aldeed/meteor-autoform) packages.
+[Collection2](https://github.com/aldeed/meteor-collection2)
+and [AutoForm](https://github.com/aldeed/meteor-autoform) packages.
 Take a look at their documentation.
 
 ## Best Practice Code Examples
@@ -891,7 +898,7 @@ developing an app to figure out why certain actions are failing validation.
 
 ## Extending the Schema Options
 
-You may find at some point that there is something extra you would really like to define within a schema for your package or app. However, if you add unrecognized options to your schema definition, you will get an error. To inform SimpleSchema about your custom option and avoid the error, you need to call `SimpleSchema.extendOptions`. By way of example, here is how the `collection2` package adds the additional schema options it provides:
+You may find at some point that there is something extra you would really like to define within a schema for your package or app. However, if you add unrecognized options to your schema definition, you will get an error. To inform SimpleSchema about your custom option and avoid the error, you need to call `SimpleSchema.extendOptions`. By way of example, here is how the Collection2 package adds the additional schema options it provides:
 
 ```js
 SimpleSchema.extendOptions({
