@@ -2560,49 +2560,46 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Update - Invalid - $set", f
 });
 
 Tinytest.add("SimpleSchema - Black Box Objects", function(test) {
-  var sc = validate(ss, {
+  function doTest(obj, isModifier, invalidCount) {
+    var sc = validate(ss, obj, isModifier, false, true);
+    test.length(sc.invalidKeys(), invalidCount);
+  }
+
+  doTest({
     blackBoxObject: "string"
-  }, false, false, true);
-  test.length(sc.invalidKeys(), 1);
+  }, false, 1);
 
-  var sc = validate(ss, {
+  doTest({
     blackBoxObject: {}
-  }, false, false, true);
-  test.length(sc.invalidKeys(), 0);
+  }, false, 0);
 
-  var sc = validate(ss, {
+  doTest({
     blackBoxObject: {
       foo: "bar"
     }
-  }, false, false, true);
-  test.length(sc.invalidKeys(), 0);
+  }, false, 0);
 
-  var sc = validate(ss, {$set: {
+  doTest({$set: {
     blackBoxObject: {
       foo: "bar"
     }
-  }}, true, false, true);
-  test.length(sc.invalidKeys(), 0);
+  }}, true, 0);
 
-  var sc = validate(ss, {$set: {
+  doTest({$set: {
     'blackBoxObject.foo': "bar"
-  }}, true, false, true);
-  test.length(sc.invalidKeys(), 0);
+  }}, true, 0);
 
-  var sc = validate(ss, {$set: {
+  doTest({$set: {
     'blackBoxObject.1': "bar"
-  }}, true, false, true);
-  test.length(sc.invalidKeys(), 0);
+  }}, true, 0);
 
-  var sc = validate(ss, {$push: {
+  doTest({$push: {
     'blackBoxObject.foo': "bar"
-  }}, true, false, true);
-  test.length(sc.invalidKeys(), 0);
+  }}, true, 0);
 
-  var sc = validate(ss, {$set: {
+  doTest({$set: {
     'blackBoxObject': []
-  }}, true, false, true);
-  test.length(sc.invalidKeys(), 1);
+  }}, true, 1);
 });
 
 Tinytest.add("SimpleSchema - Validation Against Another Key - Insert - Valid", function(test) {
@@ -2995,6 +2992,21 @@ Tinytest.add("SimpleSchema - Clean", function(test) {
       allowedStringsArray: {$each: ["tuna", "fish"]}
     }
   });
+
+  // Cleaning shouldn't remove anything within blackbox
+  doTest({blackBoxObject: {foo: 1}}, {blackBoxObject: {foo: 1}});
+  doTest({blackBoxObject: {foo: [1]}}, {blackBoxObject: {foo: [1]}});
+  doTest({blackBoxObject: {foo: [{bar: 1}]}}, {blackBoxObject: {foo: [{bar: 1}]}});
+  doTest({$set: {blackBoxObject: {foo: 1}}}, {$set: {blackBoxObject: {foo: 1}}});
+  doTest({$set: {blackBoxObject: {foo: [1]}}}, {$set: {blackBoxObject: {foo: [1]}}});
+  doTest({$set: {blackBoxObject: {foo: [{bar: 1}]}}}, {$set: {blackBoxObject: {foo: [{bar: 1}]}}});
+  doTest({$set: {'blackBoxObject.email.verificationTokens.$': {token: "Hi"}}}, {$set: {'blackBoxObject.email.verificationTokens.$': {token: "Hi"}}});
+  doTest({$set: {'blackBoxObject.email.verificationTokens.$.token': "Hi"}}, {$set: {'blackBoxObject.email.verificationTokens.$.token': "Hi"}});
+
+  doTest(
+    {$push: {'blackBoxObject.email.verificationTokens': {token: "Hi"}}},
+    {$push: {'blackBoxObject.email.verificationTokens': {token: "Hi"}}}
+    );
 
 });
 
@@ -3915,6 +3927,7 @@ Tinytest.add("SimpleSchema - AllowsKey", function(test) {
   run('blackBoxObject.foo.$', true);
   run('blackBoxObject.foo.$foo', true);
   run('blackBoxObject.foo.$.$foo', true);
+  run('blackBoxObject.foo.bar.$.baz', true);
 });
 
 Tinytest.add("SimpleSchema - RegEx - Email", function (test) {
