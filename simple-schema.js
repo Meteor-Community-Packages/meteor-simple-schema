@@ -102,7 +102,7 @@ SimpleSchema = function(schemas, options) {
       firstLevelSchemaKeys.push(fieldNameRoot);
     }
   });
-  
+
 
   // Cache these lists
   self._firstLevelSchemaKeys = firstLevelSchemaKeys;
@@ -140,10 +140,10 @@ SimpleSchema.RegEx = {
   // This is probably the same logic used by most browsers when type=email, which is our goal. It is
   // a very permissive expression. Some apps may wish to be more strict and can write their own RegExp.
   Email: /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
-  
+
   Domain: new RegExp('^' + RX_DOMAIN + '$'),
   WeakDomain: new RegExp('^' + RX_WEAK_DOMAIN + '$'),
-  
+
   IP: new RegExp('^(?:' + RX_IPv4 + '|' + RX_IPv6 + ')$'),
   IPv4: new RegExp('^' + RX_IPv4 + '$'),
   IPv6: new RegExp('^' + RX_IPv6 + '$'),
@@ -235,6 +235,20 @@ SimpleSchema.prototype.addValidator = SimpleSchema.prototype.validator = functio
 };
 
 /**
+ * @method SimpleSchema.prototype.pick
+ * @param {[fields]} The list of fields to pick to instantiate the subschema
+ * @returns {SimpleSchema} The subschema
+ */
+SimpleSchema.prototype.pick = function(/* arguments */) {
+  var self = this;
+  var args = _.toArray(arguments);
+  args.unshift(self._schema);
+
+  var newSchema = _.pick.apply(null, args);
+  return new SimpleSchema(newSchema);
+};
+
+/**
  * @method SimpleSchema.prototype.clean
  * @param {Object} doc - Document or modifier to clean. Referenced object will be modified in place.
  * @param {Object} [options]
@@ -246,7 +260,7 @@ SimpleSchema.prototype.addValidator = SimpleSchema.prototype.validator = functio
  * @param {Boolean} [options.isModifier=false] - Is doc a modifier object?
  * @param {Object} [options.extendAutoValueContext] - This object will be added to the `this` context of autoValue functions.
  * @returns {Object} The modified doc.
- * 
+ *
  * Cleans a document or modifier object. By default, will filter, automatically
  * type convert where possible, and inject automatic/default values. Use the options
  * to skip one or more of these.
@@ -433,7 +447,7 @@ SimpleSchema.prototype.labels = function(labels) {
 // should be used to safely get a label as string
 SimpleSchema.prototype.label = function(key) {
   var self = this;
-  
+
   // Get all labels
   if (key == null) {
     var result = {};
@@ -653,7 +667,7 @@ SimpleSchema.prototype.allowsKey = function(key) {
     if (schemaKey === key) {
       return true;
     }
-    
+
     // Black box handling
     if (self.schema(schemaKey).blackbox === true) {
       var kl = schemaKey.length;
@@ -917,12 +931,12 @@ var inflectedLabel = function(fieldName) {
 
 /**
  * @method getAutoValues
- * @private 
+ * @private
  * @param {MongoObject} mDoc
  * @param {Boolean} [isModifier=false] - Is it a modifier doc?
  * @param {Object} [extendedAutoValueContext] - Object that will be added to the context when calling each autoValue function
  * @returns {undefined}
- * 
+ *
  * Updates doc with automatic values from autoValue functions or default
  * values from defaultValue. Modifies the referenced object in place.
  */
@@ -934,7 +948,7 @@ function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
   if (Meteor.isClient && extendedAutoValueContext.userId === void 0) {
     extendedAutoValueContext.userId = (Meteor.userId && Meteor.userId()) || null;
   }
-  
+
   function runAV(func) {
     var affectedKey = this.key;
     // If already called for this key, skip it
@@ -1008,7 +1022,7 @@ function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
 
   _.each(self._autoValues, function(func, fieldName) {
     var positionSuffix, key, keySuffix, positions;
-    
+
     // If we're under an array, run autovalue for all the properties of
     // any objects that are present in the nearest ancestor array.
     if (fieldName.indexOf("$") !== -1) {
@@ -1018,17 +1032,17 @@ function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
       keySuffix = '.' + keySuffix;
       positions = mDoc.getPositionsForGenericKey(testField);
     } else {
-      
+
       // See if anything in the object affects this key
       positions = mDoc.getPositionsForGenericKey(fieldName);
-      
+
       // Run autovalue for properties that are set in the object
       if (positions.length) {
         key = fieldName;
         keySuffix = '';
         positionSuffix = '';
       }
-      
+
       // Run autovalue for properties that are NOT set in the object
       else {
         key = fieldName;
@@ -1040,7 +1054,7 @@ function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
           positions = [MongoObject._keyToPosition(fieldName)];
         }
       }
-    
+
     }
 
     _.each(positions, function(position) {
