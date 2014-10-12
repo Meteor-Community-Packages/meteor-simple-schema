@@ -5,6 +5,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### vNext
+
+Fixed `minDate` default validation error message
+
 ### 1.0.3
 
 Fix blackbox handling during filtering (thanks @wojtkowiak)
