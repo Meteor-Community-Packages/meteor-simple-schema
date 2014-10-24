@@ -46,13 +46,9 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
       return;
     }
 
-    // No further checking necessary for $unset or $rename
-    if (_.contains(["$unset", "$rename"], op)) {
-      return;
-    }
-
     // Value checks are not necessary for null or undefined values
-    if (Utility.isNotNullOrUndefined(val)) {
+    // or for $unset or $rename values
+    if (op !== "$unset" && op !== "$rename" && Utility.isNotNullOrUndefined(val)) {
 
       // Check that value is of the correct type
       var typeError = doTypeChecks(def, val, op);

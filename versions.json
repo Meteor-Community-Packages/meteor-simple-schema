@@ -2,42 +2,42 @@
   "dependencies": [
     [
       "base64",
-      "1.0.0"
+      "1.0.1"
     ],
     [
       "check",
-      "1.0.0"
+      "1.0.2"
     ],
     [
       "deps",
-      "1.0.3"
+      "1.0.5"
     ],
     [
       "ejson",
-      "1.0.2"
+      "1.0.4"
     ],
     [
       "json",
-      "1.0.0"
+      "1.0.1"
     ],
     [
       "meteor",
-      "1.1.0"
+      "1.1.2"
     ],
     [
       "random",
-      "1.0.0"
+      "1.0.1"
     ],
     [
       "tracker",
-      "1.0.2"
+      "1.0.3"
     ],
     [
       "underscore",
-      "1.0.0"
+      "1.0.1"
     ]
   ],
   "pluginDependencies": [],
-  "toolVersion": "meteor-tool@1.0.30",
+  "toolVersion": "meteor-tool@1.0.34",
   "format": "1.0"
 }

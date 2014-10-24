@@ -7,7 +7,8 @@ A simple, reactive schema validation smart package for Meteor.
 
 ### vNext
 
-Fixed `minDate` default validation error message
+* Fixed `minDate` default validation error message
+* Fix issue where `custom` functions were not run if the operator was $unset or $rename
 
 ### 1.0.3
 
