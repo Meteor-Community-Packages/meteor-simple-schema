@@ -5,9 +5,11 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
-### next
+### 1.1.0
 
 * Introduce the `pick` method on `SimpleSchema` instances to create subschemas
+* Fixed `minDate` default validation error message
+* Fix issue where `custom` functions were not run if the operator was $unset or $rename
 
 ### 1.0.3
 

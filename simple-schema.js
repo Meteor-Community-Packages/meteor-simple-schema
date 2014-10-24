@@ -476,7 +476,7 @@ SimpleSchema._globalMessages = {
   maxString: "[label] cannot exceed [max] characters",
   minNumber: "[label] must be at least [min]",
   maxNumber: "[label] cannot exceed [max]",
-  minDate: "[label] must be on or before [min]",
+  minDate: "[label] must be on or after [min]",
   maxDate: "[label] cannot be after [max]",
   minCount: "You must specify at least [minCount] values",
   maxCount: "You cannot specify more than [maxCount] values",

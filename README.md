@@ -397,6 +397,11 @@ does not include this field or has this field set to `undefined`. This value
 will be injected into the object by a call to `mySimpleSchema.clean()`. Default
 values are set only when cleaning *non-modifier* objects.
 
+Note the following points of confusion:
+
+* A default value itself is not cleaned. So, for example, if your default value is "", it will not be removed by the `removeEmptyStrings` operation in the cleaning.
+* A default value is *always* added if there isn't a value set. Even if the property is a child of an optional object, and the optional object is not present, the object will be added and its property will be set to the default value. Effectively, this means that if you provide a default value for one property of an object, you must provide a default value for all properties of that object or risk confusing validation errors.
+
 If you need more control, use the `autoValue` option instead.
 
 ### autoValue
@@ -779,7 +784,7 @@ SimpleSchema.messages({
   maxString: "[label] cannot exceed [max] characters",
   minNumber: "[label] must be at least [min]",
   maxNumber: "[label] cannot exceed [max]",
-  minDate: "[label] must be on or before [min]",
+  minDate: "[label] must be on or after [min]",
   maxDate: "[label] cannot be after [max]",
   minCount: "You must specify at least [minCount] values",
   maxCount: "You cannot specify more than [maxCount] values",
