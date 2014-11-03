@@ -729,6 +729,23 @@ var typeconvert = function(value, type) {
     }
     return value;
   }
+  //
+  // If target type is a Date we can safely convert from either a
+  // number (Integer value representing the number of milliseconds
+  // since 1 January 1970 00:00:00 UTC) or a string that can be parsed
+  // by Date.
+  //
+  if (type === Date) {
+    if (typeof value === "string") {
+      parsedDate = Date.parse(value);
+      if (isNaN(parsedDate) === false) {
+        return new Date(parsedDate);
+      }
+    }
+    if (typeof value === "number") {
+      return new Date(value);
+    }
+  }
   return value;
 };
 

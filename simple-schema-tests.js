@@ -1290,12 +1290,6 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   });
   test.length(sc.invalidKeys(), 1); //with filter
 
-  //number date failure
-  sc = validate(ss, {
-    date: 1
-  });
-  test.length(sc.invalidKeys(), 1);
-
   /* REGEX FAILURES */
 
   sc = validate(ss, {
@@ -1505,12 +1499,6 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
       date: ["test"]
     }}, true, true);
   test.length(sc.invalidKeys(), 1); //with filter
-
-  //number date failure
-  sc = validate(ss, {$setOnInsert: {
-      date: 1
-    }}, true, true);
-  test.length(sc.invalidKeys(), 1);
 
   /* REGEX FAILURES */
 
@@ -1739,12 +1727,6 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
       date: ["test"]
     }}, true);
   test.length(sc.invalidKeys(), 1); //with filter
-
-  //number date failure
-  sc = validate(ss, {$set: {
-      date: 1
-    }}, true);
-  test.length(sc.invalidKeys(), 1);
 
   /* REGEX FAILURES */
 
@@ -4016,6 +3998,30 @@ Tinytest.add("SimpleSchema - RegEx - IPv6", function (test) {
   isTrue("BCDF:45AB:1245:75B9::0987:1234:1324");
   isFalse("BCDF:45AB:1245:75B9:0987:1234:1324");
   isTrue("::1");
+});
+
+Tinytest.add("SimpleSchema - Autoconvert Dates", function (test) {
+  var sc;
+  // Invalid, out of range
+  sc = validate(ss, {
+    minMaxDate: 0
+  });
+  test.length(sc.invalidKeys(), 1);
+  // Invalid, out of range
+  sc = validate(ss, {
+    minMaxDate: "2014-04-25T01:32:21.196Z"
+  });
+  test.length(sc.invalidKeys(), 1);
+  // Valid, in range
+  sc = validate(ss, {
+    minMaxDate: 1366853541196
+  });
+  test.length(sc.invalidKeys(), 0);
+  // Valid, in range
+  sc = validate(ss, {
+    minMaxDate: "2013-04-25T01:32:21.196Z"
+  });
+  test.length(sc.invalidKeys(), 0);
 });
 
 /*
