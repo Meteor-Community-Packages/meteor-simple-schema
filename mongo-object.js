@@ -729,7 +729,7 @@ var isBasicObject = function(obj) {
 var makeGeneric = function makeGeneric(name) {
   if (typeof name !== "string")
     return null;
-  return name.replace(/\.[0-9]+\./g, '.$.').replace(/\.[0-9]+/g, '.$');
+  return name.replace(/\.[0-9]+\./g, '.$.').replace(/\.[0-9]+$/g, '.$');
 };
 
 var appendAffectedKey = function appendAffectedKey(affectedKey, key) {
@@ -745,3 +745,4 @@ var extractOp = function extractOp(position) {
   var firstPositionPiece = position.slice(0, position.indexOf("["));
   return (firstPositionPiece.substring(0, 1) === "$") ? firstPositionPiece : null;
 };
+
