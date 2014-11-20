@@ -571,7 +571,7 @@ any custom validation functions that are run during validation. See "Custom Vali
 ### Validating Using check() or Match.test()
 
 A schema can be passed as the second argument of the built-in `check()` 
-or ``Match.test()` methods. This will throw a Match.Error if the object
+or `Match.test()` methods. This will throw a Match.Error if the object
 specified in the first argument is not valid according to the schema.
 
 ```js
