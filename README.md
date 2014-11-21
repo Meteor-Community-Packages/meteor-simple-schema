@@ -352,7 +352,6 @@ an array of regular expressions that will be tested in order.
 The `SimpleSchema.RegEx` object defines standard regular
 expressions you can use as the value for the `regEx` key.
 - `SimpleSchema.RegEx.Email` for external emails (requires a tld like `.com`)
-- `SimpleSchema.RegEx.WeakEmail` for a less strict email validation (allows: `name@localhost` and `name@192.168.200.5`)
 - `SimpleSchema.RegEx.Domain` for external domains and the domain only (requires a tld like `.com`)
 - `SimpleSchema.RegEx.WeakDomain` for less strict domains and IPv4 and IPv6
 - `SimpleSchema.RegEx.IP` for IPv4 or IPv6
