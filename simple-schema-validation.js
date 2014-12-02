@@ -51,18 +51,20 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
     if (op !== "$unset" && op !== "$rename" && Utility.isNotNullOrUndefined(val)) {
 
       // Check that value is of the correct type
-      var typeError = doTypeChecks(def, val, op);
-      if (typeError) {
-        invalidKeys.push(Utility.errorObject(typeError, affectedKey, val, def, ss));
-        return;
-      }
+      if (! def.custom) {
+        var typeError = doTypeChecks(def, val, op);
+        if (typeError) {
+          invalidKeys.push(Utility.errorObject(typeError, affectedKey, val, def, ss));
+          return;
+        }
 
-      // Check value against allowedValues array
-      if (def.allowedValues && !_.contains(def.allowedValues, val)) {
-        invalidKeys.push(Utility.errorObject("notAllowed", affectedKey, val, def, ss));
-        return;
-      }
+        // Check value against allowedValues array
+        if (def.allowedValues && !_.contains(def.allowedValues, val)) {
+          invalidKeys.push(Utility.errorObject("notAllowed", affectedKey, val, def, ss));
+          return;
+        }
 
+      }
     }
 
     // Perform custom validation
