@@ -114,7 +114,7 @@ check(obj, mySchema);
 // Validation errors are available through reactive methods
 if (Meteor.isClient) {
   Meteor.startup(function() {
-    Deps.autorun(function() {
+    Tracker.autorun(function() {
       var context = BookSchema.namedContext("myContext");
       if (!context.isValid()) {
         console.log(context.invalidKeys());
@@ -168,6 +168,14 @@ the SimpleSchema constructor, and they will be combined.
 cmsBaseSchema = new SimpleSchema({ ... });
 cmsPageSchema = new SimpleSchema([cmsBaseSchema, {additionalField: {type: String} }]);
 ```
+
+## The Object
+
+The object you pass in when validating can be a normal object, or it can be
+a Mongo modifier object (with `$set`, etc. keys). In other words, you can pass
+in the exact object that you are going to pass to `Collection.insert()` or
+`Collection.update()`. This is what the [collection2](https://atmospherejs.com/aldeed/collection2)
+smart package does for you.
 
 ## Schema Keys
 
@@ -241,8 +249,8 @@ Type can be a standard Javascript object like:
 
 Or it can be a constructor function like `Date` or any custom object.
 
-Or it can be any of those wrapped in array brackets, to indicate that you're expecting an array of values
-of that type.
+Or it can be any of those wrapped in array brackets, to indicate that you're
+expecting an array of values of that type.
 * `[String]`
 * `[Number]`
 * `[Boolean]`
@@ -255,7 +263,7 @@ A string that will be used to refer to this field in validation error messages.
 The default is an inflected (humanized) derivation of the key name itself. For
 example, the key "firstName" will have a default label of "First name".
 
-If you require a field that changes it's meaning in some
+If you require a field that changes its meaning in some
 circumstances you can provide a callback function as a label.
 
 ```js
@@ -293,7 +301,7 @@ Here's a brief explanation of how requiredness is interpreted:
 
 * If `type` is `Array` or is an array (any type surrounded by array brackets),
 then "required" means that key must have a value, but an empty array is fine.
-(If an empty array is *not* fine, add `minCount: 1` option.)
+(If an empty array is *not* fine, add the `minCount: 1` option.)
 * For items within an array, or when the key name ends with ".$", the `optional`
 option has no effect. That is, something cannot be "required" to be in an array.
 * If a key is required at a deeper level, the key must have a value *only if*
@@ -433,20 +441,13 @@ if the modifier were `{$set: {name: "Alice"}}`, in the autoValue function for
 the `name` field, `this.isSet` would be true, `this.value` would be "Alice",
 and `this.operator` would be "$set".
 * `field()`: Use this method to get information about other fields. Pass a field
-name (schema key) as the only argument. The return object will have isSet, value,
-and operator properties for that field.
+name (schema key) as the only argument. The return object will have `isSet`, `value`,
+and `operator` properties for that field.
 * `siblingField()`: Use this method to get information about other fields that
 have the same parent object. Works the same way as `field()`. This is helpful
 when you use sub-schemas or when you're dealing with arrays of objects.
 
 Refer to the [aldeed:collection2 package documentation](https://github.com/aldeed/meteor-collection2#autovalue) for examples.
-
-## The Object
-
-The object you pass in when validating can be a normal object, or it can be
-a mongo modifier object (with `$set`, etc. keys). In other words, you can pass
-in the exact object that you are going to pass to `Collection.insert()` or
-`Collection.update()`. This is what the collection2 smart package does for you.
 
 ## Cleaning Data
 
@@ -457,10 +458,10 @@ any avoidable validation errors.
 The `clean` method takes the object to be cleaned as its first argument and
 the following optional options as its second argument:
 
-* `filter`: Filter properties not found in the schema? True by default.
+* `filter`: Filter out properties not found in the schema? True by default.
 * `autoConvert`: Type convert properties into the correct type where possible? True by default.
 * `removeEmptyStrings`: Remove keys in normal object or $set where the value is an empty string? True by default.
-* `trimStrings`: Remove all leading and trailing spaces from string values. True by default.
+* `trimStrings`: Remove all leading and trailing spaces from string values? True by default.
 * `getAutoValues`: Run `autoValue` functions and inject automatic and `defaultValue` values? True by default.
 * `isModifier`: Is the first argument a modifier object? False by default.
 * `extendAutoValueContext`: This object will be added to the `this` context of autoValue functions.
@@ -543,7 +544,7 @@ context object and causes the reactive methods to react.
 Now you can call `myContext.isValid()` to see if the object passed into `validate()`
 was found to be valid. This is a reactive method that returns true or false.
 
-For a list of options, see the "Validation Options" section.
+For a list of options, see the [Validation Options](#validation-options) section.
 
 ### Validating Only One Key in an Object
 
@@ -555,28 +556,28 @@ This may cause all of the reactive methods to react.
 This method returns `true` if the specified schema key is valid according to
 the schema or `false` if it is not.
 
-For a list of options, see the "Validation Options" section.
-
 ### Validation Options
 
-Both `validate` and `validateOne` methods accept the following options:
+Both `validate()` and `validateOne()` accept the following options:
 
 * `modifier`: Are you validating a Mongo modifier object? False by default.
 * `upsert`: Are you validating a Mongo modifier object potentially containing
 upsert operators? False by default.
 * `extendedCustomContext`: This object will be added to the `this` context in
-any custom validation functions that are run during validation. See "Custom Validation" section.
+any custom validation functions that are run during validation. See the
+[Custom Validation](#custom-validation) section.
 
 ### Validating Using check() or Match.test()
 
-A schema can be passed as the second argument of the built-in `check()` 
-or `Match.test()` methods. This will throw a Match.Error if the object
-specified in the first argument is not valid according to the schema.
+A schema can be passed as the second argument to Meteor's `check()` and
+`Match.test()` methods from the [Check package](http://docs.meteor.com/#/full/check_package).
+`check()` will throw a Match.Error if the object specified in the first argument
+is not valid according to the schema.
 
 ```js
 var mySchema = new SimpleSchema({name: {type: String}});
 
-Match.test({name: 'Steve'}, mySchema); // Return true
+Match.test({name: "Steve"}, mySchema); // Return true
 Match.test({admin: true}, mySchema); // Return false
 check({admin: true}, mySchema); // throw a Match.Error
 ```
@@ -594,17 +595,18 @@ a specific schema, use the `custom` option in the schema definition for that key
 
 All custom validation functions work the same way and have the same `this` context:
 
-* Do any necessary custom validation, and return an error type string if you
+* Do any necessary custom validation, and return a String describing the error type if you
 determine that the value is invalid. Any non-string return value means the value is valid.
-* The error type string can be one of the built-in strings or any string you want.
-If you return a custom string, you'll usually want to define a message for it.
+* The error type string can be one of the [built-in strings](#manually-adding-a-validation-error)
+or any string you want. If you return a custom string, you'll usually want to
+[define a message for it](#customizing-validation-messages).
 * Within the function, `this` provides the following properties:
     * `key`: The name of the schema key (e.g., "addresses.0.street")
     * `genericKey`: The generic name of the schema key (e.g., "addresses.$.street")
     * `definition`: The schema definition object.
     * `isSet`: Does the object being validated have this key set?
     * `value`: The value to validate.
-    * `operator`: The mongo operator for which we're doing validation. Might be `null`.
+    * `operator`: The Mongo operator for which we're doing validation. Might be `null`.
     * `field()`: Use this method to get information about other fields. Pass a field
 name (non-generic schema key) as the only argument. The return object will have
 `isSet`, `value`, and `operator` properties for that field.
@@ -612,8 +614,8 @@ name (non-generic schema key) as the only argument. The return object will have
 have the same parent object. Works the same way as `field()`. This is helpful
 when you use sub-schemas or when you're dealing with arrays of objects.
 
-NOTE: If you need to do some custom validation on the server and then display errors back on the client,
-refer to the "Asynchronous Custom Validation on the Client" section.
+NOTE: If you need to do some custom validation on the server and then display errors back
+on the client, refer to the "Asynchronous Custom Validation on the Client" section.
 
 ### Manually Adding a Validation Error
 
@@ -643,16 +645,18 @@ If you want to reactively display an arbitrary validation error and it is not po
     * expectedObject
     * expectedConstructor
     * regEx
-* `value`: Optional. The value that was not valid. Will be used in place of `[value]` placeholder in error messages.
+* `value`: Optional. The value that was not valid. Will be used to replace the
+`[value]` placeholder in error messages.
 
-If you use a custom string for `type`, be sure to define a message for it. (See "Customizing Validation Messages").
+If you use a custom string for `type`, be sure to define a message for it.
+(See [Customizing Validation Messages](#customizing-validation-messages)).
 
 Example:
 
 ```js
 SimpleSchema.messages({wrongPassword: "Wrong password"});
 
-myContext.addInvalidKeys([{name: 'password', type: 'wrongPassword'}]);
+myContext.addInvalidKeys([{name: "password", type: "wrongPassword"}]);
 ```
 
 ### Asynchronous Custom Validation on the Client
@@ -666,9 +670,9 @@ username: {
   unique: true,
   custom: function () {
     if (Meteor.isClient && this.isSet) {
-      Meteor.call('accountsIsUsernameAvailable', this.value, function (error, result) {
+      Meteor.call("accountsIsUsernameAvailable", this.value, function (error, result) {
         if (!result) {
-          Meteor.users.simpleSchema().namedContext('createUserForm').addInvalidKeys([{name: 'username', type: 'notUnique'}]);
+          Meteor.users.simpleSchema().namedContext("createUserForm").addInvalidKeys([{name: "username", type: "notUnique"}]);
         }
       });
     }
@@ -687,25 +691,8 @@ You can use a technique similar to this to work around asynchronicity issues in 
 Call `myContext.invalidKeys()` to get the full array of invalid key data. Each object
 in the array has three keys:
 * `name`: The schema key as specified in the schema.
-* `type`: The type of error. One of the following strings:
-    * required
-    * minString
-    * maxString
-    * minNumber
-    * maxNumber
-    * minDate
-    * maxDate
-    * minCount
-    * maxCount
-    * noDecimal
-    * notAllowed
-    * expectedString
-    * expectedNumber
-    * expectedBoolean
-    * expectedArray
-    * expectedObject
-    * expectedConstructor
-    * regEx
+* `type`: The type of error. One of the `required*`, `min*`, `max*` etc. strings listed
+at [Manually Adding a Validation Error](#manually-adding-a-validation-error).
 * `message`: The error message.
 
 This is a reactive method.
@@ -722,7 +709,7 @@ clearing out any invalid field messages and making it valid.
 
 ### Other SimpleSchema Methods
 
-Call `MySchema.schema(key)` to get the schema definition object. If you specify a
+Call `MySchema.schema([key])` to get the schema definition object. If you specify a
 key, then only the schema definition for that key is returned.
 
 Note that this may not match exactly what you passed into the SimpleSchema
@@ -765,7 +752,7 @@ For the `regEx` error type, you must specify a special message array of objects:
 }
 ```
 
-The message is a string. It can contain a number of different placeholders indicated by square brackets:
+The message is a string. It can contain a number of different placeholders between square brackets:
 * `[label]` will be replaced with the field label
 * `[min]` will be replaced with the minimum allowed value (string length, number, or date)
 * `[max]` will be replaced with the maximum allowed value (string length, number, or date)
