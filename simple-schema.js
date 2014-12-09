@@ -15,6 +15,8 @@ var schemaDefinition = {
   maxCount: Match.Optional(Match.OneOf(Number, Function)),
   allowedValues: Match.Optional(Match.OneOf([Match.Any], Function)),
   decimal: Match.Optional(Boolean),
+  exclusiveMax: Match.Optional(Boolean),
+  exclusiveMin: Match.Optional(Boolean),
   regEx: Match.Optional(Match.OneOf(RegExp, [RegExp])),
   custom: Match.Optional(Function),
   blackbox: Match.Optional(Boolean),
@@ -837,6 +839,12 @@ var adjustArrayFields = function(schema) {
       if (typeof def.decimal !== "undefined") {
         schema[itemKey].decimal = def.decimal;
       }
+      if (typeof def.exclusiveMax !== "undefined") {
+        schema[itemKey].exclusieMax = def.exclusiveMax;
+      }
+      if (typeof def.exclusiveMin !== "undefined") {
+        schema[itemKey].exclusieMin = def.exclusiveMin;
+      }
       if (typeof def.regEx !== "undefined") {
         schema[itemKey].regEx = def.regEx;
       }
@@ -845,7 +853,7 @@ var adjustArrayFields = function(schema) {
       }
       // Remove copied options and adjust type
       def.type = Array;
-      _.each(['min', 'max', 'allowedValues', 'decimal', 'regEx', 'blackbox'], function(k) {
+      _.each(['min', 'max', 'allowedValues', 'decimal', 'exclusiveMax', 'exclusiveMin', 'regEx', 'blackbox'], function(k) {
         Utility.deleteIfPresent(def, k);
       });
     }
