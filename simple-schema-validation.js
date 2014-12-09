@@ -270,9 +270,9 @@ function doTypeChecks(def, keyValue, op) {
   else if (expectedType === Number) {
     if (typeof keyValue !== "number" || isNaN(keyValue)) {
       return "expectedNumber";
-    } else if (op !== "$inc" && def.max !== null && def.max < keyValue) {
+    } else if (op !== "$inc" && def.max !== null && (def.exclusiveMax ? def.max < keyValue : def.max <= keyValue)) {
       return "maxNumber";
-    } else if (op !== "$inc" && def.min !== null && def.min > keyValue) {
+    } else if (op !== "$inc" && def.min !== null && (def.exclusiveMin ? def.min > keyValue : def.min >= keyValue)) {
       return "minNumber";
     } else if (!def.decimal && keyValue.toString().indexOf(".") > -1) {
       return "noDecimal";
