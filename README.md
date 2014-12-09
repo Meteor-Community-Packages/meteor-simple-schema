@@ -19,7 +19,7 @@ A simple, reactive schema validation smart package for Meteor. It's used by the 
   - [label](#label)
   - [optional](#optional)
   - [min/max](#minmax)
-  - [exclusiveMin/exclusiveMax](#exclusiveminmax)
+  - [exclusiveMin/exclusiveMax](#exclusiveminexclusivemax)
   - [decimal](#decimal)
   - [minCount/maxCount](#mincountmaxcount)
   - [allowedValues](#allowedvalues)
