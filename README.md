@@ -341,9 +341,8 @@ the minimum Date for a field should be "today".
 ### exclusiveMin/exclusiveMax
 
 Set to `true` to indicate that the range of numeric values, as set by min/max,
-are to be treated as an exclusive range. Set to `false` to treat ranges as 
-inclusive. Unlike JSON Schema, where ranges are inclusive by default, the
-default value here is to use exclusive ranges.
+are to be treated as an exclusive range. Set to `false` (default) to treat ranges as 
+inclusive. 
 
 ### decimal
 
