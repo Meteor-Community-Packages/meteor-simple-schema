@@ -19,6 +19,7 @@ A simple, reactive schema validation smart package for Meteor. It's used by the 
   - [label](#label)
   - [optional](#optional)
   - [min/max](#minmax)
+  - [exclusiveMin/exclusiveMax](#exclusiveminexclusivemax)
   - [decimal](#decimal)
   - [minCount/maxCount](#mincountmaxcount)
   - [allowedValues](#allowedvalues)
@@ -336,6 +337,12 @@ maximum date, inclusive.
 You can alternatively provide a function that takes no arguments and returns
 the appropriate minimum or maximum value. This is useful, for example, if
 the minimum Date for a field should be "today".
+
+### exclusiveMin/exclusiveMax
+
+Set to `true` to indicate that the range of numeric values, as set by min/max,
+are to be treated as an exclusive range. Set to `false` (default) to treat ranges as 
+inclusive. 
 
 ### decimal
 
