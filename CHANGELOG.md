@@ -5,6 +5,12 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 1.2.0
+
+* The `clean` function now automatically converts a number or string to a Date object. (Thanks @rlora)
+* Fix to `makeGeneric` handling when a property name starts with a number but also includes non-numeric characters. (Thanks @Nieziemski)
+* New `exclusiveMax` and `exclusiveMin` options allow you to specify that the `min` or `max` value itself should not be considered valid. (Thanks @sleiber)
+
 ### 1.1.0
 
 * Introduce the `pick` method on `SimpleSchema` instances to create subschemas
