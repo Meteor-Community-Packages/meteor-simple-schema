@@ -478,6 +478,8 @@ SimpleSchema._globalMessages = {
   maxString: "[label] cannot exceed [max] characters",
   minNumber: "[label] must be at least [min]",
   maxNumber: "[label] cannot exceed [max]",
+  minNumberExclusive: "[label] must be greater than [min]",
+  maxNumberExclusive: "[label] must be less than [max]",
   minDate: "[label] must be on or after [min]",
   maxDate: "[label] cannot be after [max]",
   minCount: "You must specify at least [minCount] values",
@@ -840,10 +842,10 @@ var adjustArrayFields = function(schema) {
         schema[itemKey].decimal = def.decimal;
       }
       if (typeof def.exclusiveMax !== "undefined") {
-        schema[itemKey].exclusieMax = def.exclusiveMax;
+        schema[itemKey].exclusiveMax = def.exclusiveMax;
       }
       if (typeof def.exclusiveMin !== "undefined") {
-        schema[itemKey].exclusieMin = def.exclusiveMin;
+        schema[itemKey].exclusiveMin = def.exclusiveMin;
       }
       if (typeof def.regEx !== "undefined") {
         schema[itemKey].regEx = def.regEx;
