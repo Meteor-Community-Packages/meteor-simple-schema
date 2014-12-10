@@ -4,6 +4,92 @@
 /* global MongoObject */
 /* global doValidation1:true */
 
+function doTypeChecks(def, keyValue, op) {
+  var expectedType = def.type;
+
+  // String checks
+  if (expectedType === String) {
+    if (typeof keyValue !== "string") {
+      return "expectedString";
+    } else if (def.max !== null && def.max < keyValue.length) {
+      return "maxString";
+    } else if (def.min !== null && def.min > keyValue.length) {
+      return "minString";
+    } else if (def.regEx instanceof RegExp && !def.regEx.test(keyValue)) {
+      return "regEx";
+    } else if (_.isArray(def.regEx)) {
+      var regExError;
+      _.every(def.regEx, function(re, i) {
+        if (!re.test(keyValue)) {
+          regExError = "regEx." + i;
+          return false;
+        }
+        return true;
+      });
+      if (regExError) {
+        return regExError;
+      }
+    }
+  }
+
+  // Number checks
+  else if (expectedType === Number) {
+    if (typeof keyValue !== "number" || isNaN(keyValue)) {
+      return "expectedNumber";
+    } else if (op !== "$inc" && def.max !== null && (!!def.exclusiveMax ? def.max <= keyValue : def.max < keyValue)) {
+       return !!def.exclusiveMax ? "maxNumberExclusive" : "maxNumber";
+    } else if (op !== "$inc" && def.min !== null && (!!def.exclusiveMin ? def.min >= keyValue : def.min > keyValue)) {
+       return !!def.exclusiveMin ? "minNumberExclusive" : "minNumber";
+    } else if (!def.decimal && keyValue.toString().indexOf(".") > -1) {
+      return "noDecimal";
+    }
+  }
+
+  // Boolean checks
+  else if (expectedType === Boolean) {
+    if (typeof keyValue !== "boolean") {
+      return "expectedBoolean";
+    }
+  }
+
+  // Object checks
+  else if (expectedType === Object) {
+    if (!Utility.isBasicObject(keyValue)) {
+      return "expectedObject";
+    }
+  }
+
+  // Array checks
+  else if (expectedType === Array) {
+    if (!_.isArray(keyValue)) {
+      return "expectedArray";
+    } else if (def.minCount !== null && keyValue.length < def.minCount) {
+      return "minCount";
+    } else if (def.maxCount !== null && keyValue.length > def.maxCount) {
+      return "maxCount";
+    }
+  }
+
+  // Constructor function checks
+  else if (expectedType instanceof Function || Utility.safariBugFix(expectedType)) {
+
+    // Generic constructor checks
+    if (!(keyValue instanceof expectedType)) {
+      return "expectedConstructor";
+    }
+
+    // Date checks
+    else if (expectedType === Date) {
+      if (_.isDate(def.min) && def.min.getTime() > keyValue.getTime()) {
+        return "minDate";
+      } else if (_.isDate(def.max) && def.max.getTime() < keyValue.getTime()) {
+        return "maxDate";
+      }
+    }
+  }
+
+}
+
 doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate, ss, extendedCustomContext) {
   // First do some basic checks of the object, and throw errors if necessary
   if (!_.isObject(obj)) {
@@ -245,89 +331,3 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
 
   return invalidKeys;
 };
-
-function doTypeChecks(def, keyValue, op) {
-  var expectedType = def.type;
-
-  // String checks
-  if (expectedType === String) {
-    if (typeof keyValue !== "string") {
-      return "expectedString";
-    } else if (def.max !== null && def.max < keyValue.length) {
-      return "maxString";
-    } else if (def.min !== null && def.min > keyValue.length) {
-      return "minString";
-    } else if (def.regEx instanceof RegExp && !def.regEx.test(keyValue)) {
-      return "regEx";
-    } else if (_.isArray(def.regEx)) {
-      var regExError;
-      _.every(def.regEx, function(re, i) {
-        if (!re.test(keyValue)) {
-          regExError = "regEx." + i;
-          return false;
-        }
-        return true;
-      });
-      if (regExError) {
-        return regExError;
-      }
-    }
-  }
-
-  // Number checks
-  else if (expectedType === Number) {
-    if (typeof keyValue !== "number" || isNaN(keyValue)) {
-      return "expectedNumber";
-    } else if (op !== "$inc" && def.max !== null && (!!def.exclusiveMax ? def.max <= keyValue : def.max < keyValue)) {
-       return !!def.exclusiveMax ? "maxNumberExclusive" : "maxNumber";
-    } else if (op !== "$inc" && def.min !== null && (!!def.exclusiveMin ? def.min >= keyValue : def.min > keyValue)) {
-       return !!def.exclusiveMin ? "minNumberExclusive" : "minNumber";
-    } else if (!def.decimal && keyValue.toString().indexOf(".") > -1) {
-      return "noDecimal";
-    }
-  }
-
-  // Boolean checks
-  else if (expectedType === Boolean) {
-    if (typeof keyValue !== "boolean") {
-      return "expectedBoolean";
-    }
-  }
-
-  // Object checks
-  else if (expectedType === Object) {
-    if (!Utility.isBasicObject(keyValue)) {
-      return "expectedObject";
-    }
-  }
-
-  // Array checks
-  else if (expectedType === Array) {
-    if (!_.isArray(keyValue)) {
-      return "expectedArray";
-    } else if (def.minCount !== null && keyValue.length < def.minCount) {
-      return "minCount";
-    } else if (def.maxCount !== null && keyValue.length > def.maxCount) {
-      return "maxCount";
-    }
-  }
-
-  // Constructor function checks
-  else if (expectedType instanceof Function || Utility.safariBugFix(expectedType)) {
-
-    // Generic constructor checks
-    if (!(keyValue instanceof expectedType)) {
-      return "expectedConstructor";
-    }
-
-    // Date checks
-    else if (expectedType === Date) {
-      if (_.isDate(def.min) && def.min.getTime() > keyValue.getTime()) {
-        return "minDate";
-      } else if (_.isDate(def.max) && def.max.getTime() < keyValue.getTime()) {
-        return "maxDate";
-      }
-    }
-  }
-
-}
