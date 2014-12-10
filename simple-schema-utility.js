@@ -1,3 +1,5 @@
+/* global Utility:true */
+
 Utility = {
   appendAffectedKey: function appendAffectedKey(affectedKey, key) {
     if (key === "$each") {
@@ -12,7 +14,7 @@ Utility = {
     }
     return !_.contains(["$pull", "$pullAll", "$pop", "$slice"], key);
   },
-  errorObject: function errorObject(errorType, keyName, keyValue, def, ss) {
+  errorObject: function errorObject(errorType, keyName, keyValue) {
     return {name: keyName, type: errorType, value: keyValue};
   },
   // Tests whether it's an Object as opposed to something that inherits from Object
@@ -22,10 +24,10 @@ Utility = {
   // The latest Safari returns false for Uint8Array, etc. instanceof Function
   // unlike other browsers.
   safariBugFix: function safariBugFix(type) {
-    return (typeof Uint8Array !== "undefined" && type === Uint8Array)
-    || (typeof Uint16Array !== "undefined" && type === Uint16Array)
-    || (typeof Uint32Array !== "undefined" && type === Uint32Array)
-    || (typeof Uint8ClampedArray !== "undefined" && type === Uint8ClampedArray);
+    return (typeof Uint8Array !== "undefined" && type === Uint8Array) ||
+      (typeof Uint16Array !== "undefined" && type === Uint16Array) ||
+      (typeof Uint32Array !== "undefined" && type === Uint32Array) ||
+      (typeof Uint8ClampedArray !== "undefined" && type === Uint8ClampedArray);
   },
   isNotNullOrUndefined: function isNotNullOrUndefined(val) {
     return val !== void 0 && val !== null;

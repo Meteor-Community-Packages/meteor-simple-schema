@@ -1,3 +1,5 @@
+/* global MongoObject */
+
 var flat = function(doc, opts) {
   var mDoc = new MongoObject(doc);
   return mDoc.getFlatObject(opts);
@@ -21,23 +23,23 @@ Tinytest.add("MongoObject - Round Trip", function(test) {
   rt({});
   rt({a: 1});
   rt({a: "Test"});
-  rt({a: new Date});
+  rt({a: new Date()});
   rt({a: []});
   rt({a: {}});
   rt({a: [1, 2]});
   rt({a: ["Test1", "Test2"]});
-  rt({a: [new Date, new Date]});
+  rt({a: [new Date(), new Date()]});
   rt({a: {b: 1}});
   rt({a: {b: "Test"}});
-  rt({a: {b: new Date}});
+  rt({a: {b: new Date()}});
   rt({a: {b: []}});
   rt({a: {b: {}}});
   rt({a: {b: [1, 2]}});
   rt({a: {b: ["Test1", "Test2"]}});
-  rt({a: {b: [new Date, new Date]}});
+  rt({a: {b: [new Date(), new Date()]}});
   rt({a: {b: [{c: 1}, {c: 2}]}});
   rt({a: {b: [{c: "Test1"}, {c: "Test2"}]}});
-  rt({a: {b: [{c: new Date}, {c: new Date}]}});
+  rt({a: {b: [{c: new Date()}, {c: new Date()}]}});
 
 });
 
@@ -57,7 +59,7 @@ Tinytest.add("MongoObject - Flat", function(test) {
   }
 
   // Flatten Tests
-  var testDate = new Date;
+  var testDate = new Date();
   testFlat({}, {});
   testFlat({a: 1}, {a: 1});
   testFlat({a: "Test"}, {a: "Test"});

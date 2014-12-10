@@ -1,3 +1,9 @@
+/* global Utility */
+/* global _ */
+/* global SimpleSchema */
+/* global MongoObject */
+/* global doValidation1:true */
+
 doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate, ss, extendedCustomContext) {
   // First do some basic checks of the object, and throw errors if necessary
   if (!_.isObject(obj)) {
@@ -159,7 +165,7 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
 
       // If this object is within an array, make sure we check for
       // required as if it's not a modifier
-      var isInArrayItemObject = (affectedKeyGeneric && affectedKeyGeneric.slice(-2) === ".$");
+      isInArrayItemObject = (affectedKeyGeneric && affectedKeyGeneric.slice(-2) === ".$");
 
       // Check all keys in the merged list
       _.each(keysToCheck, function(key) {
@@ -221,10 +227,11 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
   }
 
   // Kick off the validation
-  if (isModifier)
+  if (isModifier) {
     checkModifier(obj);
-  else
+  } else {
     checkObj(obj);
+  }
 
   // Make sure there is only one error per fieldName
   var addedFieldNames = [];
@@ -261,8 +268,9 @@ function doTypeChecks(def, keyValue, op) {
         }
         return true;
       });
-      if (regExError)
+      if (regExError) {
         return regExError;
+      }
     }
   }
 

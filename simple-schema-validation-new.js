@@ -1,3 +1,11 @@
+/* global Utility */
+/* global _ */
+/* global SimpleSchema */
+/* global MongoObject */
+/* global Meteor */
+/* global Random */
+/* global doValidation2:true */
+
 doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate, ss, extendedCustomContext) {
 
   // First do some basic checks of the object, and throw errors if necessary
@@ -159,7 +167,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
 
       // If this object is within an array, make sure we check for
       // required as if it's not a modifier
-      var strictRequiredCheck = (affectedKeyGeneric && affectedKeyGeneric.slice(-2) === ".$");
+      strictRequiredCheck = (affectedKeyGeneric && affectedKeyGeneric.slice(-2) === ".$");
 
       // Check all keys in the merged list
       _.each(keysToCheck, function(key) {
@@ -216,18 +224,19 @@ function convertModifierToDoc(mod, schema, isUpsert) {
       // we assume any existing data would be valid.
       else if (!def.optional) {
         // TODO correct value type based on schema type
-        if (def.type === Boolean)
+        if (def.type === Boolean) {
           setVal = true;
-        else if (def.type === Number)
+        } else if (def.type === Number) {
           setVal = def.min || 0;
-        else if (def.type === Date)
-          setVal = def.min || new Date;
-        else if (def.type === Array)
+        } else if (def.type === Date) {
+          setVal = def.min || new Date();
+        } else if (def.type === Array) {
           setVal = [];
-        else if (def.type === Object)
+        } else if (def.type === Object) {
           setVal = {};
-        else
+        } else {
           setVal = "0";
+        }
       }
 
       if (setVal !== void 0) {
@@ -276,8 +285,9 @@ function doTypeChecks(def, keyValue, op) {
         }
         return true;
       });
-      if (regExError)
+      if (regExError) {
         return regExError;
+      }
     }
   }
 

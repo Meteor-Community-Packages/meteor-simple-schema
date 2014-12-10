@@ -1,3 +1,62 @@
+/* global MongoObject:true */
+
+
+var isObject = function(obj) {
+  return obj === Object(obj);
+};
+
+// getPrototypeOf polyfill
+if (typeof Object.getPrototypeOf !== "function") {
+  if (typeof "".__proto__ === "object") {
+    Object.getPrototypeOf = function(object) {
+      return object.__proto__;
+    };
+  } else {
+    Object.getPrototypeOf = function(object) {
+      // May break if the constructor has been tampered with
+      return object.constructor.prototype;
+    };
+  }
+}
+
+/* Tests whether "obj" is an Object as opposed to
+ * something that inherits from Object
+ *
+ * @param {any} obj
+ * @returns {Boolean}
+ */
+var isBasicObject = function(obj) {
+  return isObject(obj) && Object.getPrototypeOf(obj) === Object.prototype;
+};
+
+/* Takes a specific string that uses mongo-style dot notation
+ * and returns a generic string equivalent. Replaces all numeric
+ * "pieces" with a dollar sign ($).
+ *
+ * @param {type} name
+ * @returns {unresolved}
+ */
+var makeGeneric = function makeGeneric(name) {
+  if (typeof name !== "string") {
+    return null;
+  }
+  return name.replace(/\.[0-9]+\./g, '.$.').replace(/\.[0-9]+$/g, '.$');
+};
+
+var appendAffectedKey = function appendAffectedKey(affectedKey, key) {
+  if (key === "$each") {
+    return affectedKey;
+  } else {
+    return (affectedKey ? affectedKey + "." + key : key);
+  }
+};
+
+// Extracts operator piece, if present, from position string
+var extractOp = function extractOp(position) {
+  var firstPositionPiece = position.slice(0, position.indexOf("["));
+  return (firstPositionPiece.substring(0, 1) === "$") ? firstPositionPiece : null;
+};
+
 /*
  * @constructor
  * @param {Object} objOrModifier
@@ -70,8 +129,9 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
       }
     }
 
-    if (stop)
+    if (stop) {
       return;
+    }
 
     // Loop through arrays
     if (_.isArray(val) && !_.isEmpty(val)) {
@@ -133,8 +193,9 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
    * (4) the generic equivalent of argument 3, with "$" instead of numeric pieces
    */
   self.forEachNode = function(func, options) {
-    if (typeof func !== "function")
+    if (typeof func !== "function") {
       throw new Error("filter requires a loop function");
+    }
 
     options = _.extend({
       endPointsOnly: true
@@ -142,8 +203,9 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
 
     var updatedValues = {};
     _.each(self._affectedKeys, function(affectedKey, position) {
-      if (options.endPointsOnly && _.contains(self._parentPositions, position))
+      if (options.endPointsOnly && _.contains(self._parentPositions, position)) {
         return; //only endpoints
+      }
       func.call({
         value: self.getValueForPosition(position),
         operator: extractOp(position),
@@ -202,8 +264,9 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
       if (i === ln - 1) {
         current[subkey] = value;
         //if value is undefined, delete the property
-        if (value === void 0)
+        if (value === void 0) {
           delete current[subkey];
+        }
       }
       // Otherwise attempt to keep moving deeper into the object.
       else {
@@ -644,8 +707,9 @@ MongoObject.expandKey = function(val, key, obj) {
       //last iteration; time to set the value; always overwrite
       current[subkey] = val;
       //if val is undefined, delete the property
-      if (val === void 0)
+      if (val === void 0) {
         delete current[subkey];
+      }
     } else {
       //see if the next piece is a number
       nextPiece = subkeys[i + 1];
@@ -687,62 +751,5 @@ MongoObject._positionToKey = function positionToKey(position) {
   var key = mDoc.getKeyForPosition(position);
   mDoc = null;
   return key;
-};
-
-var isArray = _.isArray;
-
-var isObject = function(obj) {
-  return obj === Object(obj);
-};
-
-// getPrototypeOf polyfill
-if (typeof Object.getPrototypeOf !== "function") {
-  if (typeof "".__proto__ === "object") {
-    Object.getPrototypeOf = function(object) {
-      return object.__proto__;
-    };
-  } else {
-    Object.getPrototypeOf = function(object) {
-      // May break if the constructor has been tampered with
-      return object.constructor.prototype;
-    };
-  }
-}
-
-/* Tests whether "obj" is an Object as opposed to
- * something that inherits from Object
- *
- * @param {any} obj
- * @returns {Boolean}
- */
-var isBasicObject = function(obj) {
-  return isObject(obj) && Object.getPrototypeOf(obj) === Object.prototype;
-};
-
-/* Takes a specific string that uses mongo-style dot notation
- * and returns a generic string equivalent. Replaces all numeric
- * "pieces" with a dollar sign ($).
- *
- * @param {type} name
- * @returns {unresolved}
- */
-var makeGeneric = function makeGeneric(name) {
-  if (typeof name !== "string")
-    return null;
-  return name.replace(/\.[0-9]+\./g, '.$.').replace(/\.[0-9]+$/g, '.$');
-};
-
-var appendAffectedKey = function appendAffectedKey(affectedKey, key) {
-  if (key === "$each") {
-    return affectedKey;
-  } else {
-    return (affectedKey ? affectedKey + "." + key : key);
-  }
-};
-
-// Extracts operator piece, if present, from position string
-var extractOp = function extractOp(position) {
-  var firstPositionPiece = position.slice(0, position.indexOf("["));
-  return (firstPositionPiece.substring(0, 1) === "$") ? firstPositionPiece : null;
 };
 

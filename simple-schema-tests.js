@@ -1,3 +1,6 @@
+/* global SimpleSchema */
+/* global Address:true */
+
 /*
  * BEGIN SETUP FOR TESTS
  */
@@ -19,8 +22,9 @@ Address.prototype = {
     return new Address(this.city, this.state);
   },
   equals: function(other) {
-    if (!(other instanceof Address))
+    if (!(other instanceof Address)) {
       return false;
+    }
     return EJSON.stringify(this) === EJSON.stringify(other);
   },
   typeName: function() {
@@ -339,13 +343,13 @@ var autoValues = new SimpleSchema({
       if (content.isSet) {
         if (!this.operator) {
           return [{
-              date: new Date,
+              date: new Date(),
               content: content.value
             }];
         } else {
           return {
             $push: {
-              date: new Date,
+              date: new Date(),
               content: content.value
             }
           };
@@ -474,7 +478,7 @@ Tinytest.add("SimpleSchema - Required Checks - Insert - Valid", function(test) {
   });
   test.equal(sc.invalidKeys(), []);
 
-  var sc = validate(ssr, {
+  sc = validate(ssr, {
     requiredString: "test",
     requiredBoolean: true,
     requiredNumber: 1,
@@ -663,7 +667,7 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Valid - $setOnInsert", f
 
 Tinytest.add("SimpleSchema - Required Checks - Upsert - Valid - Combined", function(test) {
   //some in $set and some in $setOnInsert, make sure they're merged for validation purposes
-  ssrCon = validate(ssr, {
+  var ssrCon = validate(ssr, {
     $set: {
       requiredString: "test",
       requiredBoolean: true,
@@ -903,14 +907,14 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - Combined", fun
       'optionalObject.requiredString': "   "
     }
   }, true, true, true);
-  var requiredErrorCount = _.reduce(sc.invalidKeys(), function (memo, errorObj) {
+  requiredErrorCount = _.reduce(sc.invalidKeys(), function (memo, errorObj) {
     if (errorObj.type === "required") {
       memo++;
     }
     return memo;
   }, 0);
   test.equal(requiredErrorCount, 5);
-  var regExErrorCount = _.reduce(sc.invalidKeys(), function (memo, errorObj) {
+  regExErrorCount = _.reduce(sc.invalidKeys(), function (memo, errorObj) {
     if (errorObj.type === "regEx") {
       memo++;
     }
@@ -1097,12 +1101,12 @@ Tinytest.add("SimpleSchema - Required Checks - Update - Invalid - $rename", func
   //rename from optional key to a key not in schema
   var sc = ss.newContext();
   sc.validate({$rename: {string: "newString"}}, {modifier: true});
-  test.equal(sc.invalidKeys()[0]["type"], "keyNotInSchema");
+  test.equal(sc.invalidKeys()[0].type, "keyNotInSchema");
 
   //rename from required key
   sc = ssr.newContext();
   sc.validate({$rename: {requiredString: "newRequiredString"}}, {modifier: true});
-  test.equal(sc.invalidKeys()[0]["type"], "required");
+  test.equal(sc.invalidKeys()[0].type, "required");
 });
 
 Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
@@ -1760,7 +1764,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
 
   sc = validate(ss, {$set: {
       booleanArray: true,
-      dateArray: new Date,
+      dateArray: new Date(),
       allowedStringsArray: "tuna",
       allowedNumbersArray: 2
     }}, true);
@@ -1785,7 +1789,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
   //these should work
   sc = validate(ss, {$set: {
       booleanArray: [true],
-      dateArray: [new Date],
+      dateArray: [new Date()],
       allowedStringsArray: ["tuna"],
       allowedNumbersArray: [2]
     }}, true);
@@ -1793,7 +1797,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
 
   sc = validate(ss, {$push: {
       booleanArray: true,
-      dateArray: new Date,
+      dateArray: new Date(),
       allowedStringsArray: "tuna",
       allowedNumbersArray: 2
     }}, true);
@@ -1801,7 +1805,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
 
   sc = validate(ss, {$addToSet: {
       booleanArray: true,
-      dateArray: new Date,
+      dateArray: new Date(),
       allowedStringsArray: "tuna",
       allowedNumbersArray: 2
     }}, true);
@@ -2694,8 +2698,9 @@ Tinytest.add("SimpleSchema - Validate Typed Arrays", function(test) {
 });
 
 Tinytest.add("SimpleSchema - Extend Schema Definition", function(test) {
+  var ssWithUnique;
   try {
-    var ssWithUnique = new SimpleSchema({
+    ssWithUnique = new SimpleSchema({
       name: {
         type: String,
         unique: true
@@ -2875,7 +2880,7 @@ Tinytest.add("SimpleSchema - Clean", function(test) {
   doTest({customObject: myObj}, {customObject: myObj});
 
   //when you clean a good object it's still good
-  var myObj = {
+  myObj = {
     foo: "bar",
     "foobar.foobar": 10000
   };
@@ -3168,10 +3173,10 @@ Tinytest.add("SimpleSchema - Nested Schemas", function(test) {
 
   var defs = parent._schema;
 
-  test.equal(defs['value'].type, Object, "should change parent definition types to Object");
+  test.equal(defs.value.type, Object, "should change parent definition types to Object");
   test.equal(defs['value.copied'], childDef, "should add child definitions to parent schema");
   test.equal(defs['value.overridden'], parentDef, "parent definitions should override child definitions");
-  test.equal(defs['array'].type, Array, "should change array parent definition types to Array");
+  test.equal(defs.array.type, Array, "should change array parent definition types to Array");
   test.equal(defs['array.$'].type, Object, "should add array child definitions to parent schema");
   test.equal(defs['array.$.copied'], childDef, "should add array child definitions to parent schema");
   test.equal(defs['array.$.overridden'], parentDef, "parent definitions should override array child definitions");
@@ -3393,7 +3398,7 @@ Tinytest.add("SimpleSchema - Basic Schema Merge", function(test) {
 
   // test validation
   var ctx = s1.namedContext();
-  var isValid = ctx.validate({a: "Wrong"});
+  ctx.validate({a: "Wrong"});
   test.length(ctx.invalidKeys(), 4);
 
 });
@@ -3439,7 +3444,7 @@ Tinytest.add("SimpleSchema - Mixed Schema Merge", function(test) {
 
   // test validation
   var ctx = s2.namedContext();
-  var isValid = ctx.validate({a: "Wrong"});
+  ctx.validate({a: "Wrong"});
   test.length(ctx.invalidKeys(), 4);
 
 });
@@ -3493,7 +3498,7 @@ Tinytest.add("SimpleSchema - Mixed Schema Merge With Base Extend and Override", 
 
   // test validation
   var ctx = s2.namedContext();
-  var isValid = ctx.validate({a: "Wrong"});
+  ctx.validate({a: "Wrong"});
   test.length(ctx.invalidKeys(), 4);
 
 });
@@ -3528,12 +3533,12 @@ Tinytest.add("SimpleSchema - AutoValues", function(test) {
       optional: true,
       autoValue: function() {
         if (this.isSet && this.operator === "$set") {
-          return {$push: {$each: this.value}}
+          return {$push: {$each: this.value}};
         }
       }
     }
   });
-  var o = {$set: {psuedoEach: ["foo", "bar"]}};
+  o = {$set: {psuedoEach: ["foo", "bar"]}};
   eachAV.clean(o);
   test.equal(o, {$set: {}, $push: {psuedoEach: {$each: ["foo", "bar"]}}});
 
@@ -3672,7 +3677,7 @@ Tinytest.add("SimpleSchema - AutoValues", function(test) {
       }
     }
   });
-  var doc = {$set: {bar: false}};
+  doc = {$set: {bar: false}};
   av5.clean(doc);
   test.equal(doc, {$set: {bar: false}});
 
@@ -3849,7 +3854,7 @@ Tinytest.add("SimpleSchema - Issue #123", function (test) {
   test.isFalse(isValid);
 
   // With $push
-  var userSchema = new SimpleSchema({
+  userSchema = new SimpleSchema({
     "profile": {
       type: [Object]
     },
@@ -3858,9 +3863,9 @@ Tinytest.add("SimpleSchema - Issue #123", function (test) {
     }
   });
 
-  var c = userSchema.namedContext();
+  c = userSchema.namedContext();
 
-  var isValid = c.validate({$push: {"profile": {}}}, {modifier: true});
+  isValid = c.validate({$push: {"profile": {}}}, {modifier: true});
   test.isFalse(isValid);
 });
 
@@ -3955,8 +3960,8 @@ Tinytest.add("SimpleSchema - AllowsKey", function(test) {
 
 Tinytest.add("SimpleSchema - RegEx - Email", function (test) {
   var expr = SimpleSchema.RegEx.Email;
-  var isTrue = function (s) { test.isTrue(expr.test(s), s) };
-  var isFalse = function (s) { test.isFalse(expr.test(s), s) };
+  var isTrue = function (s) { test.isTrue(expr.test(s), s); };
+  var isFalse = function (s) { test.isFalse(expr.test(s), s); };
   isTrue("name@web.de");
   isTrue("name+addition@web.de");
   isTrue("st#r~ange.e+mail@web.de");
@@ -3970,8 +3975,8 @@ Tinytest.add("SimpleSchema - RegEx - Email", function (test) {
 
 Tinytest.add("SimpleSchema - RegEx - Domain", function (test) {
   var expr = SimpleSchema.RegEx.Domain;
-  var isTrue = function (s) { test.isTrue(expr.test(s), s) };
-  var isFalse = function (s) { test.isFalse(expr.test(s), s) };
+  var isTrue = function (s) { test.isTrue(expr.test(s), s); };
+  var isFalse = function (s) { test.isFalse(expr.test(s), s); };
   isTrue("domain.com");
   isFalse("localhost");
   isFalse("192.168.200.5");
@@ -3980,8 +3985,7 @@ Tinytest.add("SimpleSchema - RegEx - Domain", function (test) {
 
 Tinytest.add("SimpleSchema - RegEx - WeakDomain", function (test) {
   var expr = SimpleSchema.RegEx.WeakDomain;
-  var isTrue = function (s) { test.isTrue(expr.test(s), s) };
-  var isFalse = function (s) { test.isFalse(expr.test(s), s) };
+  var isTrue = function (s) { test.isTrue(expr.test(s), s); };
   isTrue("domain.com");
   isTrue("localhost");
   isTrue("192.168.200.5");
@@ -3990,8 +3994,8 @@ Tinytest.add("SimpleSchema - RegEx - WeakDomain", function (test) {
 
 Tinytest.add("SimpleSchema - RegEx - IP (4 and 6)", function (test) {
   var expr = SimpleSchema.RegEx.IP;
-  var isTrue = function (s) { test.isTrue(expr.test(s), s) };
-  var isFalse = function (s) { test.isFalse(expr.test(s), s) };
+  var isTrue = function (s) { test.isTrue(expr.test(s), s); };
+  var isFalse = function (s) { test.isFalse(expr.test(s), s); };
   isFalse("localhost");
   isTrue("192.168.200.5");
   isFalse("320.168.200.5");
@@ -4005,8 +4009,8 @@ Tinytest.add("SimpleSchema - RegEx - IP (4 and 6)", function (test) {
 
 Tinytest.add("SimpleSchema - RegEx - IPv4", function (test) {
   var expr = SimpleSchema.RegEx.IPv4;
-  var isTrue = function (s) { test.isTrue(expr.test(s), s) };
-  var isFalse = function (s) { test.isFalse(expr.test(s), s) };
+  var isTrue = function (s) { test.isTrue(expr.test(s), s); };
+  var isFalse = function (s) { test.isFalse(expr.test(s), s); };
   isFalse("localhost");
   isTrue("192.168.200.5");
   isFalse("320.168.200.5");
@@ -4020,8 +4024,8 @@ Tinytest.add("SimpleSchema - RegEx - IPv4", function (test) {
 
 Tinytest.add("SimpleSchema - RegEx - IPv6", function (test) {
   var expr = SimpleSchema.RegEx.IPv6;
-  var isTrue = function (s) { test.isTrue(expr.test(s), s) };
-  var isFalse = function (s) { test.isFalse(expr.test(s), s) };
+  var isTrue = function (s) { test.isTrue(expr.test(s), s); };
+  var isFalse = function (s) { test.isFalse(expr.test(s), s); };
   isFalse("localhost");
   isFalse("192.168.200.5");
   isFalse("320.168.200.5");

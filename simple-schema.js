@@ -1,3 +1,9 @@
+/* global SimpleSchema:true */
+/* global SimpleSchemaValidationContext */
+/* global MongoObject */
+/* global Utility */
+/* global S:true */
+
 if (Meteor.isServer) {
   S = Npm.require("string");
 }
@@ -24,6 +30,401 @@ var schemaDefinition = {
   defaultValue: Match.Optional(Match.Any),
   trim: Match.Optional(Boolean)
 };
+
+/*
+ * PRIVATE FUNCTIONS
+ */
+
+//called by clean()
+var typeconvert = function(value, type) {
+  var parsedDate;
+
+  if (_.isArray(value) || (_.isObject(value) && !(value instanceof Date))) {
+    return value; //can't and shouldn't convert arrays or objects
+  }
+  if (type === String) {
+    if (typeof value !== "undefined" && value !== null && typeof value !== "string") {
+      return value.toString();
+    }
+    return value;
+  }
+  if (type === Number) {
+    if (typeof value === "string" && !S(value).isEmpty()) {
+      //try to convert numeric strings to numbers
+      var numberVal = Number(value);
+      if (!isNaN(numberVal)) {
+        return numberVal;
+      } else {
+        return value; //leave string; will fail validation
+      }
+    }
+    return value;
+  }
+  //
+  // If target type is a Date we can safely convert from either a
+  // number (Integer value representing the number of milliseconds
+  // since 1 January 1970 00:00:00 UTC) or a string that can be parsed
+  // by Date.
+  //
+  if (type === Date) {
+    if (typeof value === "string") {
+      parsedDate = Date.parse(value);
+      if (isNaN(parsedDate) === false) {
+        return new Date(parsedDate);
+      }
+    }
+    if (typeof value === "number") {
+      return new Date(value);
+    }
+  }
+  return value;
+};
+
+var expandSchema = function(schema) {
+  // Flatten schema by inserting nested definitions
+  _.each(schema, function(val, key) {
+    var dot, type;
+    if (!val) {
+      return;
+    }
+    if (Match.test(val.type, SimpleSchema)) {
+      dot = '.';
+      type = val.type;
+      val.type = Object;
+    } else if (Match.test(val.type, [SimpleSchema])) {
+      dot = '.$.';
+      type = val.type[0];
+      val.type = [Object];
+    } else {
+      return;
+    }
+    //add child schema definitions to parent schema
+    _.each(type._schema, function(subVal, subKey) {
+      var newKey = key + dot + subKey;
+      if (!(newKey in schema)) {
+        schema[newKey] = subVal;
+      }
+    });
+  });
+  return schema;
+};
+
+var adjustArrayFields = function(schema) {
+  _.each(schema, function(def, existingKey) {
+    if (_.isArray(def.type) || def.type === Array) {
+      // Copy some options to array-item definition
+      var itemKey = existingKey + ".$";
+      if (!(itemKey in schema)) {
+        schema[itemKey] = {};
+      }
+      if (_.isArray(def.type)) {
+        schema[itemKey].type = def.type[0];
+      }
+      if (def.label) {
+        schema[itemKey].label = def.label;
+      }
+      schema[itemKey].optional = true;
+      if (typeof def.min !== "undefined") {
+        schema[itemKey].min = def.min;
+      }
+      if (typeof def.max !== "undefined") {
+        schema[itemKey].max = def.max;
+      }
+      if (typeof def.allowedValues !== "undefined") {
+        schema[itemKey].allowedValues = def.allowedValues;
+      }
+      if (typeof def.decimal !== "undefined") {
+        schema[itemKey].decimal = def.decimal;
+      }
+      if (typeof def.exclusiveMax !== "undefined") {
+        schema[itemKey].exclusiveMax = def.exclusiveMax;
+      }
+      if (typeof def.exclusiveMin !== "undefined") {
+        schema[itemKey].exclusiveMin = def.exclusiveMin;
+      }
+      if (typeof def.regEx !== "undefined") {
+        schema[itemKey].regEx = def.regEx;
+      }
+      if (typeof def.blackbox !== "undefined") {
+        schema[itemKey].blackbox = def.blackbox;
+      }
+      // Remove copied options and adjust type
+      def.type = Array;
+      _.each(['min', 'max', 'allowedValues', 'decimal', 'exclusiveMax', 'exclusiveMin', 'regEx', 'blackbox'], function(k) {
+        Utility.deleteIfPresent(def, k);
+      });
+    }
+  });
+};
+
+/**
+ * Adds implied keys.
+ * * If schema contains a key like "foo.$.bar" but not "foo", adds "foo".
+ * * If schema contains a key like "foo" with an array type, adds "foo.$".
+ * @param {Object} schema
+ * @returns {Object} modified schema
+ */
+var addImplicitKeys = function(schema) {
+  var arrayKeysToAdd = [], objectKeysToAdd = [], newKey, key, i, ln;
+
+  // Pass 1 (objects)
+  _.each(schema, function(def, existingKey) {
+    var pos = existingKey.indexOf(".");
+    while (pos !== -1) {
+      newKey = existingKey.substring(0, pos);
+
+      // It's an array item; nothing to add
+      if (newKey.substring(newKey.length - 2) === ".$") {
+        pos = -1;
+      }
+      // It's an array of objects; add it with type [Object] if not already in the schema
+      else if (existingKey.substring(pos, pos + 3) === ".$.") {
+        arrayKeysToAdd.push(newKey); // add later, since we are iterating over schema right now
+        pos = existingKey.indexOf(".", pos + 3); // skip over next dot, find the one after
+      }
+      // It's an object; add it with type Object if not already in the schema
+      else {
+        objectKeysToAdd.push(newKey); // add later, since we are iterating over schema right now
+        pos = existingKey.indexOf(".", pos + 1); // find next dot
+      }
+    }
+  });
+
+  for (i = 0, ln = arrayKeysToAdd.length; i < ln; i++) {
+    key = arrayKeysToAdd[i];
+    if (!(key in schema)) {
+      schema[key] = {type: [Object], optional: true};
+    }
+  }
+
+  for (i = 0, ln = objectKeysToAdd.length; i < ln; i++) {
+    key = objectKeysToAdd[i];
+    if (!(key in schema)) {
+      schema[key] = {type: Object, optional: true};
+    }
+  }
+
+  // Pass 2 (arrays)
+  adjustArrayFields(schema);
+
+  return schema;
+};
+
+var mergeSchemas = function(schemas) {
+
+  // Merge all provided schema definitions.
+  // This is effectively a shallow clone of each object, too,
+  // which is what we want since we are going to manipulate it.
+  var mergedSchema = {};
+  _.each(schemas, function(schema) {
+
+    // Create a temporary SS instance so that the internal object
+    // we use for merging/extending will be fully expanded
+    if (Match.test(schema, SimpleSchema)) {
+      schema = schema._schema;
+    } else {
+      schema = addImplicitKeys(expandSchema(schema));
+    }
+
+    // Loop through and extend each individual field
+    // definition. That way you can extend and overwrite
+    // base field definitions.
+    _.each(schema, function(def, field) {
+      mergedSchema[field] = mergedSchema[field] || {};
+      _.extend(mergedSchema[field], def);
+    });
+
+  });
+
+  // If we merged some schemas, do this again to make sure
+  // extended definitions are pushed into array item field
+  // definitions properly.
+  schemas.length && adjustArrayFields(mergedSchema);
+
+  return mergedSchema;
+};
+
+// Returns an object relating the keys in the list
+// to their parent object.
+var getObjectKeys = function(schema, schemaKeyList) {
+  var keyPrefix, remainingText, rKeys = {}, loopArray;
+  _.each(schema, function(definition, fieldName) {
+    if (definition.type === Object) {
+      //object
+      keyPrefix = fieldName + ".";
+    } else {
+      return;
+    }
+
+    loopArray = [];
+    _.each(schemaKeyList, function(fieldName2) {
+      if (S(fieldName2).startsWith(keyPrefix)) {
+        remainingText = fieldName2.substring(keyPrefix.length);
+        if (remainingText.indexOf(".") === -1) {
+          loopArray.push(remainingText);
+        }
+      }
+    });
+    rKeys[keyPrefix] = loopArray;
+  });
+  return rKeys;
+};
+
+// returns an inflected version of fieldName to use as the label
+var inflectedLabel = function(fieldName) {
+  var label = fieldName, lastPeriod = label.lastIndexOf(".");
+  if (lastPeriod !== -1) {
+    label = label.substring(lastPeriod + 1);
+    if (label === "$") {
+      var pcs = fieldName.split(".");
+      label = pcs[pcs.length - 2];
+    }
+  }
+  if (label === "_id") {
+    return "ID";
+  }
+  return S(label).humanize().s;
+};
+
+/**
+ * @method getAutoValues
+ * @private
+ * @param {MongoObject} mDoc
+ * @param {Boolean} [isModifier=false] - Is it a modifier doc?
+ * @param {Object} [extendedAutoValueContext] - Object that will be added to the context when calling each autoValue function
+ * @returns {undefined}
+ *
+ * Updates doc with automatic values from autoValue functions or default
+ * values from defaultValue. Modifies the referenced object in place.
+ */
+function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
+  var self = this;
+  var doneKeys = [];
+
+  //on the client we can add the userId if not already in the custom context
+  if (Meteor.isClient && extendedAutoValueContext.userId === void 0) {
+    extendedAutoValueContext.userId = (Meteor.userId && Meteor.userId()) || null;
+  }
+
+  function runAV(func) {
+    var affectedKey = this.key;
+    // If already called for this key, skip it
+    if (_.contains(doneKeys, affectedKey)) {
+      return;
+    }
+    var lastDot = affectedKey.lastIndexOf('.');
+    var fieldParentName = lastDot === -1 ? '' : affectedKey.slice(0, lastDot + 1);
+    var doUnset = false;
+    var autoValue = func.call(_.extend({
+      isSet: (this.value !== void 0),
+      unset: function() {
+        doUnset = true;
+      },
+      value: this.value,
+      operator: this.operator,
+      field: function(fName) {
+        var keyInfo = mDoc.getInfoForKey(fName) || {};
+        return {
+          isSet: (keyInfo.value !== void 0),
+          value: keyInfo.value,
+          operator: keyInfo.operator || null
+        };
+      },
+      siblingField: function(fName) {
+        var keyInfo = mDoc.getInfoForKey(fieldParentName + fName) || {};
+        return {
+          isSet: (keyInfo.value !== void 0),
+          value: keyInfo.value,
+          operator: keyInfo.operator || null
+        };
+      }
+    }, extendedAutoValueContext || {}), mDoc.getObject());
+
+    // Update tracking of which keys we've run autovalue for
+    doneKeys.push(affectedKey);
+
+    if (autoValue === void 0) {
+      if (doUnset) {
+        mDoc.removeValueForPosition(this.position);
+      }
+      return;
+    }
+
+    // If the user's auto value is of the pseudo-modifier format, parse it
+    // into operator and value.
+    var op, newValue;
+    if (_.isObject(autoValue)) {
+      for (var key in autoValue) {
+        if (autoValue.hasOwnProperty(key) && key.substring(0, 1) === "$") {
+          op = key;
+          newValue = autoValue[key];
+          break;
+        }
+      }
+    }
+
+    // Add $set for updates and upserts if necessary
+    if (!op && isModifier && this.position.slice(0, 1) !== '$') {
+      op = "$set";
+      newValue = autoValue;
+    }
+
+    // Update/change value
+    if (op) {
+      mDoc.removeValueForPosition(this.position);
+      mDoc.setValueForPosition(op + '[' + affectedKey + ']', newValue);
+    } else {
+      mDoc.setValueForPosition(this.position, autoValue);
+    }
+  }
+
+  _.each(self._autoValues, function(func, fieldName) {
+    var positionSuffix, key, keySuffix, positions;
+
+    // If we're under an array, run autovalue for all the properties of
+    // any objects that are present in the nearest ancestor array.
+    if (fieldName.indexOf("$") !== -1) {
+      var testField = fieldName.slice(0, fieldName.lastIndexOf("$") + 1);
+      keySuffix = fieldName.slice(testField.length + 1);
+      positionSuffix = MongoObject._keyToPosition(keySuffix, true);
+      keySuffix = '.' + keySuffix;
+      positions = mDoc.getPositionsForGenericKey(testField);
+    } else {
+
+      // See if anything in the object affects this key
+      positions = mDoc.getPositionsForGenericKey(fieldName);
+
+      // Run autovalue for properties that are set in the object
+      if (positions.length) {
+        key = fieldName;
+        keySuffix = '';
+        positionSuffix = '';
+      }
+
+      // Run autovalue for properties that are NOT set in the object
+      else {
+        key = fieldName;
+        keySuffix = '';
+        positionSuffix = '';
+        if (isModifier) {
+          positions = ["$set[" + fieldName + "]"];
+        } else {
+          positions = [MongoObject._keyToPosition(fieldName)];
+        }
+      }
+
+    }
+
+    _.each(positions, function(position) {
+      runAV.call({
+        key: (key || MongoObject._positionToKey(position)) + keySuffix,
+        value: mDoc.getValueForPosition(position + positionSuffix),
+        operator: Utility.extractOp(position),
+        position: position + positionSuffix
+      }, func);
+    });
+  });
+}
 
 //exported
 SimpleSchema = function(schemas, options) {
@@ -55,7 +456,7 @@ SimpleSchema = function(schemas, options) {
   // a place to store custom error messages for this schema
   self._messages = {};
 
-  self._depsMessages = new Deps.Dependency;
+  self._depsMessages = new Deps.Dependency();
   self._depsLabels = {};
 
   _.each(self._schema, function(definition, fieldName) {
@@ -75,7 +476,7 @@ SimpleSchema = function(schemas, options) {
         console.warn('SimpleSchema: Found both autoValue and defaultValue options for "' + fieldName + '". Ignoring defaultValue.');
       } else {
         if (fieldName.slice(-2) === ".$") {
-          throw new Error('An array item field (one that ends with ".$") cannot have defaultValue.')
+          throw new Error('An array item field (one that ends with ".$") cannot have defaultValue.');
         }
         self._autoValues[fieldName] = (function defineAutoValue(v) {
           return function() {
@@ -89,12 +490,12 @@ SimpleSchema = function(schemas, options) {
 
     if ('autoValue' in definition) {
       if (fieldName.slice(-2) === ".$") {
-        throw new Error('An array item field (one that ends with ".$") cannot have autoValue.')
+        throw new Error('An array item field (one that ends with ".$") cannot have autoValue.');
       }
       self._autoValues[fieldName] = definition.autoValue;
     }
 
-    self._depsLabels[fieldName] = new Deps.Dependency;
+    self._depsLabels[fieldName] = new Deps.Dependency();
 
     if (definition.blackbox === true) {
       self._blackboxKeys.push(fieldName);
@@ -159,13 +560,14 @@ SimpleSchema.RegEx = {
 };
 
 SimpleSchema._makeGeneric = function(name) {
-  if (typeof name !== "string")
+  if (typeof name !== "string") {
     return null;
+  }
 
   return name.replace(/\.[0-9]+\./g, '.$.').replace(/\.[0-9]+/g, '.$');
 };
 
-SimpleSchema._depsGlobalMessages = new Deps.Dependency;
+SimpleSchema._depsGlobalMessages = new Deps.Dependency();
 
 // Inherit from Match.Where
 // This allow SimpleSchema instance to be recognized as a Match.Where instance as well
@@ -187,11 +589,13 @@ SimpleSchema.prototype.condition = function(obj) {
     }
   });
 
-  if (isModifier && isNotModifier)
+  if (isModifier && isNotModifier) {
     throw new Match.Error("Object cannot contain modifier operators alongside other keys");
+  }
 
-  if (!self.newContext().validate(obj, {modifier: isModifier, filter: false, autoConvert: false}))
+  if (!self.newContext().validate(obj, {modifier: isModifier, filter: false, autoConvert: false})) {
     throw new Match.Error("One or more properties do not match the schema.");
+  }
 
   return true;
 };
@@ -300,10 +704,10 @@ SimpleSchema.prototype.clean = function(doc, options) {
   // Clean loop
   if (options.filter || options.autoConvert || options.removeEmptyStrings || options.trimStrings) {
     mDoc.forEachNode(function() {
-      var gKey = this.genericKey;
+      var gKey = this.genericKey, p, def, val;
       if (gKey) {
-        var def = self._schema[gKey];
-        var val = this.value;
+        def = self._schema[gKey];
+        val = this.value;
         // Filter out props if necessary; any property is OK for $unset because we want to
         // allow conversions to remove props that have been removed from the schema.
         if (options.filter && this.operator !== "$unset" && !self.allowsKey(gKey)) {
@@ -330,7 +734,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
                 newVal = void 0;
                 // For a modifier, we $unset any fields that are being set to an empty string
                 if (this.operator === "$set") {
-                  var p = this.position.replace("$set", "$unset");
+                  p = this.position.replace("$set", "$unset");
                   mDoc.setValueForPosition(p, "");
                 }
               }
@@ -352,7 +756,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
               this.remove();
               // For a modifier, we $unset any fields that are being set to an empty string
               if (this.operator === "$set") {
-                var p = this.position.replace("$set", "$unset");
+                p = this.position.replace("$set", "$unset");
                 mDoc.setValueForPosition(p, "");
               }
             }
@@ -377,7 +781,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
 SimpleSchema.prototype.schema = function(key) {
   var self = this;
   // if not null or undefined (more specific)
-  if (key != null) {
+  if (key !== null && key !== void 0) {
     return self._schema[SimpleSchema._makeGeneric(key)];
   } else {
     return self._schema;
@@ -391,8 +795,9 @@ SimpleSchema.prototype.schema = function(key) {
 SimpleSchema.prototype.getDefinition = function(key, propList, functionContext) {
   var self = this;
   var defs = self.schema(key);
-  if (!defs)
+  if (!defs) {
     return;
+  }
 
   if (_.isArray(propList)) {
     defs = _.pick(defs, propList);
@@ -409,7 +814,7 @@ SimpleSchema.prototype.getDefinition = function(key, propList, functionContext) 
   });
 
   // Inflect label if not defined
-  defs["label"] = defs["label"] || inflectedLabel(key);
+  defs.label = defs.label || inflectedLabel(key);
 
   return defs;
 };
@@ -435,11 +840,13 @@ SimpleSchema.prototype.keyIsInBlackBox = function(key) {
 SimpleSchema.prototype.labels = function(labels) {
   var self = this;
   _.each(labels, function(label, fieldName) {
-    if (!_.isString(label) && !_.isFunction(label))
+    if (!_.isString(label) && !_.isFunction(label)) {
       return;
+    }
 
-    if (!(fieldName in self._schema))
+    if (!(fieldName in self._schema)) {
       return;
+    }
 
     self._schema[fieldName].label = label;
     self._depsLabels[fieldName] && self._depsLabels[fieldName].changed();
@@ -451,7 +858,7 @@ SimpleSchema.prototype.label = function(key) {
   var self = this;
 
   // Get all labels
-  if (key == null) {
+  if (key === null || key === void 0) {
     var result = {};
     _.each(self.schema(), function(def, fieldName) {
       result[fieldName] = self.label(fieldName);
@@ -541,7 +948,7 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
   // Which regExp is it?
   var regExpMatch;
   if (type === "regEx") {
-    if (index != null && !isNaN(index)) {
+    if (index !== null && index !== void 0 && !isNaN(index)) {
       regExpMatch = def.regEx[index];
     } else {
       regExpMatch = def.regEx;
@@ -681,12 +1088,14 @@ SimpleSchema.prototype.allowsKey = function(key) {
       // If the test key is the black box key + ".$", then the test
       // key is NOT allowed because black box keys are by definition
       // only for objects, and not for arrays.
-      if (compare1 === schemaKey + '.$')
+      if (compare1 === schemaKey + '.$') {
         return false;
+      }
 
       // Otherwise
-      if (compare2 === schemaKey + '.')
+      if (compare2 === schemaKey + '.') {
         return true;
+      }
     }
 
     return false;
@@ -706,391 +1115,3 @@ SimpleSchema.prototype.objectKeys = function(keyPrefix) {
   }
   return self._objectKeys[keyPrefix + "."] || [];
 };
-
-/*
- * PRIVATE FUNCTIONS
- */
-
-//called by clean()
-var typeconvert = function(value, type) {
-  if (_.isArray(value) || (_.isObject(value) && !(value instanceof Date)))
-    return value; //can't and shouldn't convert arrays or objects
-  if (type === String) {
-    if (typeof value !== "undefined" && value !== null && typeof value !== "string") {
-      return value.toString();
-    }
-    return value;
-  }
-  if (type === Number) {
-    if (typeof value === "string" && !S(value).isEmpty()) {
-      //try to convert numeric strings to numbers
-      var numberVal = Number(value);
-      if (!isNaN(numberVal)) {
-        return numberVal;
-      } else {
-        return value; //leave string; will fail validation
-      }
-    }
-    return value;
-  }
-  //
-  // If target type is a Date we can safely convert from either a
-  // number (Integer value representing the number of milliseconds
-  // since 1 January 1970 00:00:00 UTC) or a string that can be parsed
-  // by Date.
-  //
-  if (type === Date) {
-    if (typeof value === "string") {
-      parsedDate = Date.parse(value);
-      if (isNaN(parsedDate) === false) {
-        return new Date(parsedDate);
-      }
-    }
-    if (typeof value === "number") {
-      return new Date(value);
-    }
-  }
-  return value;
-};
-
-var mergeSchemas = function(schemas) {
-
-  // Merge all provided schema definitions.
-  // This is effectively a shallow clone of each object, too,
-  // which is what we want since we are going to manipulate it.
-  var mergedSchema = {};
-  _.each(schemas, function(schema) {
-
-    // Create a temporary SS instance so that the internal object
-    // we use for merging/extending will be fully expanded
-    if (Match.test(schema, SimpleSchema)) {
-      schema = schema._schema;
-    } else {
-      schema = addImplicitKeys(expandSchema(schema));
-    }
-
-    // Loop through and extend each individual field
-    // definition. That way you can extend and overwrite
-    // base field definitions.
-    _.each(schema, function(def, field) {
-      mergedSchema[field] = mergedSchema[field] || {};
-      _.extend(mergedSchema[field], def);
-    });
-
-  });
-
-  // If we merged some schemas, do this again to make sure
-  // extended definitions are pushed into array item field
-  // definitions properly.
-  schemas.length && adjustArrayFields(mergedSchema);
-
-  return mergedSchema;
-};
-
-var expandSchema = function(schema) {
-  // Flatten schema by inserting nested definitions
-  _.each(schema, function(val, key) {
-    var dot, type;
-    if (!val)
-      return;
-    if (Match.test(val.type, SimpleSchema)) {
-      dot = '.';
-      type = val.type;
-      val.type = Object;
-    } else if (Match.test(val.type, [SimpleSchema])) {
-      dot = '.$.';
-      type = val.type[0];
-      val.type = [Object];
-    } else {
-      return;
-    }
-    //add child schema definitions to parent schema
-    _.each(type._schema, function(subVal, subKey) {
-      var newKey = key + dot + subKey;
-      if (!(newKey in schema))
-        schema[newKey] = subVal;
-    });
-  });
-  return schema;
-};
-
-var adjustArrayFields = function(schema) {
-  _.each(schema, function(def, existingKey) {
-    if (_.isArray(def.type) || def.type === Array) {
-      // Copy some options to array-item definition
-      var itemKey = existingKey + ".$";
-      if (!(itemKey in schema)) {
-        schema[itemKey] = {};
-      }
-      if (_.isArray(def.type)) {
-        schema[itemKey].type = def.type[0];
-      }
-      if (def.label) {
-        schema[itemKey].label = def.label;
-      }
-      schema[itemKey].optional = true;
-      if (typeof def.min !== "undefined") {
-        schema[itemKey].min = def.min;
-      }
-      if (typeof def.max !== "undefined") {
-        schema[itemKey].max = def.max;
-      }
-      if (typeof def.allowedValues !== "undefined") {
-        schema[itemKey].allowedValues = def.allowedValues;
-      }
-      if (typeof def.decimal !== "undefined") {
-        schema[itemKey].decimal = def.decimal;
-      }
-      if (typeof def.exclusiveMax !== "undefined") {
-        schema[itemKey].exclusiveMax = def.exclusiveMax;
-      }
-      if (typeof def.exclusiveMin !== "undefined") {
-        schema[itemKey].exclusiveMin = def.exclusiveMin;
-      }
-      if (typeof def.regEx !== "undefined") {
-        schema[itemKey].regEx = def.regEx;
-      }
-      if (typeof def.blackbox !== "undefined") {
-        schema[itemKey].blackbox = def.blackbox;
-      }
-      // Remove copied options and adjust type
-      def.type = Array;
-      _.each(['min', 'max', 'allowedValues', 'decimal', 'exclusiveMax', 'exclusiveMin', 'regEx', 'blackbox'], function(k) {
-        Utility.deleteIfPresent(def, k);
-      });
-    }
-  });
-};
-
-/**
- * Adds implied keys.
- * * If schema contains a key like "foo.$.bar" but not "foo", adds "foo".
- * * If schema contains a key like "foo" with an array type, adds "foo.$".
- * @param {Object} schema
- * @returns {Object} modified schema
- */
-var addImplicitKeys = function(schema) {
-  var arrayKeysToAdd = [], objectKeysToAdd = [], newKey, key;
-
-  // Pass 1 (objects)
-  _.each(schema, function(def, existingKey) {
-    var pos = existingKey.indexOf(".");
-    while (pos !== -1) {
-      newKey = existingKey.substring(0, pos);
-
-      // It's an array item; nothing to add
-      if (newKey.substring(newKey.length - 2) === ".$") {
-        pos = -1;
-      }
-      // It's an array of objects; add it with type [Object] if not already in the schema
-      else if (existingKey.substring(pos, pos + 3) === ".$.") {
-        arrayKeysToAdd.push(newKey); // add later, since we are iterating over schema right now
-        pos = existingKey.indexOf(".", pos + 3); // skip over next dot, find the one after
-      }
-      // It's an object; add it with type Object if not already in the schema
-      else {
-        objectKeysToAdd.push(newKey); // add later, since we are iterating over schema right now
-        pos = existingKey.indexOf(".", pos + 1); // find next dot
-      }
-    }
-  });
-
-  for (var i = 0, ln = arrayKeysToAdd.length; i < ln; i++) {
-    key = arrayKeysToAdd[i];
-    if (!(key in schema)) {
-      schema[key] = {type: [Object], optional: true};
-    }
-  }
-
-  for (var i = 0, ln = objectKeysToAdd.length; i < ln; i++) {
-    key = objectKeysToAdd[i];
-    if (!(key in schema)) {
-      schema[key] = {type: Object, optional: true};
-    }
-  }
-
-  // Pass 2 (arrays)
-  adjustArrayFields(schema);
-
-  return schema;
-};
-
-// Returns an object relating the keys in the list
-// to their parent object.
-var getObjectKeys = function(schema, schemaKeyList) {
-  var keyPrefix, remainingText, rKeys = {}, loopArray;
-  _.each(schema, function(definition, fieldName) {
-    if (definition.type === Object) {
-      //object
-      keyPrefix = fieldName + ".";
-    } else {
-      return;
-    }
-
-    loopArray = [];
-    _.each(schemaKeyList, function(fieldName2) {
-      if (S(fieldName2).startsWith(keyPrefix)) {
-        remainingText = fieldName2.substring(keyPrefix.length);
-        if (remainingText.indexOf(".") === -1) {
-          loopArray.push(remainingText);
-        }
-      }
-    });
-    rKeys[keyPrefix] = loopArray;
-  });
-  return rKeys;
-};
-
-// returns an inflected version of fieldName to use as the label
-var inflectedLabel = function(fieldName) {
-  var label = fieldName, lastPeriod = label.lastIndexOf(".");
-  if (lastPeriod !== -1) {
-    label = label.substring(lastPeriod + 1);
-    if (label === "$") {
-      var pcs = fieldName.split(".");
-      label = pcs[pcs.length - 2];
-    }
-  }
-  if (label === "_id")
-    return "ID";
-  return S(label).humanize().s;
-};
-
-/**
- * @method getAutoValues
- * @private
- * @param {MongoObject} mDoc
- * @param {Boolean} [isModifier=false] - Is it a modifier doc?
- * @param {Object} [extendedAutoValueContext] - Object that will be added to the context when calling each autoValue function
- * @returns {undefined}
- *
- * Updates doc with automatic values from autoValue functions or default
- * values from defaultValue. Modifies the referenced object in place.
- */
-function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
-  var self = this;
-  var doneKeys = [];
-
-  //on the client we can add the userId if not already in the custom context
-  if (Meteor.isClient && extendedAutoValueContext.userId === void 0) {
-    extendedAutoValueContext.userId = (Meteor.userId && Meteor.userId()) || null;
-  }
-
-  function runAV(func) {
-    var affectedKey = this.key;
-    // If already called for this key, skip it
-    if (_.contains(doneKeys, affectedKey))
-      return;
-    var lastDot = affectedKey.lastIndexOf('.');
-    var fieldParentName = lastDot === -1 ? '' : affectedKey.slice(0, lastDot + 1);
-    var doUnset = false;
-    var autoValue = func.call(_.extend({
-      isSet: (this.value !== void 0),
-      unset: function() {
-        doUnset = true;
-      },
-      value: this.value,
-      operator: this.operator,
-      field: function(fName) {
-        var keyInfo = mDoc.getInfoForKey(fName) || {};
-        return {
-          isSet: (keyInfo.value !== void 0),
-          value: keyInfo.value,
-          operator: keyInfo.operator || null
-        };
-      },
-      siblingField: function(fName) {
-        var keyInfo = mDoc.getInfoForKey(fieldParentName + fName) || {};
-        return {
-          isSet: (keyInfo.value !== void 0),
-          value: keyInfo.value,
-          operator: keyInfo.operator || null
-        };
-      }
-    }, extendedAutoValueContext || {}), mDoc.getObject());
-
-    // Update tracking of which keys we've run autovalue for
-    doneKeys.push(affectedKey);
-
-    if (autoValue === void 0) {
-      if (doUnset) {
-        mDoc.removeValueForPosition(this.position);
-      }
-      return;
-    }
-
-    // If the user's auto value is of the pseudo-modifier format, parse it
-    // into operator and value.
-    var op, newValue;
-    if (_.isObject(autoValue)) {
-      for (var key in autoValue) {
-        if (autoValue.hasOwnProperty(key) && key.substring(0, 1) === "$") {
-          op = key;
-          newValue = autoValue[key];
-          break;
-        }
-      }
-    }
-
-    // Add $set for updates and upserts if necessary
-    if (!op && isModifier && this.position.slice(0, 1) !== '$') {
-      op = "$set";
-      newValue = autoValue;
-    }
-
-    // Update/change value
-    if (op) {
-      mDoc.removeValueForPosition(this.position);
-      mDoc.setValueForPosition(op + '[' + affectedKey + ']', newValue);
-    } else {
-      mDoc.setValueForPosition(this.position, autoValue);
-    }
-  }
-
-  _.each(self._autoValues, function(func, fieldName) {
-    var positionSuffix, key, keySuffix, positions;
-
-    // If we're under an array, run autovalue for all the properties of
-    // any objects that are present in the nearest ancestor array.
-    if (fieldName.indexOf("$") !== -1) {
-      var testField = fieldName.slice(0, fieldName.lastIndexOf("$") + 1);
-      keySuffix = fieldName.slice(testField.length + 1);
-      positionSuffix = MongoObject._keyToPosition(keySuffix, true);
-      keySuffix = '.' + keySuffix;
-      positions = mDoc.getPositionsForGenericKey(testField);
-    } else {
-
-      // See if anything in the object affects this key
-      positions = mDoc.getPositionsForGenericKey(fieldName);
-
-      // Run autovalue for properties that are set in the object
-      if (positions.length) {
-        key = fieldName;
-        keySuffix = '';
-        positionSuffix = '';
-      }
-
-      // Run autovalue for properties that are NOT set in the object
-      else {
-        key = fieldName;
-        keySuffix = '';
-        positionSuffix = '';
-        if (isModifier) {
-          positions = ["$set[" + fieldName + "]"];
-        } else {
-          positions = [MongoObject._keyToPosition(fieldName)];
-        }
-      }
-
-    }
-
-    _.each(positions, function(position) {
-      runAV.call({
-        key: (key || MongoObject._positionToKey(position)) + keySuffix,
-        value: mDoc.getValueForPosition(position + positionSuffix),
-        operator: Utility.extractOp(position),
-        position: position + positionSuffix
-      }, func);
-    });
-  });
-}

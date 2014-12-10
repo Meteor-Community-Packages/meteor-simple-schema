@@ -1,3 +1,14 @@
+/* global SimpleSchema */
+/* global SimpleSchemaValidationContext:true */
+/* global doValidation1 */
+/* global doValidation2 */
+
+function doValidation(obj, isModifier, isUpsert, keyToValidate, ss, extendedCustomContext) {
+  var useOld = true; //for now this can be manually changed to try the experimental method, which doesn't yet work properly
+  var func = useOld ? doValidation1 : doValidation2;
+  return func(obj, isModifier, isUpsert, keyToValidate, ss, extendedCustomContext);
+}
+
 /*
  * PUBLIC API
  */
@@ -10,14 +21,14 @@ SimpleSchemaValidationContext = function SimpleSchemaValidationContext(ss) {
   self._invalidKeys = [];
   //set up validation dependencies
   self._deps = {};
-  self._depsAny = new Deps.Dependency;
+  self._depsAny = new Deps.Dependency();
   _.each(self._schemaKeys, function(name) {
-    self._deps[name] = new Deps.Dependency;
+    self._deps[name] = new Deps.Dependency();
   });
 };
 
 //validates the object against the simple schema and sets a reactive array of error objects
-SimpleSchemaValidationContext.prototype.validate = function SimpleSchemaValidationContext_validate(doc, options) {
+SimpleSchemaValidationContext.prototype.validate = function simpleSchemaValidationContextValidate(doc, options) {
   var self = this;
   options = _.extend({
     modifier: false,
@@ -53,8 +64,8 @@ SimpleSchemaValidationContext.prototype.validate = function SimpleSchemaValidati
 };
 
 //validates doc against self._schema for one key and sets a reactive array of error objects
-SimpleSchemaValidationContext.prototype.validateOne = function SimpleSchemaValidationContext_validateOne(doc, keyName, options) {
-  var self = this;
+SimpleSchemaValidationContext.prototype.validateOne = function simpleSchemaValidationContextValidateOne(doc, keyName, options) {
+  var self = this, i, ln, k;
   options = _.extend({
     modifier: false,
     upsert: false,
@@ -72,7 +83,7 @@ SimpleSchemaValidationContext.prototype.validateOne = function SimpleSchemaValid
 
   //remove objects from self._invalidKeys where name = keyName
   var newInvalidKeys = [];
-  for (var i = 0, ln = self._invalidKeys.length, k; i < ln; i++) {
+  for (i = 0, ln = self._invalidKeys.length; i < ln; i++) {
     k = self._invalidKeys[i];
     if (k.name !== keyName) {
       newInvalidKeys.push(k);
@@ -81,7 +92,7 @@ SimpleSchemaValidationContext.prototype.validateOne = function SimpleSchemaValid
   self._invalidKeys = newInvalidKeys;
 
   //merge invalidKeys into self._invalidKeys
-  for (var i = 0, ln = invalidKeys.length, k; i < ln; i++) {
+  for (i = 0, ln = invalidKeys.length; i < ln; i++) {
     k = invalidKeys[i];
     self._invalidKeys.push(k);
   }
@@ -93,37 +104,32 @@ SimpleSchemaValidationContext.prototype.validateOne = function SimpleSchemaValid
   return !self._keyIsInvalid(keyName);
 };
 
-function doValidation(obj, isModifier, isUpsert, keyToValidate, ss, extendedCustomContext) {
-  var useOld = true; //for now this can be manually changed to try the experimental method, which doesn't yet work properly
-  var func = useOld ? doValidation1 : doValidation2;
-  return func(obj, isModifier, isUpsert, keyToValidate, ss, extendedCustomContext);
-}
-
 //reset the invalidKeys array
-SimpleSchemaValidationContext.prototype.resetValidation = function SimpleSchemaValidationContext_resetValidation() {
+SimpleSchemaValidationContext.prototype.resetValidation = function simpleSchemaValidationContextResetValidation() {
   var self = this;
   var removedKeys = _.pluck(self._invalidKeys, "name");
   self._invalidKeys = [];
   self._markKeysChanged(removedKeys);
 };
 
-SimpleSchemaValidationContext.prototype.isValid = function SimpleSchemaValidationContext_isValid() {
+SimpleSchemaValidationContext.prototype.isValid = function simpleSchemaValidationContextIsValid() {
   var self = this;
   self._depsAny.depend();
   return !self._invalidKeys.length;
 };
 
-SimpleSchemaValidationContext.prototype.invalidKeys = function SimpleSchemaValidationContext_invalidKeys() {
+SimpleSchemaValidationContext.prototype.invalidKeys = function simpleSchemaValidationContextInvalidKeys() {
   var self = this;
   self._depsAny.depend();
   return self._invalidKeys;
 };
 
-SimpleSchemaValidationContext.prototype.addInvalidKeys = function SimpleSchemaValidationContext_addInvalidKeys(errors) {
+SimpleSchemaValidationContext.prototype.addInvalidKeys = function simpleSchemaValidationContextAddInvalidKeys(errors) {
   var self = this;
 
-  if (!errors || !errors.length)
+  if (!errors || !errors.length) {
     return;
+  }
 
   var changedKeys = [];
   _.each(errors, function (errorObject) {
@@ -134,11 +140,12 @@ SimpleSchemaValidationContext.prototype.addInvalidKeys = function SimpleSchemaVa
   self._markKeysChanged(changedKeys);
 };
 
-SimpleSchemaValidationContext.prototype._markKeysChanged = function SimpleSchemaValidationContext__markKeysChanged(keys) {
+SimpleSchemaValidationContext.prototype._markKeysChanged = function simpleSchemaValidationContextMarkKeysChanged(keys) {
   var self = this;
 
-  if (!keys || !keys.length)
+  if (!keys || !keys.length) {
     return;
+  }
 
   _.each(keys, function(name) {
     var genericName = SimpleSchema._makeGeneric(name);
@@ -149,7 +156,7 @@ SimpleSchemaValidationContext.prototype._markKeysChanged = function SimpleSchema
   self._depsAny.changed();
 };
 
-SimpleSchemaValidationContext.prototype._getInvalidKeyObject = function SimpleSchemaValidationContext__getInvalidKeyObject(name, genericName) {
+SimpleSchemaValidationContext.prototype._getInvalidKeyObject = function simpleSchemaValidationContextGetInvalidKeyObject(name, genericName) {
   var self = this;
   genericName = genericName || SimpleSchema._makeGeneric(name);
 
@@ -160,19 +167,19 @@ SimpleSchemaValidationContext.prototype._getInvalidKeyObject = function SimpleSc
   return errorObj;
 };
 
-SimpleSchemaValidationContext.prototype._keyIsInvalid = function SimpleSchemaValidationContext__keyIsInvalid(name, genericName) {
+SimpleSchemaValidationContext.prototype._keyIsInvalid = function simpleSchemaValidationContextKeyIsInvalid(name, genericName) {
   return !!this._getInvalidKeyObject(name, genericName);
 };
 
 // Like the internal one, but with deps
-SimpleSchemaValidationContext.prototype.keyIsInvalid = function SimpleSchemaValidationContext_keyIsInvalid(name) {
+SimpleSchemaValidationContext.prototype.keyIsInvalid = function simpleSchemaValidationContextKeyIsInvalid(name) {
   var self = this, genericName = SimpleSchema._makeGeneric(name);
   self._deps[genericName] && self._deps[genericName].depend();
 
   return self._keyIsInvalid(name, genericName);
 };
 
-SimpleSchemaValidationContext.prototype.keyErrorMessage = function SimpleSchemaValidationContext_keyErrorMessage(name) {
+SimpleSchemaValidationContext.prototype.keyErrorMessage = function simpleSchemaValidationContextKeyErrorMessage(name) {
   var self = this, genericName = SimpleSchema._makeGeneric(name);
   self._deps[genericName] && self._deps[genericName].depend();
   
@@ -184,7 +191,7 @@ SimpleSchemaValidationContext.prototype.keyErrorMessage = function SimpleSchemaV
   return self._simpleSchema.messageForError(errorObj.type, errorObj.name, null, errorObj.value);
 };
 
-SimpleSchemaValidationContext.prototype.getErrorObject = function SimpleSchemaValidationContext_getErrorObject(context) {
+SimpleSchemaValidationContext.prototype.getErrorObject = function simpleSchemaValidationContextGetErrorObject() {
   var self = this, message, invalidKeys = this._invalidKeys;
   if (invalidKeys.length) {
     message = self.keyErrorMessage(invalidKeys[0].name);
