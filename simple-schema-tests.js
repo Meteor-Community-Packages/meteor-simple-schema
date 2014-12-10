@@ -152,6 +152,22 @@ var ss = new SimpleSchema({
       return 20;
     }
   },
+  minMaxNumberExclusive: {
+     type: Number,
+     optional: true,
+     min: 10,
+     max: 20,
+     exclusiveMax: true,
+     exclusiveMin: true
+  },
+  minMaxNumberInclusive: {
+     type: Number,
+     optional: true,
+     min: 10,
+     max: 20,
+     exclusiveMax: false,
+     exclusiveMin: false
+  },
   allowedNumbers: {
     type: Number,
     optional: true,
@@ -1904,6 +1920,23 @@ Tinytest.add("SimpleSchema - Minimum Checks - Insert", function(test) {
   });
   test.length(sc.invalidKeys(), 1);
   /* NUMBER */
+  sc = validate(ss, {
+    minMaxNumberExclusive: 20 
+  });
+  test.length(sc.invalidKeys(), 1);
+  sc = validate(ss, {
+    minMaxNumberExclusive: 10
+  });
+  test.length(sc.invalidKeys(), 1);
+
+  sc = validate(ss, {
+    minMaxNumberInclusive: 20
+  });
+  test.equal(sc.invalidKeys(), []);
+  sc = validate(ss, {
+    minMaxNumberInclusive: 10
+  });
+  test.equal(sc.invalidKeys(), []);
   sc = validate(ss, {
     minMaxNumber: 10
   });
