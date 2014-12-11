@@ -402,7 +402,7 @@ Otherwise, all strings are trimmed when you call `mySimpleSchema.clean()`.
 
 ### custom
 
-Refer to the "Custom Validation" section.
+Refer to the [Custom Validation](#custom-validation) section.
 
 ### defaultValue
 
