@@ -622,7 +622,7 @@ have the same parent object. Works the same way as `field()`. This is helpful
 when you use sub-schemas or when you're dealing with arrays of objects.
 
 NOTE: If you need to do some custom validation on the server and then display errors back
-on the client, refer to the "Asynchronous Custom Validation on the Client" section.
+on the client, refer to the [Asynchronous Custom Validation on the Client](#asynchronous-custom-validation-on-the-client) section.
 
 ### Manually Adding a Validation Error
 
