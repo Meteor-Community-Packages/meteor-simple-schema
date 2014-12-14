@@ -556,7 +556,10 @@ SimpleSchema.RegEx = {
   // unique id from the random package also used by minimongo
   // character list: https://github.com/meteor/meteor/blob/release/0.8.0/packages/random/random.js#L88
   // string length: https://github.com/meteor/meteor/blob/release/0.8.0/packages/random/random.js#L143
-  Id: /^[23456789ABCDEFGHJKLMNPQRSTWXYZabcdefghijkmnopqrstuvwxyz]{17}$/
+  Id: /^[23456789ABCDEFGHJKLMNPQRSTWXYZabcdefghijkmnopqrstuvwxyz]{17}$/,
+  // allows for a 5 digit zip code followed by a whitespace or dash and then 4 more digits
+  // matches 11111 and 11111-1111 and 11111 1111
+  ZipCode: /^\d{5}(?:[-\s]\d{4})?$/
 };
 
 SimpleSchema._makeGeneric = function(name) {
