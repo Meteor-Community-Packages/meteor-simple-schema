@@ -5,6 +5,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 1.3.0
+
+Added built-in regular expression `SimpleSchema.RegEx.ZipCode`
+
 ### 1.2.0
 
 * The `clean` function now automatically converts a number or string to a Date object. (Thanks @rlora)
