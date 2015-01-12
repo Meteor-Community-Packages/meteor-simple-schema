@@ -13,6 +13,8 @@ A simple, reactive schema validation smart package for Meteor. It's used by the 
 - [Basic Usage](#basic-usage)
   - [Example](#example)
   - [Combining SimpleSchemas](#combining-simpleschemas)
+  - [Extracting SimpleSchemas](#extracting-simpleschemas)
+- [The Object to Validate](#the-object-to-validate)
 - [Schema Keys](#schema-keys)
 - [Schema Rules](#schema-rules)
   - [type](#type)
@@ -29,7 +31,6 @@ A simple, reactive schema validation smart package for Meteor. It's used by the 
   - [custom](#custom)
   - [defaultValue](#defaultvalue)
   - [autoValue](#autovalue)
-- [The Object](#the-object)
 - [Cleaning Data](#cleaning-data)
 - [Validating Data](#validating-data)
   - [Named Validation Contexts](#named-validation-contexts)
@@ -170,7 +171,21 @@ cmsBaseSchema = new SimpleSchema({ ... });
 cmsPageSchema = new SimpleSchema([cmsBaseSchema, {additionalField: {type: String} }]);
 ```
 
-## The Object
+### Extracting SimpleSchemas
+
+Sometimes you have one large SimpleSchema object, and you need just a subset of it for some purpose. To pull out certain schema keys into a new schema, you can use the `pick` method:
+
+```js
+var profileSchema = new SimpleSchema({
+  firstName: {type: String},
+  lastName: {type: String},
+  username: {type: String}
+});
+
+var nameSchema = profileSchema.pick(['firstName', 'lastName']);
+```
+
+## The Object to Validate
 
 The object you pass in when validating can be a normal object, or it can be
 a Mongo modifier object (with `$set`, etc. keys). In other words, you can pass
