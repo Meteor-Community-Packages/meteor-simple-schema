@@ -420,6 +420,11 @@ Otherwise, all strings are trimmed when you call `mySimpleSchema.clean()`.
 
 Refer to the [Custom Validation](#custom-validation) section.
 
+### keyIsRegEx
+
+Set to `true` to indicate that the key is a regular expression.
+This schema will be applied to keys matching the regular expression.
+
 ### defaultValue
 
 Set this to any value that you want to be used as the default when an object
