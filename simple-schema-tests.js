@@ -428,6 +428,15 @@ var reqCust = new SimpleSchema({
   }
 });
 
+var keyRegEx = new SimpleSchema({
+  '^element_': {
+    keyIsRegEx: true,
+    type: Number,
+    max: 10,
+    optional: true
+  }
+});
+
 /*
  * END SETUP FOR TESTS
  */
@@ -3898,6 +3907,22 @@ Tinytest.add("SimpleSchema - Required Custom", function (test) {
 
   ctx.validate({$push: {'a': {}}}, {modifier: true});
   test.equal(ctx.invalidKeys().length, 0, 'expected no validation errors');
+});
+
+Tinytest.add("SimpleSchema - Regular Expression Key", function (test) {
+  var ctx = keyRegEx.namedContext();
+  // Ensure that the key is regarded as optional
+  ctx.validate({});
+  test.equal(ctx.invalidKeys().length, 0, 'expected no validation errors');
+  // Ensure that the key doesn't match unwanted keys
+  ctx.validate({$set: {a: 1}}, {modifier: true});
+  test.equal(ctx.invalidKeys().length, 1, 'expected 1 invalid key');
+  // Ensure that the key matches wanted keys
+  ctx.validate({$set: {element_foo: 1}}, {modifier: true});
+  test.equal(ctx.invalidKeys().length, 0, 'expected no validation errors');
+  // Ensure that restrictions are applied normally
+  ctx.validate({$set: {element_foo: 37}}, {modifier: true});
+  test.equal(ctx.invalidKeys().length, 1, 'expected 1 invalid key');
 });
 
 Tinytest.add("SimpleSchema - Clean and Validate Object with Prototype", function (test) {

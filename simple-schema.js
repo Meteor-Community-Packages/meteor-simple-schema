@@ -28,7 +28,8 @@ var schemaDefinition = {
   blackbox: Match.Optional(Boolean),
   autoValue: Match.Optional(Function),
   defaultValue: Match.Optional(Match.Any),
-  trim: Match.Optional(Boolean)
+  trim: Match.Optional(Boolean),
+  keyIsRegEx: Match.Optional(Boolean)
 };
 
 /*
@@ -444,6 +445,9 @@ SimpleSchema = function(schemas, options) {
   // store the list of defined keys for speedier checking
   self._schemaKeys = [];
 
+  // store the list of defined regular expression keys for speedier checking
+  self._schemaRegExKeys = [];
+
   // store autoValue functions by key
   self._autoValues = {};
 
@@ -466,6 +470,11 @@ SimpleSchema = function(schemas, options) {
     }
 
     fieldNameRoot = fieldName.split(".")[0];
+
+    if ('keyIsRegEx' in definition) {
+      var fieldNameRegEx = new RegExp(fieldName);
+      self._schemaRegExKeys.push(fieldNameRegEx);
+    }
 
     self._schemaKeys.push(fieldName);
 
@@ -798,8 +807,22 @@ SimpleSchema.prototype.schema = function(key) {
 SimpleSchema.prototype.getDefinition = function(key, propList, functionContext) {
   var self = this;
   var defs = self.schema(key);
+
   if (!defs) {
-    return;
+    if (_.isEmpty(self._schemaRegExKeys)) {
+      return;
+    } else {
+      var regex = _.find(self._schemaRegExKeys, function (regex) {
+        return key.match(regex);
+      });
+      if (!regex) {
+        return;
+      }
+      defs = self.schema(regex.source);
+      if (!defs) {
+        return;
+      }
+    }
   }
 
   if (_.isArray(propList)) {
@@ -1079,6 +1102,14 @@ SimpleSchema.prototype.allowsKey = function(key) {
 
     // If the schema key is the test key, it's allowed.
     if (schemaKey === key) {
+      return true;
+    }
+
+    // If the schema key is a regular expression and it matches
+    if (key === 'element_foo'){
+      console.log(key);
+    }
+    if (schemaKey instanceof RegExp && key.match(schemaKe)) {
       return true;
     }
 
