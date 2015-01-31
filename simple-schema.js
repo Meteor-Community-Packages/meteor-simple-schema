@@ -426,19 +426,7 @@ function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
   });
 }
 
-// Used to match key parts.
-// * 1st group is the root key.
-// * 2nd group is the root key if it is a regular expression.
-// * 3rd group is the last key after a $.
-// * 4rd group is the last regular expression after a $.
-// * 5rd group is the leaf key.
-// * 6rd group is the last regular expression after the root.
-var KEY_REGEX = /^([^.\/]+|(\/[^\/]+\/))(?:\.\$\.([^.\/]+|(\/[^\/]+\/))|\.([^.\/]+|(\/[^\/]+\/)))*$/;
-function isRegExKey(key) {
-  matches = KEY_REGEX.exec(key);
-  return Boolean(matches[2] || matches[4] || matches[6]);
-}
-
+// Split key into nodes. RegExp safe version.
 function splitKey(key) {
   return key.match(/[^.\/]+|\/[^\/]+\/|\$/g);
 }
@@ -684,6 +672,22 @@ SimpleSchema.addValidator = function(func) {
 SimpleSchema.prototype.addValidator = SimpleSchema.prototype.validator = function(func) {
   this._validators.push(func);
 };
+
+// Used to match key parts.
+// * 1st group is the root key.
+// * 2nd group is the root key if it is a regular expression.
+// * 3rd group is the last key after a $.
+// * 4rd group is the last regular expression after a $.
+// * 5rd group is the leaf key.
+// * 6rd group is the last regular expression after the root.
+var KEY_REGEX = /^([^.\/]+|(\/[^\/]+\/))(?:\.\$\.([^.\/]+|(\/[^\/]+\/))|\.([^.\/]+|(\/[^\/]+\/)))*$/;
+function isRegExKey(key) {
+  matches = KEY_REGEX.exec(key);
+  return Boolean(matches[2] || matches[4] || matches[6]);
+}
+
+// Utility function to check whether a key contains a regular expression.
+SimpleSchema.keyIsRegEx = isRegExKey
 
 /**
  * @method SimpleSchema.prototype.pick
