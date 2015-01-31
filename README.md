@@ -251,6 +251,21 @@ MySchema = new SimpleSchema({
 });
 ```
 
+Schemas can also contain regular expressions defined as literal `RegExp` in javascript.
+
+```js
+MySchema = new SimpleSchema({
+    '/_address$/.street': {
+        type: String
+    },
+    '/_address$/.city': {
+        type: String
+    }
+});
+```
+
+In the example above, "home_address" and "office_address" are valid keys.
+
 ## Schema Rules
 
 Here are some specifics about the various rules you can define in your schema.
