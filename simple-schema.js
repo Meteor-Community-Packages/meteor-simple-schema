@@ -426,11 +426,45 @@ function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
   });
 }
 
+// Used to match key parts.
+// * 1st group is the root key.
+// * 2nd group is the root key if it is a regular expression.
+// * 3rd group is the last key after a $.
+// * 4rd group is the last regular expression after a $.
+// * 5rd group is the leaf key.
+// * 6rd group is the last regular expression after the root.
+var KEY_REGEX = /^([^.\/]+|(\/[^\/]+\/))(?:\.\$\.([^.\/]+|(\/[^\/]+\/))|\.([^.\/]+|(\/[^\/]+\/)))*$/;
+function isRegExKey(key) {
+  matches = KEY_REGEX.exec(key);
+  return Boolean(matches[2] || matches[4] || matches[6]);
+}
+
+function splitKey(key) {
+  return key.match(/[^.\/]+|\/[^\/]+\/|\$/g);
+}
+
+function makeSingleRegEx(key) {
+  var nodes = splitKey(key);
+  var src = '^' + _.map(nodes, function(node) {
+    if (node.match(/\/[^\/]*\//)) {
+      node = node.replace(/^\/\^/, '')
+                 .replace(/^\//, '[^.]*')
+                 .replace(/\$\/$/, '')
+                 .replace(/\/$/, '[^.]*');
+    } else if (node == '$') {
+      node = '(?:[0-9]+|\\$)';
+    }
+    return node;
+  }).join('\\.') + '$';
+  return new RegExp(src);
+}
+
 //exported
 SimpleSchema = function(schemas, options) {
   var self = this;
   var firstLevelSchemaKeys = [];
   var fieldNameRoot;
+  var fieldNameParts;
   options = options || {};
   schemas = schemas || {};
 
@@ -443,6 +477,9 @@ SimpleSchema = function(schemas, options) {
 
   // store the list of defined keys for speedier checking
   self._schemaKeys = [];
+
+  // store the list of defined regular expression keys for speedier checking
+  self._schemaRegExKeys = {};
 
   // store autoValue functions by key
   self._autoValues = {};
@@ -465,7 +502,12 @@ SimpleSchema = function(schemas, options) {
       throw new Error('Invalid definition for ' + fieldName + ' field.');
     }
 
-    fieldNameRoot = fieldName.split(".")[0];
+    fieldNameParts = splitKey(fieldName);
+    fieldNameRoot = fieldNameParts[0];
+
+    if (isRegExKey(fieldName)){
+      self._schemaRegExKeys[fieldName] = makeSingleRegEx(fieldName);
+    }
 
     self._schemaKeys.push(fieldName);
 
@@ -779,13 +821,28 @@ SimpleSchema.prototype.clean = function(doc, options) {
   return doc;
 };
 
+// Returns a key in the definition that matches the proposed key.
+SimpleSchema.prototype.getMatchingKey = function(key) {
+  var self = this;
+  var orig;
+  if (key in self._schema){
+    return key;
+  }
+  for(orig in self._schemaRegExKeys){
+    if (key.match(self._schemaRegExKeys[orig])) {
+      return orig;
+    }
+  }
+  return null;
+}
+
 // Returns the entire schema object or just the definition for one key
 // in the schema.
 SimpleSchema.prototype.schema = function(key) {
   var self = this;
   // if not null or undefined (more specific)
   if (key !== null && key !== void 0) {
-    return self._schema[SimpleSchema._makeGeneric(key)];
+    return self._schema[self.getMatchingKey(SimpleSchema._makeGeneric(key))];
   } else {
     return self._schema;
   }
