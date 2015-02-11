@@ -914,7 +914,7 @@ SimpleSchema._globalMessages = {
     {exp: SimpleSchema.RegEx.Url, msg: "[label] must be a valid URL"},
     {exp: SimpleSchema.RegEx.Id, msg: "[label] must be a valid alphanumeric ID"}
   ],
-  keyNotInSchema: "[label] is not allowed by the schema"
+  keyNotInSchema: "[key] is not allowed by the schema"
 };
 
 SimpleSchema.messages = function(messages) {
@@ -966,10 +966,9 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
   var genericKey = SimpleSchema._makeGeneric(key);
   var typePlusGenKey = type + " " + genericKey;
 
-  // reactively update when message templates or labels are changed
+  // reactively update when message templates are changed
   SimpleSchema._depsGlobalMessages.depend();
   self._depsMessages.depend();
-  self._depsLabels[key] && self._depsLabels[key].depend();
 
   // Prep a function that finds the correct message for regEx errors
   function findRegExError(message) {
@@ -1019,9 +1018,12 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
 
   // Now replace all placeholders in the message with the correct values
 
+  // [key]
+  message = message.replace("[key]", key);
+
   // [label]
-  self._depsLabels[key] && self._depsLabels[key].depend(); // React to label changes
-  message = message.replace("[label]", def.label);
+  // The call to self.label() establishes a reactive dependency, too
+  message = message.replace("[label]", self.label(key));
 
   // [minCount]
   if (typeof def.minCount !== "undefined") {
