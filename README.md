@@ -277,7 +277,7 @@ expecting an array of values of that type.
 
 A string that will be used to refer to this field in validation error messages.
 The default is an inflected (humanized) derivation of the key name itself. For
-example, the key "firstName" will have a default label of "First name".
+example, the key "firstName" will have a default label of "First Name".
 
 If you require a field that changes its meaning in some
 circumstances you can provide a callback function as a label.

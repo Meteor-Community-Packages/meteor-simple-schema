@@ -3184,8 +3184,8 @@ Tinytest.add("SimpleSchema - Nested Schemas", function(test) {
 
 Tinytest.add("SimpleSchema - Labels", function(test) {
   //inflection
-  test.equal(ss.label("minMaxNumber"), "Min max number", '"minMaxNumber" should have inflected to "Min max number" label');
-  test.equal(ssr.label("optionalObject.requiredString"), "Required string", '"optionalObject.requiredString" should have inflected to "Required string" label');
+  test.equal(ss.label("minMaxNumber"), "Min Max Number", '"minMaxNumber" should have inflected to "Min Max Number" label');
+  test.equal(ssr.label("optionalObject.requiredString"), "Required String", '"optionalObject.requiredString" should have inflected to "Required String" label');
 
   //dynamic
   ss.labels({"sub.number": "A different label"});
@@ -3317,7 +3317,7 @@ Tinytest.add("SimpleSchema - Built-In RegEx and Messages", function(test) {
 
   c1.validate({weakDomain: "///jioh779&%"});
   test.length(c1.invalidKeys(), 1);
-  test.equal(c1.keyErrorMessage("weakDomain"), "Weak domain must be a valid domain");
+  test.equal(c1.keyErrorMessage("weakDomain"), "Weak Domain must be a valid domain");
 
   c1.validate({ip: "foo"});
   test.length(c1.invalidKeys(), 1);

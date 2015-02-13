@@ -54,7 +54,12 @@ string.js - Copyright (C) 2012-2013, JP Richardson <jprichardson@gmail.com>
     },
 
     capitalize: function() {
-      return new S(this.s.substr(0, 1).toUpperCase() + this.s.substring(1).toLowerCase());
+      var words = this.s.split(' ');
+      var s = '';
+      for (var i = 0; i < words.length; i++) {
+        s += words[i].substr(0, 1).toUpperCase() + words[i].substr(1).toLowerCase() + ' ';
+      }
+      return new S(s).trim();
     },
 
     charAt: function(index) {
@@ -165,7 +170,7 @@ string.js - Copyright (C) 2012-2013, JP Richardson <jprichardson@gmail.com>
     humanize: function() { //modified from underscore.string
       if (this.s === null || this.s === undefined)
         return new S('')
-      var s = this.underscore().replace(/_id$/,'').replace(/_/g, ' ').trim().capitalize()
+      var s = this.underscore().replace(/_/g, ' ').trim().capitalize()
       return new S(s)
     },
 
