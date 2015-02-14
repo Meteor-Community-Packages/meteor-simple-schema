@@ -82,6 +82,7 @@ function doTypeChecks(def, keyValue, op) {
 
     // Date checks
     else if (expectedType === Date) {
+      if (isNaN(keyValue.getTime())) return "expectedConstructor";
       if (_.isDate(def.min) && def.min.getTime() > keyValue.getTime()) {
         return "minDate";
       } else if (_.isDate(def.max) && def.max.getTime() < keyValue.getTime()) {
@@ -286,7 +287,7 @@ function convertModifierToDoc(mod, schema, isUpsert) {
   var t = new Meteor.Collection(null);
 
   // LocalCollections are in memory, and it seems
-  // that it's fine to use them synchronously on 
+  // that it's fine to use them synchronously on
   // either client or server
   var id;
   if (isUpsert) {
@@ -337,7 +338,7 @@ function convertModifierToDoc(mod, schema, isUpsert) {
     // Now update it with the modifier
     t.update(id, mod);
   }
-  
+
   var doc = t.findOne(id);
   // We're done with it
   t.remove(id);
