@@ -730,6 +730,10 @@ SimpleSchema.prototype.clean = function(doc, options) {
           var wasAutoConverted = false;
           if (options.autoConvert && def) {
             var newVal = typeconvert(val, def.type);
+            // trim strings
+            if (options.trimStrings && typeof newVal === "string") {
+              newVal = S(newVal).trim().s;
+            }
             if (newVal !== void 0 && newVal !== val) {
               // remove empty strings
               if (options.removeEmptyStrings && (!this.operator || this.operator === "$set") && typeof newVal === "string" && !newVal.length) {
@@ -741,10 +745,6 @@ SimpleSchema.prototype.clean = function(doc, options) {
                   mDoc.setValueForPosition(p, "");
                 }
               }
-              // trim strings
-              else if (options.trimStrings && typeof newVal === "string") {
-                newVal = S(newVal).trim().s;
-              }
 
               // Change value; if undefined, will remove it
               SimpleSchema.debug && console.info('SimpleSchema.clean: autoconverted value ' + val + ' from ' + typeof val + ' to ' + typeof newVal + ' for ' + gKey);
@@ -753,6 +753,10 @@ SimpleSchema.prototype.clean = function(doc, options) {
             }
           }
           if (!wasAutoConverted) {
+            // trim strings
+            if (options.trimStrings && typeof val === "string" && (!def || (def && def.trim !== false))) {
+              this.updateValue(S(val).trim().s);
+            }
             // remove empty strings
             if (options.removeEmptyStrings && (!this.operator || this.operator === "$set") && typeof val === "string" && !val.length) {
               // For a document, we remove any fields that are being set to an empty string
@@ -762,10 +766,6 @@ SimpleSchema.prototype.clean = function(doc, options) {
                 p = this.position.replace("$set", "$unset");
                 mDoc.setValueForPosition(p, "");
               }
-            }
-            // trim strings
-            else if (options.trimStrings && typeof val === "string" && (!def || (def && def.trim !== false))) {
-              this.updateValue(S(val).trim().s);
             }
           }
         }
