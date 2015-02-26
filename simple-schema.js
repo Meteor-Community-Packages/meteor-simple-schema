@@ -730,6 +730,10 @@ SimpleSchema.prototype.clean = function(doc, options) {
           var wasAutoConverted = false;
           if (options.autoConvert && def) {
             var newVal = typeconvert(val, def.type);
+            // trim strings
+            if (options.trimStrings && typeof newVal === "string") {
+              newVal = S(newVal).trim().s;
+            }
             if (newVal !== void 0 && newVal !== val) {
               // remove empty strings
               if (options.removeEmptyStrings && (!this.operator || this.operator === "$set") && typeof newVal === "string" && !newVal.length) {
@@ -741,10 +745,6 @@ SimpleSchema.prototype.clean = function(doc, options) {
                   mDoc.setValueForPosition(p, "");
                 }
               }
-              // trim strings
-              else if (options.trimStrings && typeof newVal === "string") {
-                newVal = S(newVal).trim().s;
-              }
 
               // Change value; if undefined, will remove it
               SimpleSchema.debug && console.info('SimpleSchema.clean: autoconverted value ' + val + ' from ' + typeof val + ' to ' + typeof newVal + ' for ' + gKey);
@@ -753,6 +753,10 @@ SimpleSchema.prototype.clean = function(doc, options) {
             }
           }
           if (!wasAutoConverted) {
+            // trim strings
+            if (options.trimStrings && typeof val === "string" && (!def || (def && def.trim !== false))) {
+              this.updateValue(S(val).trim().s);
+            }
             // remove empty strings
             if (options.removeEmptyStrings && (!this.operator || this.operator === "$set") && typeof val === "string" && !val.length) {
               // For a document, we remove any fields that are being set to an empty string
@@ -762,10 +766,6 @@ SimpleSchema.prototype.clean = function(doc, options) {
                 p = this.position.replace("$set", "$unset");
                 mDoc.setValueForPosition(p, "");
               }
-            }
-            // trim strings
-            else if (options.trimStrings && typeof val === "string" && (!def || (def && def.trim !== false))) {
-              this.updateValue(S(val).trim().s);
             }
           }
         }
@@ -914,7 +914,7 @@ SimpleSchema._globalMessages = {
     {exp: SimpleSchema.RegEx.Url, msg: "[label] must be a valid URL"},
     {exp: SimpleSchema.RegEx.Id, msg: "[label] must be a valid alphanumeric ID"}
   ],
-  keyNotInSchema: "[label] is not allowed by the schema"
+  keyNotInSchema: "[key] is not allowed by the schema"
 };
 
 SimpleSchema.messages = function(messages) {
@@ -966,10 +966,9 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
   var genericKey = SimpleSchema._makeGeneric(key);
   var typePlusGenKey = type + " " + genericKey;
 
-  // reactively update when message templates or labels are changed
+  // reactively update when message templates are changed
   SimpleSchema._depsGlobalMessages.depend();
   self._depsMessages.depend();
-  self._depsLabels[key] && self._depsLabels[key].depend();
 
   // Prep a function that finds the correct message for regEx errors
   function findRegExError(message) {
@@ -1019,9 +1018,12 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
 
   // Now replace all placeholders in the message with the correct values
 
+  // [key]
+  message = message.replace("[key]", key);
+
   // [label]
-  self._depsLabels[key] && self._depsLabels[key].depend(); // React to label changes
-  message = message.replace("[label]", def.label);
+  // The call to self.label() establishes a reactive dependency, too
+  message = message.replace("[label]", self.label(key));
 
   // [minCount]
   if (typeof def.minCount !== "undefined") {
