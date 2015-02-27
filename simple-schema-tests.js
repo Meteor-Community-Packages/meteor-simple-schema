@@ -2869,6 +2869,8 @@ Tinytest.add("SimpleSchema - Clean", function(test) {
   doTest({string: 1}, {string: "1"});
   //remove empty strings
   doTest({string: ""}, {});
+  //remove whitespace only strings (trimmed to empty strings)
+  doTest({string: "    "}, {});
   //mongo objectID
   var oid = new Meteor.Collection.ObjectID();
   doTest({oid: [oid]}, {oid: [oid]});
