@@ -728,7 +728,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
         if (val !== void 0) {
           // Autoconvert values if requested and if possible
           var wasAutoConverted = false;
-          if (options.autoConvert && def) {
+          if (options.autoConvert && this.operator !== "$unset" && def) {
             var newVal = typeconvert(val, def.type);
             // trim strings
             if (options.trimStrings && typeof newVal === "string") {

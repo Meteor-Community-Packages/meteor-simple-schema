@@ -2908,6 +2908,8 @@ Tinytest.add("SimpleSchema - Clean", function(test) {
   doTest({$unset: {string: null}}, {$unset: {string: null}});
   //when you clean an object with extra unset keys, they stay there
   doTest({$unset: {string: null, admin: null}}, {$unset: {string: null, admin: null}});
+  //cleaning does not type convert the $unset value because it's a meaningless value
+  doTest({$unset: {string: 1}}, {$unset: {string: 1}});
 
   //$SETONINSERT
 
