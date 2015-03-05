@@ -105,13 +105,13 @@ BookSchema = new SimpleSchema({
 // Validate an object against the schema
 obj = {title: "Ulysses", author: "James Joyce"};
 
-isValid = mySchema.namedContext("myContext").validate(obj);
+isValid = BookSchema.namedContext("myContext").validate(obj);
 // OR
-isValid = mySchema.namedContext("myContext").validateOne(obj, "keyToValidate");
+isValid = BookSchema.namedContext("myContext").validateOne(obj, "keyToValidate");
 // OR
-isValid = Match.test(obj, mySchema);
+isValid = Match.test(obj, BookSchema);
 // OR
-check(obj, mySchema);
+check(obj, BookSchema);
 
 // Validation errors are available through reactive methods
 if (Meteor.isClient) {
