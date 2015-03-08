@@ -1,9 +1,13 @@
-simple-schema
-=========================
-
 [![Build Status](https://travis-ci.org/aldeed/meteor-simple-schema.png?branch=master)](https://travis-ci.org/aldeed/meteor-simple-schema)
 
-A simple, reactive schema validation smart package for Meteor. It's used by the [Collection2](https://github.com/aldeed/meteor-collection2) and [AutoForm](https://github.com/aldeed/meteor-autoform) packages, but you can use it by itself, too.
+SimpleSchema
+=========================
+
+*aldeed:simple-schema*
+
+A simple, reactive schema validation package for Meteor. It's used by the [Collection2](https://github.com/aldeed/meteor-collection2) and [AutoForm](https://github.com/aldeed/meteor-autoform) packages, but you can use it by itself, too.
+
+## Table of Contents
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->

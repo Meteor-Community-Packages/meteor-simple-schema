@@ -5,6 +5,12 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 1.3.1
+
+* Fix "undefined is not allowed by the schema" error message
+* Trim strings before removing empty strings so that `"   "` will be cleaned
+* Don't type convert $unset values when cleaning
+
 ### 1.3.0
 
 Added built-in regular expression `SimpleSchema.RegEx.ZipCode`
