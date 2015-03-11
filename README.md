@@ -865,6 +865,7 @@ optional, and then use a custom function similar to this:
     type: String,
     optional: true,
     custom: function () {
+      var customCondition = this.field('saleType').value == 1;
       if (customCondition && !this.isSet && (!this.operator || (this.value === null || this.value === ""))) {
         return "required";
       }
