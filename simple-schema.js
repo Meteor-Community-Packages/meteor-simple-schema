@@ -500,7 +500,7 @@ SimpleSchema._globalMessages = {
     {exp: SimpleSchema.RegEx.Url, msg: "[label] must be a valid URL"},
     {exp: SimpleSchema.RegEx.Id, msg: "[label] must be a valid alphanumeric ID"}
   ],
-  keyNotInSchema: "[label] is not allowed by the schema"
+  keyNotInSchema: "[key] is not allowed by the schema"
 };
 
 SimpleSchema.messages = function(messages) {
@@ -606,8 +606,9 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
   // Now replace all placeholders in the message with the correct values
 
   // [label]
-  self._depsLabels[key] && self._depsLabels[key].depend(); // React to label changes
-  message = message.replace("[label]", def.label);
+  // self._depsLabels[key] && self._depsLabels[key].depend(); // React to label changes
+  message = message.replace("[key]", def.key);
+  message = message.replace("[label]", self.label(key));
 
   // [minCount]
   if (typeof def.minCount !== "undefined") {
