@@ -188,7 +188,7 @@ SimpleSchemaValidationContext.prototype.keyErrorMessage = function simpleSchemaV
     return "";
   }
   
-  return self._simpleSchema.messageForError(errorObj.type, errorObj.name, null, errorObj.value);
+  return errorObj.message || self._simpleSchema.messageForError(errorObj.type, errorObj.name, null, errorObj.value);
 };
 
 SimpleSchemaValidationContext.prototype.getErrorObject = function simpleSchemaValidationContextGetErrorObject() {
