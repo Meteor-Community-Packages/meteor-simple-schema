@@ -167,16 +167,21 @@ SimpleSchemaValidationContext.prototype._getInvalidKeyObject = function simpleSc
   return errorObj;
 };
 
+SimpleSchemaValidationContext.prototype.getInvalidKeyObject = function simpleSchemaValidationContextGetInvalidKeyObject(name) {
+  var self = this, genericName = SimpleSchema._makeGeneric(name);
+  self._deps[genericName] && self._deps[genericName].depend();
+
+  return self._getInvalidKeyObject(name, genericName);
+};
+
+
 SimpleSchemaValidationContext.prototype._keyIsInvalid = function simpleSchemaValidationContextKeyIsInvalid(name, genericName) {
   return !!this._getInvalidKeyObject(name, genericName);
 };
 
 // Like the internal one, but with deps
 SimpleSchemaValidationContext.prototype.keyIsInvalid = function simpleSchemaValidationContextKeyIsInvalid(name) {
-  var self = this, genericName = SimpleSchema._makeGeneric(name);
-  self._deps[genericName] && self._deps[genericName].depend();
-
-  return self._keyIsInvalid(name, genericName);
+  return !!this.getInvalidKeyObject(name);
 };
 
 SimpleSchemaValidationContext.prototype.keyErrorMessage = function simpleSchemaValidationContextKeyErrorMessage(name) {
