@@ -403,6 +403,21 @@ var defaultValues = new SimpleSchema({
   }
 });
 
+var requiredDefaultValues = new SimpleSchema({
+  stringValue: {
+    type: String,
+    defaultValue: "Test"
+  },
+  booleanValue: {
+    type: Boolean,
+    defaultValue: true
+  },
+  stringArray: {
+    type: [String],
+    defaultValue: []
+  }
+});
+
 var optCust = new SimpleSchema({
   foo: {
     type: String,
@@ -1925,7 +1940,7 @@ Tinytest.add("SimpleSchema - Minimum Checks - Insert", function(test) {
   test.length(sc.invalidKeys(), 1);
   /* NUMBER */
   sc = validate(ss, {
-    minMaxNumberExclusive: 20 
+    minMaxNumberExclusive: 20
   });
   test.length(sc.invalidKeys(), 1);
   sc = validate(ss, {
@@ -3787,6 +3802,26 @@ Tinytest.add("SimpleSchema - DefaultValues", function(test) {
           {isModifier: true}
   );
 
+});
+
+Tinytest.add("SimpleSchema - Required DefaultValues", function(test) {
+  var docs = [
+    {},
+    {stringValue: "Test1"},
+    {stringValue: "Test1", booleanValue: true},
+    {stringValue: "Test1", booleanValue: true, stringArray: []},
+    {stringValue: "Test1", booleanValue: true, stringArray: ["Test1", "Test1"]},
+    {stringValue: "Test1", stringArray: []},
+    {stringValue: "Test1", stringArray: ["Test1", "Test1"]},
+    {booleanValue: true},
+    {booleanValue: true, stringArray: []},
+    {booleanValue: true, stringArray: ["Test1", "Test1"]},
+  ];
+
+  docs.forEach(function(doc) {
+    var sc = validate(requiredDefaultValues, doc);
+    test.equal(sc.invalidKeys(), []);
+  });
 });
 
 Tinytest.add("SimpleSchema - Optional regEx with check", function(test) {

@@ -480,8 +480,12 @@ SimpleSchema = function(schemas, options) {
         }
         self._autoValues[fieldName] = (function defineAutoValue(v) {
           return function() {
-            if (this.operator === null && !this.isSet) {
+            if (this.operator === "$unset") {
               return v;
+            }
+
+            if (((this.operator === null || (this.isInsert || this.isUpsert)) && !this.isSet)) {
+              return this.isUpsert ? { $setOnInsert: v } : v;
             }
           };
         })(definition.defaultValue);
@@ -724,6 +728,11 @@ SimpleSchema.prototype.clean = function(doc, options) {
             console.info('SimpleSchema.clean: filtered out value that would have affected key "' + gKey + '", which is not allowed by the schema');
           }
           return; // no reason to do more
+        }
+        if (this.operator === "$unset" && def && !def.optional && def.defaultValue) {
+          p = this.position.replace("$unset", "$set");
+          mDoc.setValueForPosition(p, def.defaultValue);
+          this.remove();
         }
         if (val !== void 0) {
           // Autoconvert values if requested and if possible
