@@ -729,7 +729,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
           }
           return; // no reason to do more
         }
-        if (this.operator === "$unset" && def && !def.optional && def.defaultValue) {
+        if (this.operator === "$unset" && def && !def.optional && def.defaultValue !== void 0) {
           p = this.position.replace("$unset", "$set");
           mDoc.setValueForPosition(p, def.defaultValue);
           this.remove();
