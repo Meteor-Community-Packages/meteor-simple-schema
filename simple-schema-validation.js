@@ -123,7 +123,7 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
     if (!skipRequiredCheck && !def.optional) {
       if (
         val === null ||
-        op === "$unset" ||
+        op === "$unset" && def.type !== Object||
         op === "$rename" ||
         (val === void 0 && (isInArrayItemObject || isInSubObject || !op || op === "$set"))
         ) {
@@ -247,7 +247,13 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
       // Check all present keys plus all keys defined by the schema.
       // This allows us to detect extra keys not allowed by the schema plus
       // any missing required keys, and to run any custom functions for other keys.
-      var keysToCheck = _.union(presentKeys, ss.objectKeys(affectedKeyGeneric));
+
+      if (operator == '$unset') {
+        var keysToCheck = presentKeys
+      }
+      else {
+        var keysToCheck = _.union(presentKeys, ss.objectKeys(affectedKeyGeneric));
+      }
 
       // If this object is within an array, make sure we check for
       // required as if it's not a modifier
