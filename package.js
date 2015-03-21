@@ -9,7 +9,7 @@ Npm.depends({
   "string": "1.6.0"
 });
 
-Package.on_use(function(api) {
+Package.onUse(function(api) {
 
   if (api.versionsFrom) {
     api.use('deps@1.0.0');
@@ -20,8 +20,8 @@ Package.on_use(function(api) {
     api.use(['deps', 'underscore', 'check', 'random']);
   }
 
-  api.add_files('string.js', 'client');
-  api.add_files([
+  api.addFiles('string.js', 'client');
+  api.addFiles([
     'mongo-object.js',
     'simple-schema-utility.js',
     'simple-schema.js',
@@ -32,7 +32,7 @@ Package.on_use(function(api) {
   api.export(['SimpleSchema', 'MongoObject'], ['client', 'server']);
 });
 
-Package.on_test(function(api) {
+Package.onTest(function(api) {
 
   if (api.versionsFrom) {
     api.use("aldeed:simple-schema");
