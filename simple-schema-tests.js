@@ -459,10 +459,17 @@ var game = new SimpleSchema({
     type: cell
   }
 });
+
+var optionalInObject = new SimpleSchema({
+  obj: {
     type: Object
   },
-  'field.$.$.requiredString': {
-    type: String
+  'obj.string': {
+    type: String,
+    optional: true
+  },
+  'obj.num': {
+    type: Number
   }
 });
 
@@ -965,6 +972,16 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - Combined", fun
 Tinytest.add("SimpleSchema - Required Checks - Update - Valid - $set", function(test) {
   var sc = validateNoClean(ssr, {$set: {}}, true);
   test.equal(sc.invalidKeys(), []); //would not cause DB changes, so should not be an error
+
+  sc = validate(optionalInObject, {$set:
+    {
+      obj: {
+        string: '',
+        num: 1
+      }
+    }
+  }, true);
+  test.length(sc.invalidKeys(), 0)
 
   sc = validateNoClean(ssr, {$set: {
       requiredString: "test",
