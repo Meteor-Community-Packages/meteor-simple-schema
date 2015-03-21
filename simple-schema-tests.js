@@ -428,6 +428,22 @@ var reqCust = new SimpleSchema({
   }
 });
 
+var game = new SimpleSchema({
+  field: {
+    type: Array
+  },
+  'field.$': {
+    type: Array
+  },
+  'field.$.$': {
+    type: Object
+  },
+  'field.$.$.requiredString': {
+    type: String
+  }
+});
+
+
 /*
  * END SETUP FOR TESTS
  */
@@ -1925,7 +1941,7 @@ Tinytest.add("SimpleSchema - Minimum Checks - Insert", function(test) {
   test.length(sc.invalidKeys(), 1);
   /* NUMBER */
   sc = validate(ss, {
-    minMaxNumberExclusive: 20 
+    minMaxNumberExclusive: 20
   });
   test.length(sc.invalidKeys(), 1);
   sc = validate(ss, {
@@ -2827,6 +2843,12 @@ Tinytest.add("SimpleSchema - Array of Objects", function(test) {
       friends: {$each: [{name: "Bob", type: 2}, {name: "Bobby", type: "best"}]}
     }}, true);
   test.length(sc.invalidKeys(), 2);
+});
+
+Tinytest.add("SimpleSchema - Issue #216 (Array of Arrays of Objects)", function(test) {
+  var sc = validate(game, {$set: { field: [ [ {requiredString: 'lol'} ] ]}}, true);
+  console.log(sc.invalidKeys());
+  test.length(sc.invalidKeys(), 0);
 });
 
 Tinytest.add("SimpleSchema - Multiple Contexts", function(test) {
