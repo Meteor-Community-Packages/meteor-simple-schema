@@ -1090,11 +1090,14 @@ SimpleSchema.prototype.allowsKey = function(key) {
       var compare1 = key.slice(0, kl + 2);
       var compare2 = compare1.slice(0, -1);
 
-      // If the test key is the black box key + ".$", then the test
-      // key is NOT allowed because black box keys are by definition
-      // only for objects, and not for arrays.
       if (compare1 === schemaKey + '.$') {
-        return false;
+        if (self.schema(schemaKey).type === Object) {
+          return true;
+        } else {
+          // key is array, black box keys are by definition only for objects,
+          // and not for arrays - Don't allow.
+          return false;
+        }
       }
 
       // Otherwise
