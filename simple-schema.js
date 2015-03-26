@@ -1120,3 +1120,59 @@ SimpleSchema.prototype.objectKeys = function(keyPrefix) {
   }
   return self._objectKeys[keyPrefix + "."] || [];
 };
+
+SimpleSchema.prototype._getObjectString = function (s, depth, parent) {
+  function indent(depth){
+    return _.chain(depth).range().map(function(){return "\t"}).value().join("")
+  }
+  var objectString = "{\n" + _.chain(s).map(function (v, k) {
+      var paths = k.split(".");
+
+
+      var depthOk = paths.length === depth + 1;
+      var isRoot = paths.length === 1;
+      var parentMatches = (paths[depth - 1] === parent);
+      var parentOfArrayMatches = (paths[depth - 1] === "$" && paths[depth - 2] === parent);
+      if (depthOk && (isRoot ||( parentMatches)||( parentOfArrayMatches))) {
+
+        var key = paths[depth];
+
+        var typeDoc = key + " : ";
+
+        var type;
+        if (v.type === Date) {
+          type = "Date"
+        } else if (v.type === String) {
+          type = "string"
+        } else if (v.type === Number) {
+          type = "number"
+        } else if (v.type === Boolean) {
+          type = "boolean"
+        } else if (v.type === Object) {
+
+          if (v.blackbox) {
+            type = "Object"
+          } else {
+            type = this._getObjectString(s, depth + 1, key)
+          }
+        } else if (v.type === Array) {
+          type = "Array.<" + this._getObjectString(s, depth + 2, key) + ">"//+2 because we skip the $
+        }
+        //finish
+        if (v.optional) {
+          typeDoc += "(" + type + "|undefined)"
+        } else {
+          typeDoc += type
+        }
+        return indent(depth+1)+typeDoc
+      }
+
+    }.bind(this)).compact().value().join(", \n") + "\n"+indent(depth)+"}";
+  return objectString;
+};
+SimpleSchema.prototype.jSDocType = function () {
+
+  var s = this.schema();
+  var depth = 0;
+  return this._getObjectString(s, depth);
+};
