@@ -461,6 +461,11 @@ function validateNoClean(ss, doc, isModifier, isUpsert) {
  * BEGIN TESTS
  */
 
+Tinytest.add("SimpleSchema - makeGeneric", function(test) {
+  var generic = SimpleSchema._makeGeneric('foo.0.0.ab.c.123.4square.d.67e.f.g.1');
+  test.equal(generic, 'foo.$.$.ab.c.$.4square.d.67e.f.g.$');
+});
+
 Tinytest.add("SimpleSchema - Required Checks - Insert - Valid", function(test) {
   var sc = validate(ssr, {
     requiredString: "test",

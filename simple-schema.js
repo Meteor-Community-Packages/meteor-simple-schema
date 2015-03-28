@@ -567,7 +567,7 @@ SimpleSchema._makeGeneric = function(name) {
     return null;
   }
 
-  return name.replace(/\.[0-9]+\./g, '.$.').replace(/\.[0-9]+/g, '.$');
+  return name.replace(/\.[0-9]+(?=\.|$)/g, '.$');
 };
 
 SimpleSchema._depsGlobalMessages = new Deps.Dependency();
