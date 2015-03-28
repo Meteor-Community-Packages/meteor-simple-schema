@@ -776,6 +776,16 @@ SimpleSchema.prototype.clean = function(doc, options) {
   // Set automatic values
   options.getAutoValues && getAutoValues.call(self, mDoc, options.isModifier, options.extendAutoValueContext);
 
+  // Ensure we don't have any operators set to an empty object
+  // since MongoDB 2.6+ will throw errors.
+  if (options.isModifier) {
+    for (var op in doc) {
+      if (doc.hasOwnProperty(op) && _.isEmpty(doc[op])) {
+        delete doc[op];
+      }
+    }
+  }
+
   return doc;
 };
 
