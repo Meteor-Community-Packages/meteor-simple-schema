@@ -5,6 +5,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 1.3.2
+
+Bug fixes and MongoDB 2.6+ compatibility fixes
+
 ### 1.3.1
 
 * Fix "undefined is not allowed by the schema" error message
