@@ -740,7 +740,8 @@ SimpleSchema.prototype.clean = function(doc, options) {
                 // For a document, we remove any fields that are being set to an empty string
                 newVal = void 0;
                 // For a modifier, we $unset any fields that are being set to an empty string
-                if (this.operator === "$set") {
+                if (this.operator === "$set" && this.position.match(/\[.+?\]/g).length < 2) {
+
                   p = this.position.replace("$set", "$unset");
                   mDoc.setValueForPosition(p, "");
                 }
@@ -761,8 +762,8 @@ SimpleSchema.prototype.clean = function(doc, options) {
             if (options.removeEmptyStrings && (!this.operator || this.operator === "$set") && typeof val === "string" && !val.length) {
               // For a document, we remove any fields that are being set to an empty string
               this.remove();
-              // For a modifier, we $unset any fields that are being set to an empty string
-              if (this.operator === "$set") {
+              // For a modifier, we $unset any fields that are being set to an empty string. But only if we're not already within an entire object that is being set.
+              if (this.operator === "$set" && this.position.match(/\[.+?\]/g).length < 2) {
                 p = this.position.replace("$set", "$unset");
                 mDoc.setValueForPosition(p, "");
               }

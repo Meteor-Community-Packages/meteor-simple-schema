@@ -428,6 +428,19 @@ var reqCust = new SimpleSchema({
   }
 });
 
+var optionalInObject = new SimpleSchema({
+  requiredObj: {
+    type: Object
+  },
+  'requiredObj.optionalProp': {
+    type: String,
+    optional: true
+  },
+  'requiredObj.requiredProp': {
+    type: String
+  }
+});
+
 /*
  * END SETUP FOR TESTS
  */
@@ -3045,6 +3058,11 @@ Tinytest.add("SimpleSchema - Clean", function(test) {
     {$push: {'blackBoxObject.email.verificationTokens': {token: "Hi"}}},
     true
     );
+
+  // Don't $unset when the prop is within an object that is already being $set
+  myObj = {$set: {requiredObj: {requiredProp: 'blah', optionalProp: '' } }};
+  optionalInObject.clean(myObj, {isModifier: true});
+  test.equal(myObj, {$set: {requiredObj: {requiredProp: 'blah'} }});
 
 });
 
