@@ -1293,6 +1293,12 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   });
   test.length(sc.invalidKeys(), 1);
 
+  //invalid date failure
+  sc = validate(ss, {
+    date: new Date('foo')
+  });
+  test.length(sc.invalidKeys(), 1);
+
   //object date failure
   sc2.validate({
     date: {test: "test"}

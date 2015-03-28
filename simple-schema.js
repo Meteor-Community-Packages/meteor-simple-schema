@@ -902,6 +902,7 @@ SimpleSchema._globalMessages = {
   maxNumberExclusive: "[label] must be less than [max]",
   minDate: "[label] must be on or after [min]",
   maxDate: "[label] cannot be after [max]",
+  badDate: "[label] is not a valid date",
   minCount: "You must specify at least [minCount] values",
   maxCount: "You cannot specify more than [maxCount] values",
   noDecimal: "[label] must be an integer",

@@ -661,6 +661,7 @@ If you want to reactively display an arbitrary validation error and it is not po
     * maxNumber
     * minDate
     * maxDate
+    * badDate
     * minCount
     * maxCount
     * noDecimal
@@ -799,6 +800,7 @@ SimpleSchema.messages({
   maxNumber: "[label] cannot exceed [max]",
   minDate: "[label] must be on or after [min]",
   maxDate: "[label] cannot be after [max]",
+  badDate: "[label] is not a valid date",
   minCount: "You must specify at least [minCount] values",
   maxCount: "You cannot specify more than [maxCount] values",
   noDecimal: "[label] must be an integer",
