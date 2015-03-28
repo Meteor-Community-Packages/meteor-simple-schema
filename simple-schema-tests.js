@@ -428,6 +428,52 @@ var reqCust = new SimpleSchema({
   }
 });
 
+var cell = new SimpleSchema({
+  row: {
+    type: Number
+  },
+  col: {
+    type: Number
+  },
+  letter: {
+    type: String
+  },
+  color: {
+    type: String,
+    optional: true
+  },
+  score: {
+    type: Number
+  }
+});
+
+var game = new SimpleSchema({
+  field: {
+    type: [Array],
+    optional: true
+  },
+  'field.$': {
+    type: Array
+  },
+  'field.$.$': {
+    type: cell
+  }
+});
+
+var optionalInObject = new SimpleSchema({
+  obj: {
+    type: Object
+  },
+  'obj.string': {
+    type: String,
+    optional: true
+  },
+  'obj.num': {
+    type: Number
+  }
+});
+
+
 /*
  * END SETUP FOR TESTS
  */
@@ -926,6 +972,16 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - Combined", fun
 Tinytest.add("SimpleSchema - Required Checks - Update - Valid - $set", function(test) {
   var sc = validateNoClean(ssr, {$set: {}}, true);
   test.equal(sc.invalidKeys(), []); //would not cause DB changes, so should not be an error
+
+  sc = validate(optionalInObject, {$set:
+    {
+      obj: {
+        string: '',
+        num: 1
+      }
+    }
+  }, true);
+  test.length(sc.invalidKeys(), 0)
 
   sc = validateNoClean(ssr, {$set: {
       requiredString: "test",
@@ -1925,7 +1981,7 @@ Tinytest.add("SimpleSchema - Minimum Checks - Insert", function(test) {
   test.length(sc.invalidKeys(), 1);
   /* NUMBER */
   sc = validate(ss, {
-    minMaxNumberExclusive: 20 
+    minMaxNumberExclusive: 20
   });
   test.length(sc.invalidKeys(), 1);
   sc = validate(ss, {
@@ -2827,6 +2883,43 @@ Tinytest.add("SimpleSchema - Array of Objects", function(test) {
       friends: {$each: [{name: "Bob", type: 2}, {name: "Bobby", type: "best"}]}
     }}, true);
   test.length(sc.invalidKeys(), 2);
+});
+
+Tinytest.add("SimpleSchema - Issue #216 (Array of Arrays of Objects)", function(test) {
+  var sc = validate(game,
+    {
+      $set: {
+        field: [
+        [ { row: 0, col: 0, letter: 'к', score: 1, color: 'blue' },
+          { row: 0, col: 1, letter: 'л', score: 1, color: 'blue' },
+          { row: 0, col: 2, letter: 'с', score: 1, color: 'blue' },
+          { row: 0, col: 3, letter: 'ё', score: 1, color: 'blue' },
+          { row: 0, col: 4, letter: 'ю', score: 1, color: 'blue' } ],
+        [ { row: 1, col: 0, letter: 'л', score: 1, color: '' },
+          { row: 1, col: 1, letter: 'т', score: 1, color: '' },
+          { row: 1, col: 2, letter: 'ц', score: 1, color: '' },
+          { row: 1, col: 3, letter: 'щ', score: 1, color: '' },
+          { row: 1, col: 4, letter: 'ы', score: 1, color: '' } ],
+        [ { row: 2, col: 0, letter: 'ф', score: 1, color: '' },
+          { row: 2, col: 1, letter: 'щ', score: 1, color: '' },
+          { row: 2, col: 2, letter: 'х', score: 1, color: '' },
+          { row: 2, col: 3, letter: 'у', score: 1, color: '' },
+          { row: 2, col: 4, letter: 'ь', score: 1, color: '' } ],
+        [ { row: 3, col: 0, letter: 'л', score: 1, color: '' },
+          { row: 3, col: 1, letter: 'р', score: 1, color: '' },
+          { row: 3, col: 2, letter: 'р', score: 1, color: '' },
+          { row: 3, col: 3, letter: 'и', score: 1, color: '' },
+          { row: 3, col: 4, letter: 'с', score: 1, color: '' } ],
+        [ { row: 4, col: 0, letter: 'б', score: 1, color: 'green' },
+          { row: 4, col: 1, letter: 'р', score: 1, color: 'green' },
+          { row: 4, col: 2, letter: 'ь', score: 1, color: 'green' },
+          { row: 4, col: 3, letter: 'ъ', score: 1, color: 'green' },
+          { row: 4, col: 4, letter: 'й', score: 1, color: 'green' } ]
+        ]
+      }
+    }
+  , true);
+  test.length(sc.invalidKeys(), 0);
 });
 
 Tinytest.add("SimpleSchema - Multiple Contexts", function(test) {
