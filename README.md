@@ -930,6 +930,10 @@ SimpleSchema.extendOptions({
 });
 ```
 
+## Add On Packages
+
+[mxab:simple-schema-jsdoc](https://atmospherejs.com/mxab/simple-schema-jsdoc) Generate jsdoc from your schemas.
+
 ## License
 
 MIT
