@@ -717,11 +717,10 @@ You can use a technique similar to this to work around asynchronicity issues in 
 ### Other Validation Context Methods
 
 Call `myContext.invalidKeys()` to get the full array of invalid key data. Each object
-in the array has three keys:
+in the array has two keys:
 * `name`: The schema key as specified in the schema.
 * `type`: The type of error. One of the `required*`, `min*`, `max*` etc. strings listed
 at [Manually Adding a Validation Error](#manually-adding-a-validation-error).
-* `message`: The error message.
 
 This is a reactive method.
 
