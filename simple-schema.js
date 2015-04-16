@@ -658,6 +658,20 @@ SimpleSchema.prototype.pick = function(/* arguments */) {
 };
 
 /**
+ * @method SimpleSchema.prototype.omit
+ * @param {[fields]} The list of fields to omit to instantiate the subschema
+ * @returns {SimpleSchema} The subschema
+ */
+SimpleSchema.prototype.omit= function(/* arguments */) {
+  var self = this;
+  var args = _.toArray(arguments);
+  args.unshift(self._schema);
+
+  var newSchema = _.omit.apply(null, args);
+  return new SimpleSchema(newSchema);
+};
+
+/**
  * @method SimpleSchema.prototype.clean
  * @param {Object} doc - Document or modifier to clean. Referenced object will be modified in place.
  * @param {Object} [options]
