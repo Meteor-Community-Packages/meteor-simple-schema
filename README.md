@@ -46,6 +46,7 @@ A simple, reactive schema validation package for Meteor. It's used by the [Colle
   - [Custom Validation](#custom-validation)
   - [Manually Adding a Validation Error](#manually-adding-a-validation-error)
   - [Asynchronous Custom Validation on the Client](#asynchronous-custom-validation-on-the-client)
+  - [Getting a List of Invalid Keys and Validation Error Messages](#getting-a-list-of-invalid-keys-and-validation-error-messages)
   - [Other Validation Context Methods](#other-validation-context-methods)
   - [Other SimpleSchema Methods](#other-simpleschema-methods)
 - [Customizing Validation Messages](#customizing-validation-messages)
@@ -714,7 +715,7 @@ This doesn't change the fact that validation is synchronous. If you use this wit
 
 You can use a technique similar to this to work around asynchronicity issues in both client and server code.
 
-### Other Validation Context Methods
+### Getting a List of Invalid Keys and Validation Error Messages
 
 Call `myContext.invalidKeys()` to get the full array of invalid key data. Each object
 in the array has two keys:
@@ -723,6 +724,19 @@ in the array has two keys:
 at [Manually Adding a Validation Error](#manually-adding-a-validation-error).
 
 This is a reactive method.
+
+There is no `message` property. Once you see what keys are invalid, you can call `ctxt.keyErrorMessage(key)` to get a reactive message string.
+
+If you want to add a `message` property to the invalidKeys array objects (which would no longer be reactive), you can do
+
+```js
+var ik = ctxt.invalidKeys();
+ik = _.map(ik, function (o) {
+  return _.extend({message: ctxt.keyErrorMessage(o.name)}, o);
+});
+```
+
+### Other Validation Context Methods
 
 `myContext.keyIsInvalid(key)` returns true if the specified key is currently
 invalid, or false if it is valid. This is a reactive method.
