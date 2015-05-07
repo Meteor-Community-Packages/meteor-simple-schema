@@ -596,8 +596,15 @@ SimpleSchema.prototype.condition = function(obj) {
     throw new Match.Error("Object cannot contain modifier operators alongside other keys");
   }
 
-  if (!self.newContext().validate(obj, {modifier: isModifier, filter: false, autoConvert: false})) {
-    throw new Match.Error("One or more properties do not match the schema.");
+  var ctx = self.newContext();
+  if (!ctx.validate(obj, {modifier: isModifier, filter: false, autoConvert: false})) {
+    var error = ctx.getErrorObject();
+    var matchError = new Match.Error(error.message);
+    matchError.invalidKeys = error.invalidKeys;
+    if (Meteor.isServer) {
+      matchError.sanitizedError = error.sanitizedError;
+    }
+    throw matchError;
   }
 
   return true;
