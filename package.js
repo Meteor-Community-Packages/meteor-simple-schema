@@ -42,5 +42,5 @@ Package.onTest(function(api) {
     api.use(["simple-schema", "tinytest", "test-helpers"]);
   }
 
-  api.add_files(["simple-schema-tests.js", "mongo-object-tests.js"], ['client', 'server']);
+  api.addFiles(["simple-schema-tests.js", "mongo-object-tests.js"], ['client', 'server']);
 });
