@@ -571,7 +571,7 @@ SimpleSchema._makeGeneric = function(name) {
     return null;
   }
 
-  return name.replace(/\.[0-9]+\./g, '.$.').replace(/\.[0-9]+/g, '.$');
+  return name.replace(/\.[0-9]+(?=\.|$)/g, '.$');
 };
 
 SimpleSchema._depsGlobalMessages = new Deps.Dependency();
@@ -600,8 +600,15 @@ SimpleSchema.prototype.condition = function(obj) {
     throw new Match.Error("Object cannot contain modifier operators alongside other keys");
   }
 
-  if (!self.newContext().validate(obj, {modifier: isModifier, filter: false, autoConvert: false})) {
-    throw new Match.Error("One or more properties do not match the schema.");
+  var ctx = self.newContext();
+  if (!ctx.validate(obj, {modifier: isModifier, filter: false, autoConvert: false})) {
+    var error = ctx.getErrorObject();
+    var matchError = new Match.Error(error.message);
+    matchError.invalidKeys = error.invalidKeys;
+    if (Meteor.isServer) {
+      matchError.sanitizedError = error.sanitizedError;
+    }
+    throw matchError;
   }
 
   return true;
@@ -749,7 +756,8 @@ SimpleSchema.prototype.clean = function(doc, options) {
                 // For a document, we remove any fields that are being set to an empty string
                 newVal = void 0;
                 // For a modifier, we $unset any fields that are being set to an empty string
-                if (this.operator === "$set") {
+                if (this.operator === "$set" && this.position.match(/\[.+?\]/g).length < 2) {
+
                   p = this.position.replace("$set", "$unset");
                   mDoc.setValueForPosition(p, "");
                 }
@@ -770,8 +778,8 @@ SimpleSchema.prototype.clean = function(doc, options) {
             if (options.removeEmptyStrings && (!this.operator || this.operator === "$set") && typeof val === "string" && !val.length) {
               // For a document, we remove any fields that are being set to an empty string
               this.remove();
-              // For a modifier, we $unset any fields that are being set to an empty string
-              if (this.operator === "$set") {
+              // For a modifier, we $unset any fields that are being set to an empty string. But only if we're not already within an entire object that is being set.
+              if (this.operator === "$set" && this.position.match(/\[.+?\]/g).length < 2) {
                 p = this.position.replace("$set", "$unset");
                 mDoc.setValueForPosition(p, "");
               }
@@ -784,6 +792,16 @@ SimpleSchema.prototype.clean = function(doc, options) {
 
   // Set automatic values
   options.getAutoValues && getAutoValues.call(self, mDoc, options.isModifier, options.extendAutoValueContext);
+
+  // Ensure we don't have any operators set to an empty object
+  // since MongoDB 2.6+ will throw errors.
+  if (options.isModifier) {
+    for (var op in doc) {
+      if (doc.hasOwnProperty(op) && _.isEmpty(doc[op])) {
+        delete doc[op];
+      }
+    }
+  }
 
   return doc;
 };
@@ -901,6 +919,7 @@ SimpleSchema._globalMessages = {
   maxNumberExclusive: "[label] must be less than [max]",
   minDate: "[label] must be on or after [min]",
   maxDate: "[label] cannot be after [max]",
+  badDate: "[label] is not a valid date",
   minCount: "You must specify at least [minCount] values",
   maxCount: "You cannot specify more than [maxCount] values",
   noDecimal: "[label] must be an integer",

@@ -5,6 +5,14 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 1.3.3
+
+When using `check` to validate, the `Match.Error` that is thrown now explains which field failed to validate and why (only the first error). All errors can be found in an `invalidKeys` property on the `Match.Error` object.
+
+### 1.3.2
+
+Bug fixes and MongoDB 2.6+ compatibility fixes
+
 ### 1.3.1
 
 * Fix "undefined is not allowed by the schema" error message

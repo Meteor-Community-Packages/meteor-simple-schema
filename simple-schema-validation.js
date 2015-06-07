@@ -80,6 +80,10 @@ function doTypeChecks(def, keyValue, op) {
 
     // Date checks
     else if (expectedType === Date) {
+      if (isNaN(keyValue.getTime())) {
+        return "badDate";
+      }
+
       if (_.isDate(def.min) && def.min.getTime() > keyValue.getTime()) {
         return "minDate";
       } else if (_.isDate(def.max) && def.max.getTime() < keyValue.getTime()) {

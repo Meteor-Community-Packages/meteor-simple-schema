@@ -443,6 +443,19 @@ var reqCust = new SimpleSchema({
   }
 });
 
+var optionalInObject = new SimpleSchema({
+  requiredObj: {
+    type: Object
+  },
+  'requiredObj.optionalProp': {
+    type: String,
+    optional: true
+  },
+  'requiredObj.requiredProp': {
+    type: String
+  }
+});
+
 /*
  * END SETUP FOR TESTS
  */
@@ -475,6 +488,11 @@ function validateNoClean(ss, doc, isModifier, isUpsert) {
 /*
  * BEGIN TESTS
  */
+
+Tinytest.add("SimpleSchema - makeGeneric", function(test) {
+  var generic = SimpleSchema._makeGeneric('foo.0.0.ab.c.123.4square.d.67e.f.g.1');
+  test.equal(generic, 'foo.$.$.ab.c.$.4square.d.67e.f.g.$');
+});
 
 Tinytest.add("SimpleSchema - Required Checks - Insert - Valid", function(test) {
   var sc = validate(ssr, {
@@ -1300,6 +1318,12 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   //boolean date failure
   sc = validate(ss, {
     date: true
+  });
+  test.length(sc.invalidKeys(), 1);
+
+  //invalid date failure
+  sc = validate(ss, {
+    date: new Date('foo')
   });
   test.length(sc.invalidKeys(), 1);
 
@@ -2869,50 +2893,52 @@ Tinytest.add("SimpleSchema - Multiple Contexts", function(test) {
 
 Tinytest.add("SimpleSchema - Clean", function(test) {
 
-  function doTest(given, expected) {
-    var cleanObj = ss.clean(given);
-    test.equal(cleanObj, expected);
+  function doTest(given, expected, isModifier) {
+    ss.clean(given, {isModifier: isModifier});
+    test.equal(given, expected);
   }
 
   //BASELINE
 
   //when you clean a good object it's still good
-  doTest({string: "This is a string"}, {string: "This is a string"});
+  doTest({string: "This is a string"}, {string: "This is a string"}, false);
   //when you clean a bad object it's now good
-  doTest({string: "This is a string", admin: true}, {string: "This is a string"});
+  doTest({string: "This is a string", admin: true}, {string: "This is a string"}, false);
   //type conversion works
-  doTest({string: 1}, {string: "1"});
+  doTest({string: 1}, {string: "1"}, false);
   //remove empty strings
-  doTest({string: ""}, {});
+  doTest({string: ""}, {}, false);
   //remove whitespace only strings (trimmed to empty strings)
-  doTest({string: "    "}, {});
+  doTest({string: "    "}, {}, false);
   //mongo objectID
   var oid = new Meteor.Collection.ObjectID();
-  doTest({oid: [oid]}, {oid: [oid]});
+  doTest({oid: [oid]}, {oid: [oid]}, false);
 
   //WITH CUSTOM OBJECT
 
   //when you clean a good object it's still good
   var myObj = new Address("New York", "NY");
-  doTest({customObject: myObj}, {customObject: myObj});
+  doTest({customObject: myObj}, {customObject: myObj}, false);
 
   //when you clean a good object it's still good
   myObj = {
     foo: "bar",
     "foobar.foobar": 10000
   };
-  doTest({blackBoxObject: myObj}, {blackBoxObject: myObj});
+  doTest({blackBoxObject: myObj}, {blackBoxObject: myObj}, false);
 
   //$SET
 
   //when you clean a good object it's still good
-  doTest({$set: {string: "This is a string"}}, {$set: {string: "This is a string"}});
+  doTest({$set: {string: "This is a string"}}, {$set: {string: "This is a string"}}, true);
   //when you clean a bad object it's now good
-  doTest({$set: {string: "This is a string", admin: true}}, {$set: {string: "This is a string"}});
+  doTest({$set: {string: "This is a string", admin: true}}, {$set: {string: "This is a string"}}, true);
   //type conversion works
-  doTest({$set: {string: 1}}, {$set: {string: "1"}});
-  //move empty strings to $unset
-  doTest({$set: {string: ""}}, {$set: {}, $unset: {string: ""}});
+  doTest({$set: {string: 1}}, {$set: {string: "1"}}, true);
+  //move empty strings to $unset;
+  //$set must be removed, too, because Mongo 2.6+ throws errors
+  //when operator object is empty
+  doTest({$set: {string: ""}}, {$unset: {string: ""}}, true);
 
   //$UNSET
   // We don't want the filter option to apply to $unset operator because it should be fine
@@ -2920,104 +2946,104 @@ Tinytest.add("SimpleSchema - Clean", function(test) {
   // server conversion to unset properties that are no longer part of the schema.
 
   //when you clean a good object it's still good
-  doTest({$unset: {string: null}}, {$unset: {string: null}});
+  doTest({$unset: {string: null}}, {$unset: {string: null}}, true);
   //when you clean an object with extra unset keys, they stay there
-  doTest({$unset: {string: null, admin: null}}, {$unset: {string: null, admin: null}});
+  doTest({$unset: {string: null, admin: null}}, {$unset: {string: null, admin: null}}, true);
   //cleaning does not type convert the $unset value because it's a meaningless value
-  doTest({$unset: {string: 1}}, {$unset: {string: 1}});
+  doTest({$unset: {string: 1}}, {$unset: {string: 1}}, true);
 
   //$SETONINSERT
 
   //when you clean a good object it's still good
-  doTest({$setOnInsert: {string: "This is a string"}}, {$setOnInsert: {string: "This is a string"}});
+  doTest({$setOnInsert: {string: "This is a string"}}, {$setOnInsert: {string: "This is a string"}}, true);
   //when you clean a bad object it's now good
-  doTest({$setOnInsert: {string: "This is a string", admin: true}}, {$setOnInsert: {string: "This is a string"}});
+  doTest({$setOnInsert: {string: "This is a string", admin: true}}, {$setOnInsert: {string: "This is a string"}}, true);
   //type conversion works
-  doTest({$setOnInsert: {string: 1}}, {$setOnInsert: {string: "1"}});
+  doTest({$setOnInsert: {string: 1}}, {$setOnInsert: {string: "1"}}, true);
 
   //$INC
 
   //when you clean a good object it's still good
-  doTest({$inc: {number: 1}}, {$inc: {number: 1}});
+  doTest({$inc: {number: 1}}, {$inc: {number: 1}}, true);
   //when you clean a bad object it's now good
-  doTest({$inc: {number: 1, admin: 1}}, {$inc: {number: 1}});
+  doTest({$inc: {number: 1, admin: 1}}, {$inc: {number: 1}}, true);
   //type conversion works
-  doTest({$inc: {number: "1"}}, {$inc: {number: 1}});
+  doTest({$inc: {number: "1"}}, {$inc: {number: 1}}, true);
 
   //$ADDTOSET
 
   //when you clean a good object it's still good
-  doTest({$addToSet: {allowedNumbersArray: 1}}, {$addToSet: {allowedNumbersArray: 1}});
+  doTest({$addToSet: {allowedNumbersArray: 1}}, {$addToSet: {allowedNumbersArray: 1}}, true);
   //when you clean a bad object it's now good
-  doTest({$addToSet: {allowedNumbersArray: 1, admin: 1}}, {$addToSet: {allowedNumbersArray: 1}});
+  doTest({$addToSet: {allowedNumbersArray: 1, admin: 1}}, {$addToSet: {allowedNumbersArray: 1}}, true);
   //type conversion works
-  doTest({$addToSet: {allowedNumbersArray: "1"}}, {$addToSet: {allowedNumbersArray: 1}});
+  doTest({$addToSet: {allowedNumbersArray: "1"}}, {$addToSet: {allowedNumbersArray: 1}}, true);
 
   //$ADDTOSET WITH EACH
 
   //when you clean a good object it's still good
-  doTest({$addToSet: {allowedNumbersArray: {$each: [1, 2, 3]}}}, {$addToSet: {allowedNumbersArray: {$each: [1, 2, 3]}}});
+  doTest({$addToSet: {allowedNumbersArray: {$each: [1, 2, 3]}}}, {$addToSet: {allowedNumbersArray: {$each: [1, 2, 3]}}}, true);
   //when you clean a bad object it's now good
-  doTest({$addToSet: {allowedNumbersArray: {$each: [1, 2, 3]}, admin: {$each: [1, 2, 3]}}}, {$addToSet: {allowedNumbersArray: {$each: [1, 2, 3]}}});
+  doTest({$addToSet: {allowedNumbersArray: {$each: [1, 2, 3]}, admin: {$each: [1, 2, 3]}}}, {$addToSet: {allowedNumbersArray: {$each: [1, 2, 3]}}}, true);
   //type conversion works
-  doTest({$addToSet: {allowedNumbersArray: {$each: ["1", 2, 3]}}}, {$addToSet: {allowedNumbersArray: {$each: [1, 2, 3]}}});
+  doTest({$addToSet: {allowedNumbersArray: {$each: ["1", 2, 3]}}}, {$addToSet: {allowedNumbersArray: {$each: [1, 2, 3]}}}, true);
 
   //$PUSH
 
   //when you clean a good object it's still good
-  doTest({$push: {allowedNumbersArray: 1}}, {$push: {allowedNumbersArray: 1}});
+  doTest({$push: {allowedNumbersArray: 1}}, {$push: {allowedNumbersArray: 1}}, true);
   //when you clean a bad object it's now good
-  doTest({$push: {allowedNumbersArray: 1, admin: 1}}, {$push: {allowedNumbersArray: 1}});
+  doTest({$push: {allowedNumbersArray: 1, admin: 1}}, {$push: {allowedNumbersArray: 1}}, true);
   //type conversion works
-  doTest({$push: {allowedNumbersArray: "1"}}, {$push: {allowedNumbersArray: 1}});
+  doTest({$push: {allowedNumbersArray: "1"}}, {$push: {allowedNumbersArray: 1}}, true);
 
   //$PUSH WITH EACH
 
   //when you clean a good object it's still good
-  doTest({$push: {allowedNumbersArray: {$each: [1, 2, 3]}}}, {$push: {allowedNumbersArray: {$each: [1, 2, 3]}}});
+  doTest({$push: {allowedNumbersArray: {$each: [1, 2, 3]}}}, {$push: {allowedNumbersArray: {$each: [1, 2, 3]}}}, true);
   //when you clean a bad object it's now good
-  doTest({$push: {allowedNumbersArray: {$each: [1, 2, 3]}, admin: {$each: [1, 2, 3]}}}, {$push: {allowedNumbersArray: {$each: [1, 2, 3]}}});
+  doTest({$push: {allowedNumbersArray: {$each: [1, 2, 3]}, admin: {$each: [1, 2, 3]}}}, {$push: {allowedNumbersArray: {$each: [1, 2, 3]}}}, true);
   //type conversion works
-  doTest({$push: {allowedNumbersArray: {$each: ["1", 2, 3]}}}, {$push: {allowedNumbersArray: {$each: [1, 2, 3]}}});
+  doTest({$push: {allowedNumbersArray: {$each: ["1", 2, 3]}}}, {$push: {allowedNumbersArray: {$each: [1, 2, 3]}}}, true);
 
   //$PULL
 
   //when you clean a good object it's still good
-  doTest({$pull: {allowedNumbersArray: 1}}, {$pull: {allowedNumbersArray: 1}});
+  doTest({$pull: {allowedNumbersArray: 1}}, {$pull: {allowedNumbersArray: 1}}, true);
   //when you clean a bad object it's now good
-  doTest({$pull: {allowedNumbersArray: 1, admin: 1}}, {$pull: {allowedNumbersArray: 1}});
+  doTest({$pull: {allowedNumbersArray: 1, admin: 1}}, {$pull: {allowedNumbersArray: 1}}, true);
   //type conversion works
-  doTest({$pull: {allowedNumbersArray: "1"}}, {$pull: {allowedNumbersArray: 1}});
+  doTest({$pull: {allowedNumbersArray: "1"}}, {$pull: {allowedNumbersArray: 1}}, true);
 
   //$PULL with query2
 
   //when you clean a good object it's still good
-  doTest({$pull: {allowedNumbersArray: {$in: [1]}}}, {$pull: {allowedNumbersArray: {$in: [1]}}});
+  doTest({$pull: {allowedNumbersArray: {$in: [1]}}}, {$pull: {allowedNumbersArray: {$in: [1]}}}, true);
   //when you clean a bad object it's now good
-  doTest({$pull: {allowedNumbersArray: {$in: [1]}, admin: {$in: [1]}}}, {$pull: {allowedNumbersArray: {$in: [1]}}});
+  doTest({$pull: {allowedNumbersArray: {$in: [1]}, admin: {$in: [1]}}}, {$pull: {allowedNumbersArray: {$in: [1]}}}, true);
   //type conversion does not work within query2
-  doTest({$pull: {allowedNumbersArray: {$in: ["1"]}}}, {$pull: {allowedNumbersArray: {$in: ["1"]}}});
+  doTest({$pull: {allowedNumbersArray: {$in: ["1"]}}}, {$pull: {allowedNumbersArray: {$in: ["1"]}}}, true);
   //more tests
-  doTest({$pull: {allowedNumbersArray: {foo: {$in: [1]}}}}, {$pull: {allowedNumbersArray: {foo: {$in: [1]}}}});
+  doTest({$pull: {allowedNumbersArray: {foo: {$in: [1]}}}}, {$pull: {allowedNumbersArray: {foo: {$in: [1]}}}}, true);
 
   //$POP
 
   //when you clean a good object it's still good
-  doTest({$pop: {allowedNumbersArray: 1}}, {$pop: {allowedNumbersArray: 1}});
+  doTest({$pop: {allowedNumbersArray: 1}}, {$pop: {allowedNumbersArray: 1}}, true);
   //when you clean a bad object it's now good
-  doTest({$pop: {allowedNumbersArray: 1, admin: 1}}, {$pop: {allowedNumbersArray: 1}});
+  doTest({$pop: {allowedNumbersArray: 1, admin: 1}}, {$pop: {allowedNumbersArray: 1}}, true);
   //type conversion works
-  doTest({$pop: {allowedNumbersArray: "1"}}, {$pop: {allowedNumbersArray: 1}});
+  doTest({$pop: {allowedNumbersArray: "1"}}, {$pop: {allowedNumbersArray: 1}}, true);
 
   //$PULLALL
 
-  doTest({$pullAll: {allowedNumbersArray: [1, 2, 3]}}, {$pullAll: {allowedNumbersArray: [1, 2, 3]}});
-  doTest({$pullAll: {allowedNumbersArray: ["1", 2, 3]}}, {$pullAll: {allowedNumbersArray: [1, 2, 3]}});
+  doTest({$pullAll: {allowedNumbersArray: [1, 2, 3]}}, {$pullAll: {allowedNumbersArray: [1, 2, 3]}}, true);
+  doTest({$pullAll: {allowedNumbersArray: ["1", 2, 3]}}, {$pullAll: {allowedNumbersArray: [1, 2, 3]}}, true);
 
   //$PUSHALL (DEPRECATED - SHOULD BE TRANSLATED TO $PUSH+$EACH
 
-  doTest({$pushAll: {allowedNumbersArray: [1, 2, 3]}}, {$push: {allowedNumbersArray: {$each: [1, 2, 3]}}});
-  doTest({$pushAll: {allowedNumbersArray: ["1", 2, 3]}}, {$push: {allowedNumbersArray: {$each: [1, 2, 3]}}});
+  doTest({$pushAll: {allowedNumbersArray: [1, 2, 3]}}, {$push: {allowedNumbersArray: {$each: [1, 2, 3]}}}, true);
+  doTest({$pushAll: {allowedNumbersArray: ["1", 2, 3]}}, {$push: {allowedNumbersArray: {$each: [1, 2, 3]}}}, true);
   //if there's also $push for some reason, the two should be combined
   doTest({
     $push: {
@@ -3030,22 +3056,28 @@ Tinytest.add("SimpleSchema - Clean", function(test) {
       allowedNumbersArray: {$each: [1, 2, 3, 4, 5, 6]},
       allowedStringsArray: {$each: ["tuna", "fish"]}
     }
-  });
+  }, true);
 
   // Cleaning shouldn't remove anything within blackbox
   doTest({blackBoxObject: {foo: 1}}, {blackBoxObject: {foo: 1}});
   doTest({blackBoxObject: {foo: [1]}}, {blackBoxObject: {foo: [1]}});
   doTest({blackBoxObject: {foo: [{bar: 1}]}}, {blackBoxObject: {foo: [{bar: 1}]}});
-  doTest({$set: {blackBoxObject: {foo: 1}}}, {$set: {blackBoxObject: {foo: 1}}});
-  doTest({$set: {blackBoxObject: {foo: [1]}}}, {$set: {blackBoxObject: {foo: [1]}}});
-  doTest({$set: {blackBoxObject: {foo: [{bar: 1}]}}}, {$set: {blackBoxObject: {foo: [{bar: 1}]}}});
-  doTest({$set: {'blackBoxObject.email.verificationTokens.$': {token: "Hi"}}}, {$set: {'blackBoxObject.email.verificationTokens.$': {token: "Hi"}}});
-  doTest({$set: {'blackBoxObject.email.verificationTokens.$.token': "Hi"}}, {$set: {'blackBoxObject.email.verificationTokens.$.token': "Hi"}});
+  doTest({$set: {blackBoxObject: {foo: 1}}}, {$set: {blackBoxObject: {foo: 1}}}, true);
+  doTest({$set: {blackBoxObject: {foo: [1]}}}, {$set: {blackBoxObject: {foo: [1]}}}, true);
+  doTest({$set: {blackBoxObject: {foo: [{bar: 1}]}}}, {$set: {blackBoxObject: {foo: [{bar: 1}]}}}, true);
+  doTest({$set: {'blackBoxObject.email.verificationTokens.$': {token: "Hi"}}}, {$set: {'blackBoxObject.email.verificationTokens.$': {token: "Hi"}}}, true);
+  doTest({$set: {'blackBoxObject.email.verificationTokens.$.token': "Hi"}}, {$set: {'blackBoxObject.email.verificationTokens.$.token': "Hi"}}, true);
 
   doTest(
     {$push: {'blackBoxObject.email.verificationTokens': {token: "Hi"}}},
-    {$push: {'blackBoxObject.email.verificationTokens': {token: "Hi"}}}
+    {$push: {'blackBoxObject.email.verificationTokens': {token: "Hi"}}},
+    true
     );
+
+  // Don't $unset when the prop is within an object that is already being $set
+  myObj = {$set: {requiredObj: {requiredProp: 'blah', optionalProp: '' } }};
+  optionalInObject.clean(myObj, {isModifier: true});
+  test.equal(myObj, {$set: {requiredObj: {requiredProp: 'blah'} }});
 
 });
 

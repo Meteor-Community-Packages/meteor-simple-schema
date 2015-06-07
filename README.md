@@ -46,6 +46,7 @@ A simple, reactive schema validation package for Meteor. It's used by the [Colle
   - [Custom Validation](#custom-validation)
   - [Manually Adding a Validation Error](#manually-adding-a-validation-error)
   - [Asynchronous Custom Validation on the Client](#asynchronous-custom-validation-on-the-client)
+  - [Getting a List of Invalid Keys and Validation Error Messages](#getting-a-list-of-invalid-keys-and-validation-error-messages)
   - [Other Validation Context Methods](#other-validation-context-methods)
   - [Other SimpleSchema Methods](#other-simpleschema-methods)
 - [Customizing Validation Messages](#customizing-validation-messages)
@@ -661,6 +662,7 @@ If you want to reactively display an arbitrary validation error and it is not po
     * maxNumber
     * minDate
     * maxDate
+    * badDate
     * minCount
     * maxCount
     * noDecimal
@@ -713,16 +715,28 @@ This doesn't change the fact that validation is synchronous. If you use this wit
 
 You can use a technique similar to this to work around asynchronicity issues in both client and server code.
 
-### Other Validation Context Methods
+### Getting a List of Invalid Keys and Validation Error Messages
 
 Call `myContext.invalidKeys()` to get the full array of invalid key data. Each object
-in the array has three keys:
+in the array has two keys:
 * `name`: The schema key as specified in the schema.
 * `type`: The type of error. One of the `required*`, `min*`, `max*` etc. strings listed
 at [Manually Adding a Validation Error](#manually-adding-a-validation-error).
-* `message`: The error message.
 
 This is a reactive method.
+
+There is no `message` property. Once you see what keys are invalid, you can call `ctxt.keyErrorMessage(key)` to get a reactive message string.
+
+If you want to add a `message` property to the invalidKeys array objects (which would no longer be reactive), you can do
+
+```js
+var ik = ctxt.invalidKeys();
+ik = _.map(ik, function (o) {
+  return _.extend({message: ctxt.keyErrorMessage(o.name)}, o);
+});
+```
+
+### Other Validation Context Methods
 
 `myContext.keyIsInvalid(key)` returns true if the specified key is currently
 invalid, or false if it is valid. This is a reactive method.
@@ -799,6 +813,7 @@ SimpleSchema.messages({
   maxNumber: "[label] cannot exceed [max]",
   minDate: "[label] must be on or after [min]",
   maxDate: "[label] cannot be after [max]",
+  badDate: "[label] is not a valid date",
   minCount: "You must specify at least [minCount] values",
   maxCount: "You cannot specify more than [maxCount] values",
   noDecimal: "[label] must be an integer",
@@ -927,6 +942,10 @@ SimpleSchema.extendOptions({
   denyUpdate: Match.Optional(Boolean)
 });
 ```
+
+## Add On Packages
+
+[mxab:simple-schema-jsdoc](https://atmospherejs.com/mxab/simple-schema-jsdoc) Generate jsdoc from your schemas.
 
 ## License
 
