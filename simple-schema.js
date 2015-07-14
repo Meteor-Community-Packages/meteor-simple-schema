@@ -388,7 +388,7 @@ function getAutoValues(mDoc, isModifier, extendedAutoValueContext) {
       keySuffix = fieldName.slice(testField.length + 1);
       positionSuffix = MongoObject._keyToPosition(keySuffix, true);
       keySuffix = '.' + keySuffix;
-      positions = mDoc.getPositionsForGenericKey(testField);
+      positions = mDoc.getPositionsForGenericKeyUnderArray(testField);
     } else {
 
       // See if anything in the object affects this key

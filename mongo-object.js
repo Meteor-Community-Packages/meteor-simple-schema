@@ -404,6 +404,39 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
   };
 
   /**
+   * @method MongoObject.getPositionsForGenericKeyUnderArray
+   * @param {String} key - Generic key
+   * @returns {String[]} Array of position strings
+   *
+   * Returns an array of position strings for the places in the object that
+   * affect the requested generic key.
+   * This version handles objects under an array, whereby the position needs
+   * to be split at the $ sign
+   * Example: ['foo[bar][0]']
+   */
+  self.getPositionsForGenericKeyUnderArray = function(key) {
+    // Get the info
+    var list = [];
+    for (var position in self._genericAffectedKeys) {
+      if (self._genericAffectedKeys.hasOwnProperty(position)) {
+        var keyToMatch = self._genericAffectedKeys[position];
+        if (keyToMatch.indexOf("$") !== -1) {
+          var testField = keyToMatch.slice(0, keyToMatch.lastIndexOf("$") + 1);
+          if (testField === key) {
+            list.push(testField);
+          }
+        } else {
+          if (keyToMatch === key) {
+            list.push(position);
+          }
+        }
+      }
+    }
+
+    return list;
+  };
+
+  /**
    * @deprecated Use getInfoForKey
    * @method MongoObject.getValueForKey
    * @param {String} key - Non-generic key
@@ -752,4 +785,3 @@ MongoObject._positionToKey = function positionToKey(position) {
   mDoc = null;
   return key;
 };
-
