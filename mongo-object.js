@@ -422,8 +422,9 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
         var keyToMatch = self._genericAffectedKeys[position];
         if (keyToMatch.indexOf("$") !== -1) {
           var testField = keyToMatch.slice(0, keyToMatch.lastIndexOf("$") + 1);
+          var remainder = keyToMatch.slice(keyToMatch.lastIndexOf("$") + 1);
           if (testField === key) {
-            list.push(testField);
+            list.push(MongoObject._dropKeyOffEndOfPosition(position, remainder));
           }
         } else {
           if (keyToMatch === key) {
@@ -784,4 +785,23 @@ MongoObject._positionToKey = function positionToKey(position) {
   var key = mDoc.getKeyForPosition(position);
   mDoc = null;
   return key;
+};
+
+/**
+ * @method MongoObject._dropKeyOffEndOfPosition
+ * @param {String} position
+ * @param {String} keyToDrop
+ * @returns {String} The position, less the key component of that position
+ *
+ */
+MongoObject._dropKeyOffEndOfPosition = function dropKeyOffEndOfPosition(position, keyToDrop) {
+  //XXX Probably a better way to do this, but this is
+  //foolproof for now.
+  keyToDrop = keyToDrop.replace(/^\./, '');
+  if (keyToDrop.length === 0) {
+    return position;
+  }
+
+  var subString = MongoObject._keyToPosition(keyToDrop, true);
+  return position.replace(subString, '');
 };
