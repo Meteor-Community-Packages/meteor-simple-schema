@@ -880,9 +880,20 @@ optional, and then use a custom function similar to this:
     type: String,
     optional: true,
     custom: function () {
-      var customCondition = this.field('saleType').value == 1;
-      if (customCondition && !this.isSet && (!this.operator || (this.value === null || this.value === ""))) {
-        return "required";
+      var shouldBeRequired = this.field('saleType').value == 1;
+    
+      if (shouldBeRequired) {
+        // inserts
+        if (!this.operator) {
+          if (!this.isSet || this.value === null || this.value === "") return "required";
+        }
+    
+        // updates
+        else if (this.isSet) {
+          if (this.operator === "$set" && this.value === null || this.value === "") return "required";
+          if (this.operator === "$unset") return "required";
+          if (this.operator === "$rename") return "required";
+        }
       }
     }
   }
