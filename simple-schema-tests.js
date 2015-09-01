@@ -441,6 +441,15 @@ var optionalInObject = new SimpleSchema({
   }
 });
 
+var allowedStringsFromFunction = new SimpleSchema ({
+  foo: {
+    type: String,
+    allowedValues: function () {
+      return ["tuna", "fish", "salad"];
+    }
+  }
+});
+
 /*
  * END SETUP FOR TESTS
  */
@@ -1949,7 +1958,7 @@ Tinytest.add("SimpleSchema - Minimum Checks - Insert", function(test) {
   test.length(sc.invalidKeys(), 1);
   /* NUMBER */
   sc = validate(ss, {
-    minMaxNumberExclusive: 20 
+    minMaxNumberExclusive: 20
   });
   test.length(sc.invalidKeys(), 1);
   sc = validate(ss, {
@@ -2406,6 +2415,10 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Insert - Valid", function(t
     friends: [{name: 'Bob', type: 'best', a: {b: 5000}}],
     enemies: []
   });
+  test.equal(sc.invalidKeys(), []);
+
+  // function returning an array of strings
+  sc = validate(allowedStringsFromFunction, {foo: "tuna"});
   test.equal(sc.invalidKeys(), []);
 });
 
