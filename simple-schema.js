@@ -559,7 +559,12 @@ SimpleSchema.RegEx = {
   Id: /^[23456789ABCDEFGHJKLMNPQRSTWXYZabcdefghijkmnopqrstuvwxyz]{17}$/,
   // allows for a 5 digit zip code followed by a whitespace or dash and then 4 more digits
   // matches 11111 and 11111-1111 and 11111 1111
-  ZipCode: /^\d{5}(?:[-\s]\d{4})?$/
+  ZipCode: /^\d{5}(?:[-\s]\d{4})?$/,
+  // taken from google's libphonenumber library
+  // https://github.com/googlei18n/libphonenumber/blob/master/javascript/i18n/phonenumbers/phonenumberutil.js
+  // reference the VALID_PHONE_NUMBER_PATTERN key
+  // allows for common phone number symbols including + () and -
+  Phone: /^[0-9０-９٠-٩۰-۹]{2}$|^[+＋]*(?:[-x‐-―−ー－-／  ­​⁠　()（）［］.\[\]/~⁓∼～*]*[0-9０-９٠-٩۰-۹]){3,}[-x‐-―−ー－-／  ­​⁠　()（）［］.\[\]/~⁓∼～0-9０-９٠-٩۰-۹]*(?:;ext=([0-9０-９٠-٩۰-۹]{1,7})|[  \t,]*(?:e?xt(?:ensi(?:ó?|ó))?n?|ｅ?ｘｔｎ?|[,xｘ#＃~～]|int|anexo|ｉｎｔ)[:\.．]?[  \t,-]*([0-9０-９٠-٩۰-۹]{1,7})#?|[- ]+([0-9０-９٠-٩۰-۹]{1,5})#)?$/i
 };
 
 SimpleSchema._makeGeneric = function(name) {
