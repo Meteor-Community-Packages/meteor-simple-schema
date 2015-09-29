@@ -38,7 +38,7 @@ Package.on_test(function(api) {
     api.use("aldeed:simple-schema");
     api.use('tinytest@1.0.0');
     api.use('test-helpers@1.0.0');
-    api.use('check', 'underscore');
+    api.use(['check', 'underscore']);
   } else {
     api.use(["simple-schema", "tinytest", "test-helpers"]);
   }
