@@ -658,9 +658,20 @@ SimpleSchema.prototype.addValidator = SimpleSchema.prototype.validator = functio
 SimpleSchema.prototype.pick = function(/* arguments */) {
   var self = this;
   var args = _.toArray(arguments);
+  var last = _.last(args);
+  var amend = _.isObject(last) && !_.isArray(last) ? args.splice(-1,1)[0] : false;
   args.unshift(self._schema);
 
   var newSchema = _.pick.apply(null, args);
+
+  if(amend) {
+    _.each(newSchema, function(options,field){
+      if(amend[field] ){
+        newSchema[field] = _.extend(options, amend[field]);
+      }
+    });
+  }
+
   return new SimpleSchema(newSchema);
 };
 
