@@ -190,6 +190,25 @@ var profileSchema = new SimpleSchema({
 var nameSchema = profileSchema.pick(['firstName', 'lastName']);
 ```
 
+**NOTE**: When using `pick` on a field of type Array you also need to pick the array item field.
+Take the following as an example:
+
+```js
+var profileSchema = new SimpleSchema({
+  firstName: {
+    type: String
+  },
+  lastName: {
+    type: String
+  },
+  comments: {
+    type: [String]
+  }
+});
+
+var nameSchema = profileSchema.pick('comments', 'comments.$');
+```
+
 ## The Object to Validate
 
 The object you pass in when validating can be a normal object, or it can be
