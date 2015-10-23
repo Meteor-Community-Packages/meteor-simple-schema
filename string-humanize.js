@@ -1,3 +1,9 @@
+/*
+  Code source:
+    https://github.com/jxson/string-humanize
+    https://github.com/jxson/string-capitalize
+ */
+
 function capitalize(string){
   string = string || '';
   string = string.trim();
