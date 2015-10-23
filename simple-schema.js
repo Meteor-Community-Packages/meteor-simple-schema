@@ -2,14 +2,6 @@
 /* global SimpleSchemaValidationContext */
 /* global MongoObject */
 /* global Utility */
-/* global S:true */
-
-if (Meteor.isServer) {
-  S = Npm.require("string");
-}
-if (Meteor.isClient) {
-  S = window.S;
-}
 
 var schemaDefinition = {
   type: Match.Any,
@@ -49,7 +41,7 @@ var typeconvert = function(value, type) {
     return value;
   }
   if (type === Number) {
-    if (typeof value === "string" && !S(value).isEmpty()) {
+    if (typeof value === "string" && !_.isEmpty(value)) {
       //try to convert numeric strings to numbers
       var numberVal = Number(value);
       if (!isNaN(numberVal)) {
@@ -258,7 +250,7 @@ var getObjectKeys = function(schema, schemaKeyList) {
 
     loopArray = [];
     _.each(schemaKeyList, function(fieldName2) {
-      if (S(fieldName2).startsWith(keyPrefix)) {
+      if (fieldName2.startsWith(keyPrefix)) {
         remainingText = fieldName2.substring(keyPrefix.length);
         if (remainingText.indexOf(".") === -1) {
           loopArray.push(remainingText);
@@ -283,7 +275,7 @@ var inflectedLabel = function(fieldName) {
   if (label === "_id") {
     return "ID";
   }
-  return S(label).humanize().s;
+  return humanize(label);
 };
 
 /**
@@ -739,7 +731,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
             var newVal = typeconvert(val, def.type);
             // trim strings
             if (options.trimStrings && typeof newVal === "string") {
-              newVal = S(newVal).trim().s;
+              newVal = newVal.trim();
             }
             if (newVal !== void 0 && newVal !== val) {
               // remove empty strings
@@ -763,7 +755,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
           if (!wasAutoConverted) {
             // trim strings
             if (options.trimStrings && typeof val === "string" && (!def || (def && def.trim !== false))) {
-              this.updateValue(S(val).trim().s);
+              this.updateValue(val.trim());
             }
             // remove empty strings
             if (options.removeEmptyStrings && (!this.operator || this.operator === "$set") && typeof val === "string" && !val.length) {
