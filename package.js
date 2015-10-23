@@ -38,8 +38,10 @@ Package.on_test(function(api) {
     api.use("aldeed:simple-schema");
     api.use('tinytest@1.0.0');
     api.use('test-helpers@1.0.0');
+    api.use('underscore@1.0.0');
+    api.use('check@1.0.0');
   } else {
-    api.use(["simple-schema", "tinytest", "test-helpers"]);
+    api.use(["simple-schema", "tinytest", "test-helpers", "underscore", "check"]);
   }
 
   api.add_files(["simple-schema-tests.js", "mongo-object-tests.js"], ['client', 'server']);
