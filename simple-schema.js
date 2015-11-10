@@ -664,6 +664,16 @@ SimpleSchema.prototype.pick = function(/* arguments */) {
   return new SimpleSchema(newSchema);
 };
 
+SimpleSchema.prototype.omit = function() {
+  var self = this;
+  var args = _.toArray(arguments);
+  args.unshift(self._schema);
+
+  var newSchema = _.omit.apply(null, args);
+  return new SimpleSchema(newSchema);
+};
+
+
 /**
  * @method SimpleSchema.prototype.clean
  * @param {Object} doc - Document or modifier to clean. Referenced object will be modified in place.
