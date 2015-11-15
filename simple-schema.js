@@ -1031,9 +1031,7 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
     message = findRegExError(message);
   }
 
-  if (!message) {
-    return "Unknown validation error";
-  }
+  if (!message) return "Unknown validation error";
 
   // Now replace all placeholders in the message with the correct values
 

@@ -127,9 +127,7 @@ SimpleSchemaValidationContext.prototype.invalidKeys = function simpleSchemaValid
 SimpleSchemaValidationContext.prototype.addInvalidKeys = function simpleSchemaValidationContextAddInvalidKeys(errors) {
   var self = this;
 
-  if (!errors || !errors.length) {
-    return;
-  }
+  if (!errors || !errors.length) return;
 
   var changedKeys = [];
   _.each(errors, function (errorObject) {
@@ -182,12 +180,10 @@ SimpleSchemaValidationContext.prototype.keyIsInvalid = function simpleSchemaVali
 SimpleSchemaValidationContext.prototype.keyErrorMessage = function simpleSchemaValidationContextKeyErrorMessage(name) {
   var self = this, genericName = SimpleSchema._makeGeneric(name);
   self._deps[genericName] && self._deps[genericName].depend();
-  
+
   var errorObj = self._getInvalidKeyObject(name, genericName);
-  if (!errorObj) {
-    return "";
-  }
-  
+  if (!errorObj) return "";
+
   return self._simpleSchema.messageForError(errorObj.type, errorObj.name, null, errorObj.value);
 };
 
