@@ -12,20 +12,12 @@ function capitalize(string){
     string = string[0].toUpperCase() + string.substr(1).toLowerCase();
   }
 
+  // Do "ID" instead of "id"
+  string = string.replace(/ *id/g, ' ID');
+  string = string.replace(/ *id */g, ' ID ');
+
   return string;
 }
-
-humanize = function humanize(string){
-  string = string || '';
-  string = string.toString(); // might be a number
-  string = string.trim();
-  string = string.replace(extname(string), '');
-  string = underscore(string);
-  string = string.replace(/[\W_]+/g, ' ');
-
-  return capitalize(string);
-}
-
 
 function underscore(string){
   string = string || '';
@@ -43,3 +35,14 @@ function extname(string){
 
   return (index === -1) ? '' : ext;
 }
+
+humanize = function humanize(string){
+  string = string || '';
+  string = string.toString(); // might be a number
+  string = string.trim();
+  string = string.replace(extname(string), '');
+  string = underscore(string);
+  string = string.replace(/[\W_]+/g, ' ');
+
+  return capitalize(string);
+};
