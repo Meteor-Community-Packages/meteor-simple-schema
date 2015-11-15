@@ -5,10 +5,6 @@ Package.describe({
   git: "https://github.com/aldeed/meteor-simple-schema.git"
 });
 
-Npm.depends({
-  "string": "1.6.0"
-});
-
 Package.on_use(function(api) {
 
   if (api.versionsFrom) {
@@ -20,8 +16,9 @@ Package.on_use(function(api) {
     api.use(['deps', 'underscore', 'check', 'random']);
   }
 
-  api.add_files('string.js', 'client');
   api.add_files([
+    'string-polyfills.js',
+    'string-humanize.js',
     'mongo-object.js',
     'simple-schema-utility.js',
     'simple-schema.js',
@@ -30,6 +27,8 @@ Package.on_use(function(api) {
     'simple-schema-context.js'
   ]);
   api.export(['SimpleSchema', 'MongoObject'], ['client', 'server']);
+  api.export('humanize', {testonly:true});
+
 });
 
 Package.on_test(function(api) {
@@ -38,9 +37,11 @@ Package.on_test(function(api) {
     api.use("aldeed:simple-schema");
     api.use('tinytest@1.0.0');
     api.use('test-helpers@1.0.0');
+    api.use('underscore@1.0.0');
+    api.use('check@1.0.0');
   } else {
-    api.use(["simple-schema", "tinytest", "test-helpers"]);
+    api.use(["simple-schema", "tinytest", "test-helpers", "underscore", "check"]);
   }
 
-  api.add_files(["simple-schema-tests.js", "mongo-object-tests.js"], ['client', 'server']);
+  api.add_files(["simple-schema-tests.js", "mongo-object-tests.js", "humanize-tests.js"], ['client', 'server']);
 });

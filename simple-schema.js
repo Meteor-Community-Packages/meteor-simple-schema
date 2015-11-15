@@ -2,14 +2,6 @@
 /* global SimpleSchemaValidationContext */
 /* global MongoObject */
 /* global Utility */
-/* global S:true */
-
-if (Meteor.isServer) {
-  S = Npm.require("string");
-}
-if (Meteor.isClient) {
-  S = window.S;
-}
 
 var schemaDefinition = {
   type: Match.Any,
@@ -49,7 +41,7 @@ var typeconvert = function(value, type) {
     return value;
   }
   if (type === Number) {
-    if (typeof value === "string" && !S(value).isEmpty()) {
+    if (typeof value === "string" && !_.isEmpty(value)) {
       //try to convert numeric strings to numbers
       var numberVal = Number(value);
       if (!isNaN(numberVal)) {
@@ -258,7 +250,7 @@ var getObjectKeys = function(schema, schemaKeyList) {
 
     loopArray = [];
     _.each(schemaKeyList, function(fieldName2) {
-      if (S(fieldName2).startsWith(keyPrefix)) {
+      if (fieldName2.startsWith(keyPrefix)) {
         remainingText = fieldName2.substring(keyPrefix.length);
         if (remainingText.indexOf(".") === -1) {
           loopArray.push(remainingText);
@@ -283,7 +275,7 @@ var inflectedLabel = function(fieldName) {
   if (label === "_id") {
     return "ID";
   }
-  return S(label).humanize().s;
+  return humanize(label);
 };
 
 /**
@@ -559,7 +551,12 @@ SimpleSchema.RegEx = {
   Id: /^[23456789ABCDEFGHJKLMNPQRSTWXYZabcdefghijkmnopqrstuvwxyz]{17}$/,
   // allows for a 5 digit zip code followed by a whitespace or dash and then 4 more digits
   // matches 11111 and 11111-1111 and 11111 1111
-  ZipCode: /^\d{5}(?:[-\s]\d{4})?$/
+  ZipCode: /^\d{5}(?:[-\s]\d{4})?$/,
+  // taken from google's libphonenumber library
+  // https://github.com/googlei18n/libphonenumber/blob/master/javascript/i18n/phonenumbers/phonenumberutil.js
+  // reference the VALID_PHONE_NUMBER_PATTERN key
+  // allows for common phone number symbols including + () and -
+  Phone: /^[0-9０-９٠-٩۰-۹]{2}$|^[+＋]*(?:[-x‐-―−ー－-／  ­​⁠　()（）［］.\[\]/~⁓∼～*]*[0-9０-９٠-٩۰-۹]){3,}[-x‐-―−ー－-／  ­​⁠　()（）［］.\[\]/~⁓∼～0-9０-９٠-٩۰-۹]*(?:;ext=([0-9０-９٠-٩۰-۹]{1,7})|[  \t,]*(?:e?xt(?:ensi(?:ó?|ó))?n?|ｅ?ｘｔｎ?|[,xｘ#＃~～]|int|anexo|ｉｎｔ)[:\.．]?[  \t,-]*([0-9０-９٠-٩۰-۹]{1,7})#?|[- ]+([0-9０-９٠-٩۰-۹]{1,5})#)?$/i
 };
 
 SimpleSchema._makeGeneric = function(name) {
@@ -664,6 +661,16 @@ SimpleSchema.prototype.pick = function(/* arguments */) {
   return new SimpleSchema(newSchema);
 };
 
+SimpleSchema.prototype.omit = function() {
+  var self = this;
+  var args = _.toArray(arguments);
+  args.unshift(self._schema);
+
+  var newSchema = _.omit.apply(null, args);
+  return new SimpleSchema(newSchema);
+};
+
+
 /**
  * @method SimpleSchema.prototype.clean
  * @param {Object} doc - Document or modifier to clean. Referenced object will be modified in place.
@@ -739,7 +746,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
             var newVal = typeconvert(val, def.type);
             // trim strings
             if (options.trimStrings && typeof newVal === "string") {
-              newVal = S(newVal).trim().s;
+              newVal = newVal.trim();
             }
             if (newVal !== void 0 && newVal !== val) {
               // remove empty strings
@@ -763,7 +770,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
           if (!wasAutoConverted) {
             // trim strings
             if (options.trimStrings && typeof val === "string" && (!def || (def && def.trim !== false))) {
-              this.updateValue(S(val).trim().s);
+              this.updateValue(val.trim());
             }
             // remove empty strings
             if (options.removeEmptyStrings && (!this.operator || this.operator === "$set") && typeof val === "string" && !val.length) {
