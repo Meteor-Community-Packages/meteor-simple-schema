@@ -159,9 +159,7 @@ SimpleSchemaValidationContext.prototype._getInvalidKeyObject = function simpleSc
   genericName = genericName || SimpleSchema._makeGeneric(name);
 
   var errorObj = _.findWhere(self._invalidKeys, {name: name});
-  if (!errorObj) {
-    errorObj = _.findWhere(self._invalidKeys, {name: genericName});
-  }
+  if (!errorObj) errorObj = _.findWhere(self._invalidKeys, {name: genericName});
   return errorObj;
 };
 
@@ -184,7 +182,7 @@ SimpleSchemaValidationContext.prototype.keyErrorMessage = function simpleSchemaV
   var errorObj = self._getInvalidKeyObject(name, genericName);
   if (!errorObj) return "";
 
-  return self._simpleSchema.messageForError(errorObj.type, errorObj.name, null, errorObj.value);
+  return self._simpleSchema.messageForError(errorObj.type, errorObj.name, null, errorObj.value, errorObj.message);
 };
 
 SimpleSchemaValidationContext.prototype.getErrorObject = function simpleSchemaValidationContextGetErrorObject() {

@@ -112,7 +112,11 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
 
     // Get the schema for this key, marking invalid if there isn't one.
     if (!def) {
-      invalidKeys.push(Utility.errorObject("keyNotInSchema", affectedKey, val, def, ss));
+      invalidKeys.push({
+        name: affectedKey,
+        type: 'keyNotInSchema',
+        value: val
+      });
       return;
     }
 
@@ -131,14 +135,22 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
         op === "$rename" ||
         (val === void 0 && (isInArrayItemObject || isInSubObject || !op || op === "$set"))
         ) {
-        invalidKeys.push(Utility.errorObject("required", affectedKey, null, def, ss));
+        invalidKeys.push({
+          name: affectedKey,
+          type: 'required',
+          value: null
+        });
         return;
       }
     }
 
     // For $rename, make sure that the new name is allowed by the schema
     if (op === "$rename" && typeof val === "string" && !ss.allowsKey(val)) {
-      invalidKeys.push(Utility.errorObject("keyNotInSchema", val, null, null, ss));
+      invalidKeys.push({
+        name: val,
+        type: 'keyNotInSchema',
+        value: null
+      });
       return;
     }
 
@@ -149,13 +161,21 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
       // Check that value is of the correct type
       var typeError = doTypeChecks(def, val, op);
       if (typeError) {
-        invalidKeys.push(Utility.errorObject(typeError, affectedKey, val, def, ss));
+        invalidKeys.push({
+          name: affectedKey,
+          type: typeError,
+          value: val
+        });
         return;
       }
 
       // Check value against allowedValues array
       if (def.allowedValues && !_.contains(def.allowedValues, val)) {
-        invalidKeys.push(Utility.errorObject("notAllowed", affectedKey, val, def, ss));
+        invalidKeys.push({
+          name: affectedKey,
+          type: 'notAllowed',
+          value: val
+        });
         return;
       }
 
@@ -167,7 +187,7 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
     var validators = def.custom ? [def.custom] : [];
     validators = validators.concat(ss._validators).concat(SimpleSchema._validators);
     _.every(validators, function(validator) {
-      var errorType = validator.call(_.extend({
+      var result = validator.call(_.extend({
         key: affectedKey,
         genericKey: affectedKeyGeneric,
         definition: def,
@@ -193,8 +213,16 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
           };
         }
       }, extendedCustomContext || {}));
-      if (typeof errorType === "string") {
-        invalidKeys.push(Utility.errorObject(errorType, affectedKey, val, def, ss));
+      if (typeof result === "string") {
+        invalidKeys.push({
+          name: affectedKey,
+          type: result,
+          value: val
+        });
+        return false;
+      }
+      if (Utility.isBasicObject(result)) {
+        invalidKeys.push(result);
         return false;
       }
       return true;
@@ -207,9 +235,7 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
 
     if (affectedKey) {
       // When we hit a blackbox key, we don't progress any further
-      if (ss.keyIsInBlackBox(affectedKey)) {
-        return;
-      }
+      if (ss.keyIsInBlackBox(affectedKey)) return;
 
       // Make a generic version of the affected key, and use that
       // to get the schema for this key.

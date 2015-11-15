@@ -951,7 +951,7 @@ SimpleSchema.prototype.messages = function(messages) {
 
 // Returns a string message for the given error type and key. Uses the
 // def and value arguments to fill in placeholders in the error messages.
-SimpleSchema.prototype.messageForError = function(type, key, def, value) {
+SimpleSchema.prototype.messageForError = function(type, key, def, value, message) {
   var self = this;
 
   // We proceed even if we can't get a definition because it might be a keyNotInSchema error
@@ -1019,7 +1019,9 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
 
   // Try finding the correct message to use at various levels, from most
   // specific to least specific.
-  var message = self._messages[typePlusKey] ||                  // (1) Use schema-specific message for specific key
+  message = message ||                                      // Passed in message
+
+                self._messages[typePlusKey] ||                  // (1) Use schema-specific message for specific key
                 self._messages[typePlusGenKey] ||               // (2) Use schema-specific message for generic key
                 self._messages[type];                           // (3) Use schema-specific message for type
   message = findRegExError(message);

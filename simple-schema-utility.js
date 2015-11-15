@@ -14,9 +14,6 @@ Utility = {
     }
     return !_.contains(["$pull", "$pullAll", "$pop", "$slice"], key);
   },
-  errorObject: function errorObject(errorType, keyName, keyValue) {
-    return {name: keyName, type: errorType, value: keyValue};
-  },
   // Tests whether it's an Object as opposed to something that inherits from Object
   isBasicObject: function isBasicObject(obj) {
     return _.isObject(obj) && Object.getPrototypeOf(obj) === Object.prototype;
