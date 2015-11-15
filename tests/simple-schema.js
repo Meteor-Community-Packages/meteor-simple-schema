@@ -1949,7 +1949,7 @@ Tinytest.add("SimpleSchema - Minimum Checks - Insert", function(test) {
   test.length(sc.invalidKeys(), 1);
   /* NUMBER */
   sc = validate(ss, {
-    minMaxNumberExclusive: 20 
+    minMaxNumberExclusive: 20
   });
   test.length(sc.invalidKeys(), 1);
   sc = validate(ss, {

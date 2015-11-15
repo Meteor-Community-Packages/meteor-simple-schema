@@ -43,5 +43,9 @@ Package.on_test(function(api) {
     api.use(["simple-schema", "tinytest", "test-helpers", "underscore", "check"]);
   }
 
-  api.add_files(["simple-schema-tests.js", "mongo-object-tests.js", "humanize-tests.js"], ['client', 'server']);
+  api.add_files([
+    "tests/simple-schema.js",
+    "tests/mongo-object.js",
+    "tests/humanize.js"
+  ], ['client', 'server']);
 });
