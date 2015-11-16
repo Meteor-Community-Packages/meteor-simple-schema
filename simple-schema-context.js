@@ -138,6 +138,21 @@ SimpleSchemaValidationContext.prototype.addInvalidKeys = function simpleSchemaVa
   self._markKeysChanged(changedKeys);
 };
 
+SimpleSchemaValidationContext.prototype.removeInvalidKeys = function simpleSchemaValidationContextRemoveInvalidKeys() {
+  var self = this;
+
+  if (!self._invalidKeys || !self._invalidKeys.length) return;
+
+  var changedKeys = [];
+  _.each(self._invalidKeys, function (errorObject) {
+    changedKeys.push(errorObject.name);
+  });
+
+  self._invalidKeys = [];
+
+  self._markKeysChanged(changedKeys);
+};
+
 SimpleSchemaValidationContext.prototype._markKeysChanged = function simpleSchemaValidationContextMarkKeysChanged(keys) {
   var self = this;
 
