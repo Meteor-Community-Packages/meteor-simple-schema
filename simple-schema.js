@@ -453,8 +453,14 @@ SimpleSchema = function(schemas, options) {
 
   _.each(self._schema, function(definition, fieldName) {
     // Validate the field definition
-    if (!Match.test(definition, schemaDefinition)) {
-      throw new Error('Invalid definition for ' + fieldName + ' field.');
+    try {
+      check(definition, schemaDefinition);
+    } catch (error) {
+      if (error.message.indexOf('Match error: Unknown key in field ') === 0) {
+        var badKey = error.message.replace('Match error: Unknown key in field ', '');
+        throw new Error('Invalid definition for ' + fieldName + ' field: "' + badKey + '" is not a supported option');
+      }
+      throw new Error('Invalid definition for ' + fieldName + ' field: ' + error.message);
     }
 
     fieldNameRoot = fieldName.split(".")[0];
