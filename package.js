@@ -46,6 +46,8 @@ Package.on_test(function(api) {
   api.add_files([
     "tests/simple-schema.js",
     "tests/mongo-object.js",
-    "tests/humanize.js"
+    "tests/humanize.js",
+    "tests/pick.js",
+    "tests/omit.js"
   ], ['client', 'server']);
 });
