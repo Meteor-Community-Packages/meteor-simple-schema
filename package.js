@@ -27,7 +27,7 @@ Package.on_use(function(api) {
     'simple-schema-context.js'
   ]);
   api.export(['SimpleSchema', 'MongoObject'], ['client', 'server']);
-  api.export('humanize', {testonly:true});
+  api.export('humanize', {testOnly:true});
 
 });
 
