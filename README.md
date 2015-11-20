@@ -364,6 +364,8 @@ validation error if it is missing the `name` property. For example, when there
 are two objects in the friends array and both are missing the `name` property,
 there will be a validation error for both "friends.0.name" and "friends.1.name".
 
+`optional` can be a function. It's context (this) is same as in `custom` validator.
+
 ### min/max
 
 * If `type` is `Number` or `[Number]`, these rules define the minimum or
@@ -890,8 +892,20 @@ Take a look at their documentation.
 
 ### Make a field conditionally required
 
-If you have a field that should be required only in certain circumstances, first make the field
-optional, and then use a custom function similar to this:
+If you have a field that should be required only in certain circumstances you can specify optional function:
+
+```js
+{
+  field: {
+    type: String,
+    optional: function() {
+      return this.field('saleType').value == 1;
+    }
+  }
+}
+```
+
+Or you can, first make the field optional, and then use a custom function similar to this:
 
 ```js
 {
@@ -920,9 +934,6 @@ optional, and then use a custom function similar to this:
 ```
 
 Where `customCondition` is whatever should trigger it being required.
-
-Note: In the future we could make this a bit simpler by allowing `optional` to be a function that returns
-true or false. Pull request welcome.
 
 ### Validate one key against another
 

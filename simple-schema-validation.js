@@ -115,7 +115,7 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
       invalidKeys.push(Utility.errorObject("keyNotInSchema", affectedKey, val, def, ss));
       return;
     }
-
+    
     // Check for missing required values. The general logic is this:
     // * If the operator is $unset or $rename, it's invalid.
     // * If the value is null, it's invalid.
@@ -213,8 +213,33 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
 
       // Make a generic version of the affected key, and use that
       // to get the schema for this key.
+      var lastDot = affectedKey.lastIndexOf('.');
+      var fieldParentName = lastDot === -1 ? '' : affectedKey.slice(0, lastDot + 1);
       affectedKeyGeneric = SimpleSchema._makeGeneric(affectedKey);
-      def = ss.getDefinition(affectedKey);
+      def = ss.getDefinition(affectedKey, null, _.extend({
+        key: affectedKey,
+        genericKey: affectedKeyGeneric,
+        isSet: (val !== void 0),
+        value: val,
+        field: function(fName) {
+          mDoc = mDoc || new MongoObject(obj, ss._blackboxKeys); //create if necessary, cache for speed
+          var keyInfo = mDoc.getInfoForKey(fName) || {};
+          return {
+            isSet: (keyInfo.value !== void 0),
+            value: keyInfo.value,
+            operator: keyInfo.operator
+          };
+        },
+        siblingField: function(fName) {
+          mDoc = mDoc || new MongoObject(obj, ss._blackboxKeys); //create if necessary, cache for speed
+          var keyInfo = mDoc.getInfoForKey(fieldParentName + fName) || {};
+          return {
+            isSet: (keyInfo.value !== void 0),
+            value: keyInfo.value,
+            operator: keyInfo.operator
+          };
+        }
+      }, extendedCustomContext || {}));
 
       // Perform validation for this key
       if (!keyToValidate || keyToValidate === affectedKey || keyToValidate === affectedKeyGeneric) {

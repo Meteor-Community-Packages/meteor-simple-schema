@@ -835,11 +835,14 @@ SimpleSchema.prototype.getDefinition = function(key, propList, functionContext) 
 
   // For any options that support specifying a function,
   // evaluate the functions.
-  _.each(['min', 'max', 'minCount', 'maxCount', 'allowedValues', 'optional', 'label'], function (prop) {
+  _.each(['min', 'max', 'minCount', 'maxCount', 'allowedValues', 'label'], function (prop) {
     if (_.isFunction(defs[prop])) {
       defs[prop] = defs[prop].call(functionContext || {});
     }
   });
+  if (functionContext && _.isFunction(defs['optional'])) {
+    defs['optional'] = defs['optional'].call(functionContext || {});
+  }
 
   // Inflect label if not defined
   defs.label = defs.label || inflectedLabel(key);
@@ -960,7 +963,7 @@ SimpleSchema.prototype.messages = function(messages) {
 // def and value arguments to fill in placeholders in the error messages.
 SimpleSchema.prototype.messageForError = function(type, key, def, value) {
   var self = this;
-
+  
   // We proceed even if we can't get a definition because it might be a keyNotInSchema error
   def = def || self.getDefinition(key, ['regEx', 'label', 'minCount', 'maxCount', 'min', 'max', 'type']) || {};
 

@@ -222,7 +222,32 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
       // Make a generic version of the affected key, and use that
       // to get the schema for this key.
       affectedKeyGeneric = SimpleSchema._makeGeneric(affectedKey);
-      def = ss.getDefinition(affectedKey);
+      var lastDot = affectedKey ? affectedKey.lastIndexOf('.') : -1;
+      var fieldParentName = lastDot === -1 ? '' : affectedKey.slice(0, lastDot + 1);
+      def = ss.getDefinition(affectedKey, null, _.extend({
+        key: affectedKey,
+        genericKey: affectedKeyGeneric,
+        isSet: (val !== void 0),
+        value: val,
+        field: function(fName) {
+          mDoc = mDoc || new MongoObject(obj, ss._blackboxKeys); //create if necessary, cache for speed
+          var keyInfo = mDoc.getInfoForKey(fName) || {};
+          return {
+            isSet: (keyInfo.value !== void 0),
+            value: keyInfo.value,
+            operator: keyInfo.operator
+          };
+        },
+        siblingField: function(fName) {
+          mDoc = mDoc || new MongoObject(obj, ss._blackboxKeys); //create if necessary, cache for speed
+          var keyInfo = mDoc.getInfoForKey(fieldParentName + fName) || {};
+          return {
+            isSet: (keyInfo.value !== void 0),
+            value: keyInfo.value,
+            operator: keyInfo.operator
+          };
+        }
+      }, extendedCustomContext || {}));
 
       // Perform validation for this key
       if (!keyToValidate || keyToValidate === affectedKey || keyToValidate === affectedKeyGeneric) {

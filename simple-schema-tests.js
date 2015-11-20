@@ -4097,6 +4097,20 @@ Tinytest.add("SimpleSchema - Autoconvert Dates", function (test) {
   test.length(sc.invalidKeys(), 0);
 });
 
+Tinytest.add("SimpleSchema - optional function dependant on other fields", function (test) {
+  // With $set
+  var schema = new SimpleSchema({
+    a: {type: String},
+    b: {type: String, optional: function() { return this.field('a').value === 'Dont need b' }}
+  });
+
+  var c = schema.namedContext();
+
+  test.isTrue(c.validate({a: 'Dont need b'}));
+  test.isFalse(c.validate({a: 'I need b'}));
+  test.isTrue(c.validate({a: 'I need b', b: 'I am here'}));
+});
+
 /*
  * END TESTS
  */
