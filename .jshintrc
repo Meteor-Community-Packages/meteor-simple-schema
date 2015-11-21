@@ -7,7 +7,7 @@
   "forin": true,
   "immed": false,
   "indent": 2,
-  "latedef": true,
+  "latedef": false,
   "newcap": false,
   "noarg": true,
   "noempty": true,
@@ -26,7 +26,6 @@
   "boss": false,
   "debug": false,
   "eqnull": false,
-  "es5": false,
   "esnext": false,
   "moz": false,
   "evil": false,
@@ -64,7 +63,12 @@
   "passfail": false,
   "white": false,
   "globals": {
-    "humanize": true
+    "doValidation": true,
+    "humanize": true,
+    "SimpleSchema": true,
+    "SimpleSchemaValidationContext": true,
+    "MongoObject": true,
+    "Utility": true
   },
   "predef": [
       "Meteor",
@@ -74,7 +78,6 @@
       "check",
       "Match",
       "Tracker",
-      "Deps",
       "EJSON",
       "Email",
       "Package",

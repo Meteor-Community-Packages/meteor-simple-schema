@@ -12,4 +12,7 @@ Tinytest.add("Humanize - Should humanize a string", function (test) {
   test.equal(humanize('externalSource'), 'External source');
   test.equal(humanize('externalSourceId'), 'External source ID');
   test.equal(humanize('externalSource_id'), 'External source ID');
+  test.equal(humanize('_id'), 'ID');
+  // Make sure it does not mess with "id" in the middle of a word
+  test.equal(humanize('overridden'), 'Overridden');
 });

@@ -3025,24 +3025,6 @@ Tinytest.add("SimpleSchema - Clean", function(test) {
   doTest({$pullAll: {allowedNumbersArray: [1, 2, 3]}}, {$pullAll: {allowedNumbersArray: [1, 2, 3]}}, true);
   doTest({$pullAll: {allowedNumbersArray: ["1", 2, 3]}}, {$pullAll: {allowedNumbersArray: [1, 2, 3]}}, true);
 
-  //$PUSHALL (DEPRECATED - SHOULD BE TRANSLATED TO $PUSH+$EACH
-
-  doTest({$pushAll: {allowedNumbersArray: [1, 2, 3]}}, {$push: {allowedNumbersArray: {$each: [1, 2, 3]}}}, true);
-  doTest({$pushAll: {allowedNumbersArray: ["1", 2, 3]}}, {$push: {allowedNumbersArray: {$each: [1, 2, 3]}}}, true);
-  //if there's also $push for some reason, the two should be combined
-  doTest({
-    $push: {
-      allowedNumbersArray: {$each: ["1", 2, 3]},
-      allowedStringsArray: {$each: ["tuna", "fish"]}
-    },
-    $pushAll: {allowedNumbersArray: ["4", 5, 6]}
-  }, {
-    $push: {
-      allowedNumbersArray: {$each: [1, 2, 3, 4, 5, 6]},
-      allowedStringsArray: {$each: ["tuna", "fish"]}
-    }
-  }, true);
-
   // Cleaning shouldn't remove anything within blackbox
   doTest({blackBoxObject: {foo: 1}}, {blackBoxObject: {foo: 1}});
   doTest({blackBoxObject: {foo: [1]}}, {blackBoxObject: {foo: [1]}});
@@ -3188,8 +3170,8 @@ Tinytest.add("SimpleSchema - Custom Types", function(test) {
 });
 
 Tinytest.add("SimpleSchema - Nested Schemas", function(test) {
-  var childDef = {type: String, min: 10};
-  var parentDef = {type: Number, min: 10};
+  var childDef = {type: String, min: 10, label: 'foo'};
+  var parentDef = {type: Number, min: 10, label: 'foo'};
 
   var child = new SimpleSchema({
     copied: childDef,
@@ -3373,7 +3355,7 @@ Tinytest.add("SimpleSchema - Built-In RegEx and Messages", function(test) {
 
   c1.validate({id: "%#$%"});
   test.length(c1.invalidKeys(), 1);
-  test.equal(c1.keyErrorMessage("id"), "Id must be a valid alphanumeric ID");
+  test.equal(c1.keyErrorMessage("id"), "ID must be a valid alphanumeric ID");
 });
 
 Tinytest.add("SimpleSchema - Issue 28", function(test) {
@@ -3401,34 +3383,42 @@ Tinytest.add("SimpleSchema - Basic Schema Merge", function(test) {
   var s1 = new SimpleSchema([
     {
       a: {
-        type: Boolean
+        type: Boolean,
+        label: 'foo'
       },
       b: {
-        type: String
+        type: String,
+        label: 'foo'
       }
     },
     {
       c: {
-        type: String
+        type: String,
+        label: 'foo'
       },
       d: {
-        type: String
+        type: String,
+        label: 'foo'
       }
     }
   ]);
 
   test.equal(s1._schema, {
     a: {
-      type: Boolean
+      type: Boolean,
+      label: 'foo'
     },
     b: {
-      type: String
+      type: String,
+      label: 'foo'
     },
     c: {
-      type: String
+      type: String,
+      label: 'foo'
     },
     d: {
-      type: String
+      type: String,
+      label: 'foo'
     }
   }, "schema was not merged correctly");
 
@@ -3443,38 +3433,47 @@ Tinytest.add("SimpleSchema - Mixed Schema Merge", function(test) {
 
   var s1 = new SimpleSchema({
     a: {
-      type: Boolean
+      type: Boolean,
+      label: 'foo'
     },
     b: {
-      type: [String]
+      type: [String],
+      label: 'foo'
     }
   });
 
   var s2 = new SimpleSchema([s1, {
-      c: {
-        type: String
-      },
-      d: {
-        type: String
-      }
-    }]);
+    c: {
+      type: String,
+      label: 'foo'
+    },
+    d: {
+      type: String,
+      label: 'foo'
+    }
+  }]);
 
   test.equal(s2._schema, {
     a: {
-      type: Boolean
+      type: Boolean,
+      label: 'foo'
     },
     b: {
-      type: Array
+      type: Array,
+      label: 'foo'
     },
     'b.$': {
       type: String,
-      optional: true
+      optional: true,
+      label: 'foo'
     },
     c: {
-      type: String
+      type: String,
+      label: 'foo'
     },
     d: {
-      type: String
+      type: String,
+      label: 'foo'
     }
   }, "schema was not merged correctly");
 
@@ -3489,31 +3488,37 @@ Tinytest.add("SimpleSchema - Mixed Schema Merge With Base Extend and Override", 
 
   var s1 = new SimpleSchema({
     a: {
-      type: Boolean
+      type: Boolean,
+      label: 'foo'
     },
     b: {
-      type: [String]
+      type: [String],
+      label: 'foo'
     }
   });
 
   var s2 = new SimpleSchema([s1, {
-      a: {
-        type: Number
-      },
-      b: {
-        label: "Bacon"
-      },
-      c: {
-        type: String
-      },
-      d: {
-        type: String
-      }
-    }]);
+    a: {
+      type: Number,
+      label: 'foo'
+    },
+    b: {
+      label: "Bacon"
+    },
+    c: {
+      type: String,
+      label: 'foo'
+    },
+    d: {
+      type: String,
+      label: 'foo'
+    }
+  }]);
 
   test.equal(s2._schema, {
     a: {
-      type: Number
+      type: Number,
+      label: 'foo'
     },
     b: {
       type: Array,
@@ -3525,10 +3530,12 @@ Tinytest.add("SimpleSchema - Mixed Schema Merge With Base Extend and Override", 
       label: "Bacon"
     },
     c: {
-      type: String
+      type: String,
+      label: 'foo'
     },
     d: {
-      type: String
+      type: String,
+      label: 'foo'
     }
   }, "schema was not merged correctly");
 
