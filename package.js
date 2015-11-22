@@ -52,6 +52,7 @@ Package.onTest(function(api) {
     "tests/mongo-object.js",
     "tests/humanize.js",
     "tests/pick.js",
-    "tests/omit.js"
+    "tests/omit.js",
+    "tests/messages.js",
   ], ['client', 'server']);
 });
