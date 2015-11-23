@@ -54,5 +54,6 @@ Package.onTest(function(api) {
     "tests/pick.js",
     "tests/omit.js",
     "tests/messages.js",
+    "tests/autovalue.js",
   ], ['client', 'server']);
 });
