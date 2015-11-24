@@ -413,3 +413,22 @@ Tinytest.add('SimpleSchema - autoValue - objects in arrays', function (test) {
 
   test.equal(mod.$set['children.$.value'], 'autovalue');
 });
+
+Tinytest.add('SimpleSchema - autoValue - operator correct for $pull', function (test) {
+  var called = false;
+
+  var schema = new SimpleSchema({
+    foo: {
+      type: [String],
+      autoValue: function () {
+        called = true;
+        test.equal(this.operator, '$pull');
+      }
+    }
+  });
+
+  var mod = { $pull: {foo: 'bar'}};
+  schema.clean(mod);
+
+  test.isTrue(called);
+});
