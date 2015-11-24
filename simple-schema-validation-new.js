@@ -104,21 +104,17 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
   }
 
   if (isModifier) {
-    if (_.isEmpty(obj)) {
-      throw new Error("When the modifier option is true, validation object must have at least one operator");
-    } else {
-      var allKeysAreOperators = _.every(obj, function(v, k) {
-        return (k.substring(0, 1) === "$");
-      });
-      if (!allKeysAreOperators) {
-        throw new Error("When the modifier option is true, all validation object keys must be operators");
-      }
-
-      // We use a LocalCollection to figure out what the resulting doc
-      // would be in a worst case scenario. Then we validate that doc
-      // so that we don't have to validate the modifier object directly.
-      obj = convertModifierToDoc(obj, ss.schema(), isUpsert);
+    var allKeysAreOperators = _.every(obj, function(v, k) {
+      return (k.substring(0, 1) === "$");
+    });
+    if (!allKeysAreOperators) {
+      throw new Error("When the modifier option is true, all validation object keys must be operators");
     }
+
+    // We use a LocalCollection to figure out what the resulting doc
+    // would be in a worst case scenario. Then we validate that doc
+    // so that we don't have to validate the modifier object directly.
+    obj = convertModifierToDoc(obj, ss.schema(), isUpsert);
   } else if (Utility.looksLikeModifier(obj)) {
     throw new Error("When the validation object contains mongo operators, you must set the modifier option to true");
   }

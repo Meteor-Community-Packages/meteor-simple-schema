@@ -55,5 +55,6 @@ Package.onTest(function(api) {
     "tests/omit.js",
     "tests/messages.js",
     "tests/autovalue.js",
+    "tests/validation.js",
   ], ['client', 'server']);
 });

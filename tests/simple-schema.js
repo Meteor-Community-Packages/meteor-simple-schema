@@ -1066,7 +1066,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   sc = validate(ss, {
     string: {test: "test"}
   });
-  test.length(sc.invalidKeys(), 1); //with filter
+  test.length(sc.invalidKeys(), 0); //with filter
 
   //array string failure
   sc2.validate({
@@ -1113,7 +1113,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   sc = validate(ss, {
     boolean: {test: "test"}
   });
-  test.length(sc.invalidKeys(), 1); //with filter
+  test.length(sc.invalidKeys(), 0); //with filter
 
   //array bool failure
   sc2.validate({
@@ -1155,7 +1155,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   sc = validate(ss, {
     number: {test: "test"}
   });
-  test.length(sc.invalidKeys(), 1); //with filter
+  test.length(sc.invalidKeys(), 0); //with filter
 
   //array number failure
   sc2.validate({
@@ -1215,7 +1215,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   sc = validate(ss, {
     date: {test: "test"}
   });
-  test.length(sc.invalidKeys(), 1); //with filter
+  test.length(sc.invalidKeys(), 0); //with filter
 
   //array date failure
   sc2.validate({
@@ -1285,11 +1285,6 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
     }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
 
-  sc = validate(ss, {$setOnInsert: {
-      string: {test: "test"}
-    }}, true, true);
-  test.length(sc.invalidKeys(), 1); //with filter
-
   //array string failure
   sc2.validate({$setOnInsert: {
       string: ["test"]
@@ -1332,11 +1327,6 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
     }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
 
-  sc = validate(ss, {$setOnInsert: {
-      boolean: {test: "test"}
-    }}, true, true);
-  test.length(sc.invalidKeys(), 1); //with filter
-
   //array bool failure
   sc2.validate({$setOnInsert: {
       boolean: ["test"]
@@ -1373,11 +1363,6 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
       number: {test: "test"}
     }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
-
-  sc = validate(ss, {$setOnInsert: {
-      number: {test: "test"}
-    }}, true, true);
-  test.length(sc.invalidKeys(), 1); //with filter
 
   //array number failure
   sc2.validate({$setOnInsert: {
@@ -1421,11 +1406,6 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
       date: {test: "test"}
     }}, {modifier: true, upsert: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
-
-  sc = validate(ss, {$setOnInsert: {
-      date: {test: "test"}
-    }}, true, true);
-  test.length(sc.invalidKeys(), 1); //with filter
 
   //array date failure
   sc2.validate({$setOnInsert: {
@@ -1493,11 +1473,6 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
     }}, {modifier: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
 
-  sc = validate(ss, {$set: {
-      string: {test: "test"}
-    }}, true, true);
-  test.length(sc.invalidKeys(), 1); //with filter
-
   //array string failure
   sc2.validate({$set: {
       string: ["test"]
@@ -1540,11 +1515,6 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
     }}, {modifier: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
 
-  sc = validate(ss, {$set: {
-      boolean: {test: "test"}
-    }}, true, true);
-  test.length(sc.invalidKeys(), 1); //with filter
-
   //array bool failure
   sc2.validate({$set: {
       boolean: ["test"]
@@ -1581,11 +1551,6 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
       number: {test: "test"}
     }}, {modifier: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
-
-  sc = validate(ss, {$set: {
-      number: {test: "test"}
-    }}, true, true);
-  test.length(sc.invalidKeys(), 1); //with filter
 
   //array number failure
   sc2.validate({$set: {
@@ -1649,11 +1614,6 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
       date: {test: "test"}
     }}, {modifier: true, filter: false, autoConvert: false});
   test.length(sc2.invalidKeys(), 2); //without filter
-
-  sc = validate(ss, {$set: {
-      date: {test: "test"}
-    }}, true, true);
-  test.length(sc.invalidKeys(), 1); //with filter
 
   //array date failure
   sc2.validate({$set: {
