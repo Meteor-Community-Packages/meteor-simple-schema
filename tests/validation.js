@@ -43,3 +43,44 @@ Tinytest.add('SimpleSchema - validation - issue 314', function (test) {
   test.equal(cleanMe, { names: [], testField: null });
 
 });
+
+Tinytest.add('SimpleSchema - validation - issue 360', function (test) {
+  var schema = new SimpleSchema({
+    emails: {
+        type: [Object],
+        optional: true,
+        maxCount: 5
+    },
+    "emails.$.address": {
+        type: String,
+        regEx: SimpleSchema.RegEx.Email
+    },
+    "emails.$.verified": {
+        type: Boolean
+    }
+  });
+
+  var validationContext = schema.newContext();
+
+  var result = validationContext.validateOne({
+    emails: [
+      {
+        address: 12321,
+        verified: 'asdasd'
+      }
+    ]
+  }, 'emails');
+
+  test.isFalse(result);
+
+  result = validationContext.validateOne({
+    emails: [
+      {
+        address: 12321,
+        verified: 'asdasd'
+      }
+    ]
+  }, 'emails.0');
+
+  test.isFalse(result);
+});
