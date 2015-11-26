@@ -61,5 +61,6 @@ Package.onTest(function(api) {
     "tests/autovalue.js",
     "tests/validation.js",
     "tests/validation-error.js",
+    "tests/reg-exp.js",
   ], ['client', 'server']);
 });
