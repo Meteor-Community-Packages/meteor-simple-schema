@@ -1783,6 +1783,10 @@ Tinytest.add("SimpleSchema - Minimum Checks - Insert", function(test) {
     minMaxString: "short"
   });
   test.length(sc.invalidKeys(), 1);
+  sc = validateNoClean(ss, {
+    minMaxString: ""
+  });
+  test.length(sc.invalidKeys(), 1);
   /* NUMBER */
   sc = validate(ss, {
     minMaxNumberExclusive: 20
@@ -1847,6 +1851,11 @@ Tinytest.add("SimpleSchema - Minimum Checks - Insert", function(test) {
     minMaxStringArray: ["longenough", "longenough"]
   });
   test.equal(sc.invalidKeys(), []);
+
+  sc = validateNoClean(ss, {
+    minMaxStringArray: ["longenough", ""]
+  });
+  test.length(sc.invalidKeys(), 1);
 
   sc = validate(ss, {
     minMaxStringArray: ["short", "short"]
