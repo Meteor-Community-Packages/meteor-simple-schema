@@ -3466,6 +3466,16 @@ Tinytest.add('SimpleSchema - Multi-Dimensional Arrays', function (test) {
   test.equal(JSON.stringify(doc), expected);
 });
 
+Tinytest.add('SimpleSchema - Weird Type', function (test) {
+  test.throws(function () {
+    new SimpleSchema({
+      name: {
+        type: Array[Object]
+      }
+    });
+  });
+});
+
 /*
  * END TESTS
  */
