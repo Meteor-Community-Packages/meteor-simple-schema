@@ -3,7 +3,95 @@ simple-schema
 
 A simple, reactive schema validation smart package for Meteor.
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [simple-schema](#simple-schema)
+  - [Change Log](#change-log)
+    - [1.4.0](#140)
+    - [1.3.3](#133)
+    - [1.3.2](#132)
+    - [1.3.1](#131)
+    - [1.3.0](#130)
+    - [1.2.0](#120)
+    - [1.1.0](#110)
+    - [1.0.3](#103)
+    - [1.0.2](#102)
+    - [1.0.1](#101)
+    - [1.0.0](#100)
+    - [0.7.0](#070)
+    - [0.6.0](#060)
+    - [0.5.1](#051)
+    - [0.5.0](#050)
+    - [0.4.0](#040)
+    - [0.3.0](#030)
+    - [0.2.48](#0248)
+    - [0.2.47](#0247)
+    - [0.2.46](#0246)
+    - [0.2.45](#0245)
+    - [0.2.44](#0244)
+    - [0.2.43](#0243)
+    - [0.2.42](#0242)
+    - [0.2.41](#0241)
+    - [0.2.40](#0240)
+    - [0.2.39](#0239)
+    - [0.2.38](#0238)
+    - [0.2.37](#0237)
+    - [0.2.36](#0236)
+    - [0.2.35](#0235)
+    - [0.2.34](#0234)
+    - [0.2.33](#0233)
+    - [0.2.32](#0232)
+    - [0.2.31](#0231)
+    - [0.2.30](#0230)
+    - [0.2.29](#0229)
+    - [0.2.28](#0228)
+    - [0.2.27](#0227)
+    - [0.2.26](#0226)
+    - [0.2.25](#0225)
+    - [0.2.24](#0224)
+    - [0.2.23](#0223)
+    - [0.2.22](#0222)
+    - [0.2.21](#0221)
+    - [0.2.20](#0220)
+    - [0.2.19](#0219)
+    - [0.2.18](#0218)
+    - [0.2.17](#0217)
+    - [0.2.16](#0216)
+    - [0.2.15](#0215)
+    - [0.2.14](#0214)
+    - [0.2.13](#0213)
+    - [0.2.12](#0212)
+    - [0.2.11](#0211)
+    - [0.2.10](#0210)
+    - [0.2.9](#029)
+    - [0.2.8](#028)
+    - [0.2.7](#027)
+    - [0.2.6](#026)
+    - [0.2.5](#025)
+    - [0.2.4](#024)
+    - [0.2.3](#023)
+    - [0.2.2](#022)
+    - [0.2.1](#021)
+    - [0.2.0](#020)
+    - [0.1.13](#0113)
+    - [0.1.12](#0112)
+    - [0.1.11](#0111)
+    - [0.1.10](#0110)
+    - [0.1.9](#019)
+    - [0.1.8](#018)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 ## Change Log
+
+### 1.4.0
+
+For compatibility with the new [mdg:method](https://github.com/meteor/method) package, two new functions have been added:
+
+- Call `mySimpleSchema.validate(doc)` to validate `doc` against the schema and throw a `ValidationError` if invalid. This is like `check(doc, mySimpleSchema)` but without the `check` dependency and with the ability to pass full schema error details back to a callback on the client.
+- Call `mySimpleSchema.validator()` to get a function that calls `mySimpleSchema.validate` for whatever object is passed to it. This means you can do `validate: mySimpleSchema.validator()` in the [mdg:method](https://github.com/meteor/method) package.
 
 ### 1.3.3
 

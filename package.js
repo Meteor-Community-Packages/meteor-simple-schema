@@ -1,7 +1,7 @@
 Package.describe({
   name: "aldeed:simple-schema",
   summary: "A simple schema validation object with reactivity. Used by collection2 and autoform.",
-  version: "1.3.3",
+  version: "1.4.0",
   git: "https://github.com/aldeed/meteor-simple-schema.git"
 });
 
@@ -14,6 +14,8 @@ Package.onUse(function(api) {
   } else {
     api.use(['tracker', 'underscore', 'check', 'random']);
   }
+
+  api.use('mdg:validation-error@0.1.0', {unordered: true});
 
   api.addFiles([
     'lib/string-polyfills.js',
@@ -29,6 +31,7 @@ Package.onUse(function(api) {
     'lib/validation.js',
     'lib/context.js',
     'lib/context-create.js',
+    'lib/validation-error.js',
   ]);
 
   api.export(['SimpleSchema', 'MongoObject'], ['client', 'server']);
@@ -56,5 +59,6 @@ Package.onTest(function(api) {
     "tests/messages.js",
     "tests/autovalue.js",
     "tests/validation.js",
+    "tests/validation-error.js",
   ], ['client', 'server']);
 });

@@ -11,7 +11,7 @@ A simple, reactive schema validation package for Meteor. It's used by the [Colle
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](http://doctoc.herokuapp.com/)*
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Installation](#installation)
 - [Basic Usage](#basic-usage)
@@ -42,6 +42,7 @@ A simple, reactive schema validation package for Meteor. It's used by the [Colle
   - [Validating an Object](#validating-an-object)
   - [Validating Only One Key in an Object](#validating-only-one-key-in-an-object)
   - [Validation Options](#validation-options)
+  - [Validating and Throwing ValidationErrors](#validating-and-throwing-validationerrors)
   - [Validating Using check() or Match.test()](#validating-using-check-or-matchtest)
   - [Custom Validation](#custom-validation)
   - [Manually Adding a Validation Error](#manually-adding-a-validation-error)
@@ -57,6 +58,7 @@ A simple, reactive schema validation package for Meteor. It's used by the [Colle
   - [Validate one key against another](#validate-one-key-against-another)
 - [Debug Mode](#debug-mode)
 - [Extending the Schema Options](#extending-the-schema-options)
+- [Add On Packages](#add-on-packages)
 - [License](#license)
 - [Contributing](#contributing)
   - [Thanks](#thanks)
@@ -613,6 +615,11 @@ upsert operators? False by default.
 * `extendedCustomContext`: This object will be added to the `this` context in
 any custom validation functions that are run during validation. See the
 [Custom Validation](#custom-validation) section.
+
+### Validating and Throwing ValidationErrors
+
+- Call `mySimpleSchema.validate(doc)` to validate `doc` against the schema and throw a `ValidationError` if invalid. This is like `check(doc, mySimpleSchema)` but without the `check` dependency and with the ability to pass full schema error details back to a callback on the client.
+- Call `mySimpleSchema.validator()` to get a function that calls `mySimpleSchema.validate` for whatever object is passed to it. This means you can do `validate: mySimpleSchema.validator()` in the [mdg:method](https://github.com/meteor/method) package.
 
 ### Validating Using check() or Match.test()
 
