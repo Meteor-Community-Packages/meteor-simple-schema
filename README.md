@@ -624,6 +624,7 @@ upsert operators? False by default.
 * `extendedCustomContext`: This object will be added to the `this` context in
 any custom validation functions that are run during validation. See the
 [Custom Validation](#custom-validation) section.
+* `ignore`: An array of validation error types to ignore.
 
 ### Validating and Throwing ValidationErrors
 

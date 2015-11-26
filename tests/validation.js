@@ -84,3 +84,23 @@ Tinytest.add('SimpleSchema - validation - issue 360', function (test) {
 
   test.isFalse(result);
 });
+
+Tinytest.add('SimpleSchema - validation - ignore option', function (test) {
+  var schema = new SimpleSchema({
+    foo: {
+      type: String
+    }
+  });
+
+  var validationContext = schema.newContext();
+
+  var result = validationContext.validateOne({
+    foo: 'bar',
+  }, 'foo', {ignore: ['notInSchema']});
+  test.isTrue(result);
+
+  result = validationContext.validate({
+    foo: 'bar',
+  }, {ignore: ['notInSchema']});
+  test.isTrue(result);
+});
