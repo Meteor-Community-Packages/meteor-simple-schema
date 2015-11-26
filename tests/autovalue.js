@@ -456,3 +456,21 @@ Tinytest.add('SimpleSchema - autoValue - issue 340', function (test) {
 
   test.equal(called, 2);
 });
+
+Tinytest.add('SimpleSchema - autoValue - issue 426', function (test) {
+  var schema = new SimpleSchema({
+    name: {
+      type: String,
+    },
+    images: {
+      type: [Object],
+      label: 'Images',
+      minCount: 0,
+      defaultValue: [],
+    }
+  });
+
+  var doc = {name: 'Test'};
+  schema.clean(doc);
+  test.equal(doc, {name: 'Test', images: []});
+});
