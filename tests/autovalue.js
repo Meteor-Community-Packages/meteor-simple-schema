@@ -432,3 +432,27 @@ Tinytest.add('SimpleSchema - autoValue - operator correct for $pull', function (
 
   test.isTrue(called);
 });
+
+Tinytest.add('SimpleSchema - autoValue - issue 340', function (test) {
+  var called = 0;
+
+  var schema = new SimpleSchema({
+    field1: {
+      type: Number
+    },
+    field2: {
+      type: String,
+      autoValue: function () {
+        called++;
+        test.equal(this.field('field1').value, 1);
+        test.equal(this.siblingField('field1').value, 1);
+        return 'foo';
+      }
+    }
+  });
+
+  schema.clean({field1: 1});
+  schema.clean({$set: {field1: 1}});
+
+  test.equal(called, 2);
+});
