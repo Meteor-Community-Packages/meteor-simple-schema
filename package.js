@@ -52,6 +52,7 @@ Package.onTest(function(api) {
 
   api.addFiles([
     "tests/simple-schema.js",
+    "tests/clean.js",
     "tests/mongo-object.js",
     "tests/humanize.js",
     "tests/pick.js",
