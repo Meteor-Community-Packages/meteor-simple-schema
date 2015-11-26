@@ -239,7 +239,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
 
       // Make a generic version of the affected key, and use that
       // to get the schema for this key.
-      affectedKeyGeneric = SimpleSchema._makeGeneric(affectedKey);
+      affectedKeyGeneric = MongoObject.makeKeyGeneric(affectedKey);
       def = ss.getDefinition(affectedKey);
 
       // Perform validation for this key

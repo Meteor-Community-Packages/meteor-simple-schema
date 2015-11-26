@@ -209,6 +209,11 @@ Tinytest.add("MongoObject - _keyToPosition", function(test) {
   convert('foo.bar.0', true, '[foo][bar][0]');
 });
 
+Tinytest.add("MongoObject - makeKeyGeneric", function(test) {
+  var generic = MongoObject.makeKeyGeneric('foo.0.0.ab.c.123.4square.d.67e.f.g.1');
+  test.equal(generic, 'foo.$.$.ab.c.$.4square.d.67e.f.g.$');
+});
+
 //Test API:
 //test.isFalse(v, msg)
 //test.isTrue(v, msg)
