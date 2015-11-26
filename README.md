@@ -211,6 +211,15 @@ var profileSchema = new SimpleSchema({
 var nameSchema = profileSchema.pick('comments', 'comments.$');
 ```
 
+### Extending SimpleSchemas
+
+If you have a SimpleSchema and need to add fields or adjust existing ones, you can use `extend`.
+
+```js
+// Take firstName and lastName fields from profileSchema, but make firstName optional
+var nameSchema = profileSchema.pick('firstName', 'lastName').extend({firstName: {optional: true}});
+```
+
 ## The Object to Validate
 
 The object you pass in when validating can be a normal object, or it can be

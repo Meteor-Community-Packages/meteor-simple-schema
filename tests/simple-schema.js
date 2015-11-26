@@ -3485,6 +3485,33 @@ Tinytest.add('SimpleSchema - Weird Type', function (test) {
   });
 });
 
+Tinytest.add('SimpleSchema - extend', function (test) {
+  var schema1 = new SimpleSchema({
+    firstName: {
+      type: String,
+      label: 'First name'
+    },
+    lastName: {
+      type: String,
+      label: 'Last name'
+    }
+  });
+
+  var schema2 = schema1.extend({firstName: {optional: true}});
+
+  test.equal(schema2.schema(), {
+    firstName: {
+      type: String,
+      label: 'First name',
+      optional: true
+    },
+    lastName: {
+      type: String,
+      label: 'Last name'
+    }
+  });
+});
+
 /*
  * END TESTS
  */
