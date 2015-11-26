@@ -11,7 +11,7 @@ A simple, reactive schema validation package for Meteor. It's used by the [Colle
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](http://doctoc.herokuapp.com/)*
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Installation](#installation)
 - [Basic Usage](#basic-usage)
@@ -42,6 +42,7 @@ A simple, reactive schema validation package for Meteor. It's used by the [Colle
   - [Validating an Object](#validating-an-object)
   - [Validating Only One Key in an Object](#validating-only-one-key-in-an-object)
   - [Validation Options](#validation-options)
+  - [Validating and Throwing ValidationErrors](#validating-and-throwing-validationerrors)
   - [Validating Using check() or Match.test()](#validating-using-check-or-matchtest)
   - [Custom Validation](#custom-validation)
   - [Manually Adding a Validation Error](#manually-adding-a-validation-error)
@@ -57,6 +58,7 @@ A simple, reactive schema validation package for Meteor. It's used by the [Colle
   - [Validate one key against another](#validate-one-key-against-another)
 - [Debug Mode](#debug-mode)
 - [Extending the Schema Options](#extending-the-schema-options)
+- [Add On Packages](#add-on-packages)
 - [License](#license)
 - [Contributing](#contributing)
   - [Thanks](#thanks)
@@ -354,7 +356,7 @@ That last point can be confusing, so let's look at a couple examples:
 * Say you have a required key "friends.address.city" but "friends.address" is
 optional. If "friends.address" is set in the object you're validating, but
 "friends.address.city" is not, there is a validation error. However, if
-"friends.address" is *not* set, then there is no validation error for 
+"friends.address" is *not* set, then there is no validation error for
 "friends.address.city" because the object it belongs to is not present.
 * If you have a required key "friends.$.name", but the `friends` array has
 no objects in the object you are validating, there is no validation error
@@ -380,8 +382,8 @@ the minimum Date for a field should be "today".
 ### exclusiveMin/exclusiveMax
 
 Set to `true` to indicate that the range of numeric values, as set by min/max,
-are to be treated as an exclusive range. Set to `false` (default) to treat ranges as 
-inclusive. 
+are to be treated as an exclusive range. Set to `false` (default) to treat ranges as
+inclusive.
 
 ### decimal
 
@@ -426,7 +428,7 @@ validated as well, so you must define all allowed properties in the schema. If t
 not possible or you don't care to validate the object's properties, use the
 `blackbox: true` option to skip validation for everything within the object.
 
-Custom object types are treated as blackbox objects by default. However, 
+Custom object types are treated as blackbox objects by default. However,
 when using collection2, you must ensure that the custom type is not lost
 between client and server. This can be done with a `transform` function that
 converts the generic Object to the custom object. Without this transformation,
@@ -482,7 +484,7 @@ function:
 you return undefined.
 * `value`: If isSet = true, this contains the field's current (requested) value
 in the document or modifier.
-* `operator`: If isSet = true and isUpdate = true, this contains the name of the 
+* `operator`: If isSet = true and isUpdate = true, this contains the name of the
 update operator in the modifier in which this field is being changed. For example,
 if the modifier were `{$set: {name: "Alice"}}`, in the autoValue function for
 the `name` field, `this.isSet` would be true, `this.value` would be "Alice",
@@ -614,6 +616,11 @@ upsert operators? False by default.
 any custom validation functions that are run during validation. See the
 [Custom Validation](#custom-validation) section.
 
+### Validating and Throwing ValidationErrors
+
+- Call `mySimpleSchema.validate(doc)` to validate `doc` against the schema and throw a `ValidationError` if invalid. This is like `check(doc, mySimpleSchema)` but without the `check` dependency and with the ability to pass full schema error details back to a callback on the client.
+- Call `mySimpleSchema.validator()` to get a function that calls `mySimpleSchema.validate` for whatever object is passed to it. This means you can do `validate: mySimpleSchema.validator()` in the [mdg:method](https://github.com/meteor/method) package.
+
 ### Validating Using check() or Match.test()
 
 A schema can be passed as the second argument to Meteor's `check()` and
@@ -633,7 +640,7 @@ check({admin: true}, mySchema); // throw a Match.Error
 
 There are three ways to attach custom validation methods:
 
-* To add a custom validation function that is called for all keys in all 
+* To add a custom validation function that is called for all keys in all
 defined schemas, use `SimpleSchema.addValidator(myFunction)`.
 * To add a custom validation function that is called for all keys for a
 specific SimpleSchema instance, use `mySimpleSchema.addValidator(myFunction)`.
@@ -778,7 +785,7 @@ method returns the normalized copy.
 
 ## Customizing Validation Messages
 
-To customize validation messages, pass a messages object to either 
+To customize validation messages, pass a messages object to either
 `SimpleSchema.messages()` or `mySimpleSchemaInstance.messages()`. Instance-specific
 messages are given priority over global messages.
 
@@ -877,7 +884,7 @@ portion and you want to specify a minimum date, `min` should be set to midnight
 UTC on the minimum date (inclusive).
 
 Following these rules ensures maximum interoperability with HTML5 date inputs
-and usually just makes sense. 
+and usually just makes sense.
 
 ## Collection2 and AutoForm
 
@@ -900,13 +907,13 @@ optional, and then use a custom function similar to this:
     optional: true,
     custom: function () {
       var shouldBeRequired = this.field('saleType').value == 1;
-    
+
       if (shouldBeRequired) {
         // inserts
         if (!this.operator) {
           if (!this.isSet || this.value === null || this.value === "") return "required";
         }
-    
+
         // updates
         else if (this.isSet) {
           if (this.operator === "$set" && this.value === null || this.value === "") return "required";
