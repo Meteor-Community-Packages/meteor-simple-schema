@@ -5,6 +5,13 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 1.4.0
+
+For compatibility with the new [mdg:method](https://github.com/meteor/method) package, two new functions have been added:
+
+- Call `mySimpleSchema.validate(doc)` to validate `doc` against the schema and throw a `ValidationError` if invalid. This is like `check(doc, mySimpleSchema)` but without the `check` dependency and with the ability to pass full schema error details back to a callback on the client.
+- Call `mySimpleSchema.validator()` to get a function that calls `mySimpleSchema.validate` for whatever object is passed to it. This means you can do `validate: mySimpleSchema.validator()` in the [mdg:method](https://github.com/meteor/method) package.
+
 ### 1.3.3
 
 When using `check` to validate, the `Match.Error` that is thrown now explains which field failed to validate and why (only the first error). All errors can be found in an `invalidKeys` property on the `Match.Error` object.

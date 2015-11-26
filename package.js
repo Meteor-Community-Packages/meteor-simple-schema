@@ -1,7 +1,7 @@
 Package.describe({
   name: "aldeed:simple-schema",
   summary: "A simple schema validation object with reactivity. Used by collection2 and autoform.",
-  version: "1.3.3",
+  version: "1.4.0",
   git: "https://github.com/aldeed/meteor-simple-schema.git"
 });
 
