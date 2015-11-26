@@ -16,6 +16,8 @@ Package.on_use(function(api) {
     api.use(['deps', 'underscore', 'check', 'random']);
   }
 
+  api.use('mdg:validation-error@0.1.0', {unordered: true});
+
   api.add_files([
     'string-polyfills.js',
     'string-humanize.js',
@@ -24,7 +26,7 @@ Package.on_use(function(api) {
     'simple-schema.js',
     'simple-schema-validation.js',
     'simple-schema-validation-new.js',
-    'simple-schema-context.js'
+    'simple-schema-context.js',
   ]);
   api.export(['SimpleSchema', 'MongoObject'], ['client', 'server']);
   api.export('humanize', {testOnly:true});
@@ -43,5 +45,10 @@ Package.on_test(function(api) {
     api.use(["simple-schema", "tinytest", "test-helpers", "underscore", "check"]);
   }
 
-  api.add_files(["simple-schema-tests.js", "mongo-object-tests.js", "humanize-tests.js"], ['client', 'server']);
+  api.add_files([
+    "simple-schema-tests.js",
+    "mongo-object-tests.js",
+    "humanize-tests.js",
+    "validation-error-tests.js"
+  ], ['client', 'server']);
 });
