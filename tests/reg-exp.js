@@ -9,4 +9,6 @@ Tinytest.add('SimpleSchema - regEx - issue 409', function (test) {
   });
 
   test.isTrue(schema.newContext().validate({}));
+  test.isTrue(schema.newContext().validate({foo: null}));
+  test.isFalse(schema.newContext().validate({foo: ''}));
 });
