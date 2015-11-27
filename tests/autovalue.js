@@ -379,10 +379,16 @@ Tinytest.add("SimpleSchema - autoValue - defaultValue", function(test) {
     {name: "Test1", a: {b: "Test1"}, b: [{a: "Test1"}, {a: "Test"}], strVals: []}
   );
 
-  // Updates should not be affected
+  // Updates should not be affected, but should get $setOnInsert
   avClean(
           {$addToSet: {strVals: 'new value'}},
-          {$addToSet: {strVals: 'new value'}}
+          {
+            $addToSet: {strVals: 'new value'},
+            $setOnInsert: {
+              name: 'Test',
+              'a.b': 'Test'
+            }
+          }
   );
 
 });
