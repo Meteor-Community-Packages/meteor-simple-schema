@@ -7,7 +7,7 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
     },
     someDefault: {
       type: Number,
-      autoValue: function() {
+      autoValue: function () {
         if (!this.isSet) {
           return 5;
         }
@@ -15,11 +15,13 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
     },
     updateCount: {
       type: Number,
-      autoValue: function() {
+      autoValue: function () {
         if (!this.operator) {
           return 0;
         } else {
-          return {$inc: 1};
+          return {
+            $inc: 1
+          };
         }
       }
     },
@@ -30,7 +32,7 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
     firstWord: {
       type: String,
       optional: true,
-      autoValue: function() {
+      autoValue: function () {
         var content = this.field("content");
         if (content.isSet) {
           return content.value.split(' ')[0];
@@ -42,14 +44,14 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
     updatesHistory: {
       type: [Object],
       optional: true,
-      autoValue: function() {
+      autoValue: function () {
         var content = this.field("content");
         if (content.isSet) {
           if (!this.operator) {
             return [{
-                date: new Date(),
-                content: content.value
-              }];
+              date: new Date(),
+              content: content.value
+            }];
           } else {
             return {
               $push: {
@@ -89,17 +91,28 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
     test.equal(obj, exp);
   }
 
-  avClean(
-          {name: "Test", firstWord: "Illegal to manually set value"},
-  {name: "Test", someDefault: 5, updateCount: 0}
-  );
+  avClean({
+    name: "Test",
+    firstWord: "Illegal to manually set value"
+  }, {
+    name: "Test",
+    someDefault: 5,
+    updateCount: 0
+  });
 
-  avClean(
-          {name: "Test", someDefault: 20},
-  {name: "Test", someDefault: 20, updateCount: 0}
-  );
+  avClean({
+    name: "Test",
+    someDefault: 20
+  }, {
+    name: "Test",
+    someDefault: 20,
+    updateCount: 0
+  });
 
-  o = {name: "Test", content: 'Hello world!'};
+  o = {
+    name: "Test",
+    content: 'Hello world!'
+  };
   autoValues.clean(o);
   test.equal(o.firstWord, 'Hello', 'expected firstWord to be "Hello"');
   test.length(o.updatesHistory, 1);
@@ -110,9 +123,13 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
     psuedoEach: {
       type: Array,
       optional: true,
-      autoValue: function() {
+      autoValue: function () {
         if (this.isSet && this.operator === "$set") {
-          return {$push: {$each: this.value}};
+          return {
+            $push: {
+              $each: this.value
+            }
+          };
         }
       }
     },
@@ -120,18 +137,69 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
       type: String
     }
   });
-  o = {$set: {psuedoEach: ["foo", "bar"]}};
+  o = {
+    $set: {
+      psuedoEach: ["foo", "bar"]
+    }
+  };
   eachAV.clean(o);
-  test.equal(o, {$push: {psuedoEach: {$each: ["foo", "bar"]}}});
+  test.equal(o, {
+    $push: {
+      psuedoEach: {
+        $each: ["foo", "bar"]
+      }
+    }
+  });
 
   // autoValues in object in array with modifier
-  o = {$push: {avArrayOfObjects: {a: "b"}}};
+  o = {
+    $push: {
+      avArrayOfObjects: {
+        a: "b"
+      }
+    }
+  };
   autoValues.clean(o);
-  test.equal(o, {$push: {avArrayOfObjects: {a: "b", foo: "bar"}}, $set: {someDefault: 5}, $inc:{updateCount:1}}, 'autoValue in object in array not set correctly');
+  test.equal(o, {
+    $push: {
+      avArrayOfObjects: {
+        a: "b",
+        foo: "bar"
+      }
+    },
+    $set: {
+      someDefault: 5
+    },
+    $inc: {
+      updateCount: 1
+    }
+  }, 'autoValue in object in array not set correctly');
 
-  o = {$set: {avArrayOfObjects: [{a: "b"}, {a: "c"}]}};
+  o = {
+    $set: {
+      avArrayOfObjects: [{
+        a: "b"
+      }, {
+        a: "c"
+      }]
+    }
+  };
   autoValues.clean(o);
-  test.equal(o, {$set: {avArrayOfObjects: [{a: "b", foo: "bar"}, {a: "c", foo: "bar"}], someDefault: 5}, $inc:{updateCount:1}}, 'autoValue in object in array not set correctly');
+  test.equal(o, {
+    $set: {
+      avArrayOfObjects: [{
+        a: "b",
+        foo: "bar"
+      }, {
+        a: "c",
+        foo: "bar"
+      }],
+      someDefault: 5
+    },
+    $inc: {
+      updateCount: 1
+    }
+  }, 'autoValue in object in array not set correctly');
 
   var av = new SimpleSchema({
     foo: {
@@ -141,7 +209,7 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
     bar: {
       type: Boolean,
       optional: true,
-      autoValue: function() {
+      autoValue: function () {
         test.equal(this.isSet, false);
         test.isUndefined(this.value);
         test.equal(this.operator, null);
@@ -166,7 +234,7 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
     bar: {
       type: Boolean,
       optional: true,
-      autoValue: function() {
+      autoValue: function () {
         test.equal(this.isSet, false);
         test.isUndefined(this.value);
         test.equal(this.operator, null);
@@ -181,7 +249,9 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
       }
     }
   });
-  av2.clean({foo: "clown"});
+  av2.clean({
+    foo: "clown"
+  });
 
   var av3 = new SimpleSchema({
     foo: {
@@ -191,7 +261,7 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
     bar: {
       type: Boolean,
       optional: true,
-      autoValue: function() {
+      autoValue: function () {
         test.equal(this.isSet, true);
         test.equal(this.value, true);
         test.equal(this.operator, null);
@@ -206,7 +276,10 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
       }
     }
   });
-  av3.clean({foo: "clown", bar: true});
+  av3.clean({
+    foo: "clown",
+    bar: true
+  });
 
   var av4 = new SimpleSchema({
     foo: {
@@ -216,7 +289,7 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
     bar: {
       type: Boolean,
       optional: true,
-      autoValue: function() {
+      autoValue: function () {
         test.equal(this.isSet, true);
         test.equal(this.value, false);
         test.equal(this.operator, null);
@@ -232,7 +305,9 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
       }
     }
   });
-  var doc = {bar: false};
+  var doc = {
+    bar: false
+  };
   av4.clean(doc);
   test.equal(doc, {});
 
@@ -244,7 +319,7 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
     bar: {
       type: Boolean,
       optional: true,
-      autoValue: function() {
+      autoValue: function () {
         test.equal(this.isSet, true);
         test.equal(this.value, false);
         test.equal(this.operator, "$set");
@@ -259,9 +334,17 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
       }
     }
   });
-  doc = {$set: {bar: false}};
+  doc = {
+    $set: {
+      bar: false
+    }
+  };
   av5.clean(doc);
-  test.equal(doc, {$set: {bar: false}});
+  test.equal(doc, {
+    $set: {
+      bar: false
+    }
+  });
 
   var av6 = new SimpleSchema({
     foo: {
@@ -271,7 +354,7 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
     bar: {
       type: Boolean,
       optional: true,
-      autoValue: function() {
+      autoValue: function () {
         test.equal(this.isSet, true);
         test.equal(this.value, false);
         test.equal(this.operator, "$set");
@@ -287,9 +370,19 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
       }
     }
   });
-  doc = {$set: {foo: "clown", bar: false}};
+  doc = {
+    $set: {
+      foo: "clown",
+      bar: false
+    }
+  };
   av6.clean(doc);
-  test.equal(doc, {$set: {foo: "clown", bar: true}});
+  test.equal(doc, {
+    $set: {
+      foo: "clown",
+      bar: true
+    }
+  });
 
   var av7 = new SimpleSchema({
     foo: {
@@ -299,7 +392,7 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
     bar: {
       type: Boolean,
       optional: true,
-      autoValue: function() {
+      autoValue: function () {
         test.equal(this.isSet, false);
         test.isUndefined(this.value);
         test.equal(this.operator, '$set');
@@ -311,16 +404,24 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
         test.equal(foo.isSet, false);
         test.isUndefined(foo.value);
         test.equal(foo.operator, null);
-        return {$set: true};
+        return {
+          $set: true
+        };
       }
     }
   });
   doc = {};
-  av7.clean(doc, {isModifier: true});
-  test.equal(doc, {$set: {bar: true}});
+  av7.clean(doc, {
+    isModifier: true
+  });
+  test.equal(doc, {
+    $set: {
+      bar: true
+    }
+  });
 });
 
-Tinytest.add("SimpleSchema - autoValue - defaultValue", function(test) {
+Tinytest.add("SimpleSchema - autoValue - defaultValue", function (test) {
   var defaultValues = new SimpleSchema({
     name: {
       type: String,
@@ -349,47 +450,104 @@ Tinytest.add("SimpleSchema - autoValue - defaultValue", function(test) {
     test.equal(obj, exp);
   }
 
-  avClean(
-          {},
-          {name: "Test", a: {b: "Test"}, strVals: []}
-  );
+  avClean({}, {
+    name: "Test",
+    a: {
+      b: "Test"
+    },
+    strVals: []
+  });
 
-  avClean(
-          {strVals: ["foo", "bar"]},
-          {name: "Test", a: {b: "Test"}, strVals: ["foo", "bar"]}
-  );
+  avClean({
+    strVals: ["foo", "bar"]
+  }, {
+    name: "Test",
+    a: {
+      b: "Test"
+    },
+    strVals: ["foo", "bar"]
+  });
 
-  avClean(
-          {name: "Test1", a: {b: "Test1"}},
-  {name: "Test1", a: {b: "Test1"}, strVals: []}
-  );
+  avClean({
+    name: "Test1",
+    a: {
+      b: "Test1"
+    }
+  }, {
+    name: "Test1",
+    a: {
+      b: "Test1"
+    },
+    strVals: []
+  });
 
-  avClean(
-          {name: "Test1", a: {b: "Test1"}, b: []},
-  {name: "Test1", a: {b: "Test1"}, b: [], strVals: []}
-  );
+  avClean({
+    name: "Test1",
+    a: {
+      b: "Test1"
+    },
+    b: []
+  }, {
+    name: "Test1",
+    a: {
+      b: "Test1"
+    },
+    b: [],
+    strVals: []
+  });
 
-  avClean(
-    {name: "Test1", a: {b: "Test1"}, b: [{}]},
-    {name: "Test1", a: {b: "Test1"}, b: [{a: "Test"}], strVals: []}
-  );
+  avClean({
+    name: "Test1",
+    a: {
+      b: "Test1"
+    },
+    b: [{}]
+  }, {
+    name: "Test1",
+    a: {
+      b: "Test1"
+    },
+    b: [{
+      a: "Test"
+    }],
+    strVals: []
+  });
 
-  avClean(
-    {name: "Test1", a: {b: "Test1"}, b: [{a: "Test1"}, {}]},
-    {name: "Test1", a: {b: "Test1"}, b: [{a: "Test1"}, {a: "Test"}], strVals: []}
-  );
+  avClean({
+    name: "Test1",
+    a: {
+      b: "Test1"
+    },
+    b: [{
+      a: "Test1"
+    }, {}]
+  }, {
+    name: "Test1",
+    a: {
+      b: "Test1"
+    },
+    b: [{
+      a: "Test1"
+    }, {
+      a: "Test"
+    }],
+    strVals: []
+  });
 
   // Updates should not be affected, but should get $setOnInsert
-  avClean(
-          {$addToSet: {strVals: 'new value'}},
-          {
-            $addToSet: {strVals: 'new value'},
-            $setOnInsert: {
-              name: 'Test',
-              'a.b': 'Test'
-            }
-          }
-  );
+  avClean({
+    $addToSet: {
+      strVals: 'new value'
+    }
+  }, {
+    $addToSet: {
+      strVals: 'new value'
+    },
+    $setOnInsert: {
+      name: 'Test',
+      'a.b': 'Test'
+    }
+  });
 
 });
 
@@ -413,7 +571,9 @@ Tinytest.add('SimpleSchema - autoValue - objects in arrays', function (test) {
   });
 
   var mod = {
-    $set: {"children.$.value": "should be overridden by autovalue"}
+    $set: {
+      "children.$.value": "should be overridden by autovalue"
+    }
   };
   TestSchema.clean(mod);
 
@@ -433,7 +593,11 @@ Tinytest.add('SimpleSchema - autoValue - operator correct for $pull', function (
     }
   });
 
-  var mod = { $pull: {foo: 'bar'}};
+  var mod = {
+    $pull: {
+      foo: 'bar'
+    }
+  };
   schema.clean(mod);
 
   test.isTrue(called);
@@ -457,8 +621,14 @@ Tinytest.add('SimpleSchema - autoValue - issue 340', function (test) {
     }
   });
 
-  schema.clean({field1: 1});
-  schema.clean({$set: {field1: 1}});
+  schema.clean({
+    field1: 1
+  });
+  schema.clean({
+    $set: {
+      field1: 1
+    }
+  });
 
   test.equal(called, 2);
 });
@@ -476,7 +646,46 @@ Tinytest.add('SimpleSchema - autoValue - issue 426', function (test) {
     }
   });
 
-  var doc = {name: 'Test'};
+  var doc = {
+    name: 'Test'
+  };
   schema.clean(doc);
-  test.equal(doc, {name: 'Test', images: []});
+  test.equal(doc, {
+    name: 'Test',
+    images: []
+  });
+});
+
+Tinytest.add('SimpleSchema - autoValue - array items', function (test) {
+  var ss = new SimpleSchema({
+    'tags': {
+      type: Array,
+      optional: true,
+    },
+    'tags.$': {
+      type: String,
+      autoValue: function () {
+        console.log(this);
+        if (this.isSet) {
+          return this.value.toLowerCase();
+        }
+      }
+    }
+  });
+
+  var obj = {
+    tags: []
+  };
+  ss.clean(obj);
+  test.equal(obj, {
+    tags: []
+  });
+
+  obj = {
+    tags: ['FOO', 'BAR']
+  };
+  ss.clean(obj);
+  test.equal(obj, {
+    tags: ['foo', 'bar']
+  });
 });
