@@ -86,6 +86,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 2.0.0 (WORK IN PROGRESS)
+
+* `SimpleSchemaValidationContext` is now `SimpleSchema.ValidationContext`
+
 ### 1.4.0
 
 For compatibility with the new [mdg:method](https://github.com/meteor/method) package, two new functions have been added:
