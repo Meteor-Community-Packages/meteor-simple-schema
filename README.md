@@ -531,7 +531,19 @@ additional valuable information, such as `userId`. (Note that operations done
 using the Collection2 package automatically add `userId` to the `autoValue`
 context already.)
 
-Example:
+You can also set defaults for any of these options in your SimpleSchema constructor options:
+
+```js
+var schema = new SimpleSchema({
+  name: {type: String}
+}, {
+  clean: {
+    trimStrings: false,
+  },
+});
+```
+
+Example cleaning:
 
 ```js
 mySchema.clean(obj);
