@@ -370,6 +370,15 @@ Tinytest.add("SimpleSchema - Clean", function(test) {
   optionalInObject.clean(myObj, {isModifier: true});
   test.equal(myObj, {$set: {requiredObj: {requiredProp: 'blah'} }});
 
+  // Type convert to array
+  myObj = {allowedStringsArray: 'tuna'};
+  ss.clean(myObj);
+  test.equal(myObj, {allowedStringsArray: ['tuna']});
+
+  myObj = {$set: {allowedStringsArray: 'tuna'}};
+  ss.clean(myObj, {isModifier: true});
+  test.equal(myObj, {$set: {allowedStringsArray: ['tuna']}});
+
 });
 
 Tinytest.add("SimpleSchema - Clean - trimStrings", function(test) {

@@ -62,5 +62,6 @@ Package.onTest(function(api) {
     "tests/validation.js",
     "tests/validation-error.js",
     "tests/reg-exp.js",
+    "tests/type-errors.js",
   ], ['client', 'server']);
 });
