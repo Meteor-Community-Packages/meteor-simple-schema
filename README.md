@@ -509,35 +509,29 @@ Refer to the [aldeed:collection2 package documentation](https://github.com/aldee
 
 ## Cleaning Data
 
-SimpleSchema instances provide a `clean` method that cleans or alters data in
-a number of ways. It's intended to be called prior to validation to avoid
-any avoidable validation errors.
+You can call `mySimpleSchema.clean` or `mySimpleSchemaValidationContext.clean` to clean the object you're validating by mutating it. Do this prior to validating it to avoid any avoidable validation errors.
 
-The `clean` method takes the object to be cleaned as its first argument and
+The object is mutated. That is, the original referenced object (document or modifier) will
+be cleaned. You do not have to use the return value of the `clean` method.
+
+The `clean` function takes the object to be cleaned as its first argument and
 the following optional options as its second argument:
 
-* `filter`: Filter out properties not found in the schema? True by default.
-* `autoConvert`: Type convert properties into the correct type where possible? True by default.
+* `isModifier`: Is the first argument a modifier object? False by default.
+* `filter`: `true` by default. If `true`, removes any keys not explicitly or implicitly allowed by the schema, which prevents errors being thrown for those keys during validation.
+* `autoConvert`: `true` by default. If `true`, helps eliminate unnecessary validation messages by automatically converting values where possible.
+  * Non-string values are converted to a String if the schema expects a String
+  * Strings that are numbers are converted to Numbers if the schema expects a Number
+  * Non-array values are converted to a one-item array if the schema expects an Array
 * `removeEmptyStrings`: Remove keys in normal object or $set where the value is an empty string? True by default.
 * `trimStrings`: Remove all leading and trailing spaces from string values? True by default.
 * `getAutoValues`: Run `autoValue` functions and inject automatic and `defaultValue` values? True by default.
-* `isModifier`: Is the first argument a modifier object? False by default.
-* `extendAutoValueContext`: This object will be added to the `this` context of autoValue functions.
-
-Additional notes:
-
-* The object is cleaned in place. That is, the original referenced object will
-be cleaned. You do not have to use the return value of the `clean` method.
-* `filter` removes any keys not explicitly or implicitly allowed by the schema,
-which prevents errors being thrown for those keys during validation.
-* `autoConvert` helps eliminate unnecessary validation
-messages by automatically converting values where possible. For example, non-string
-values can be converted to a String if the schema expects a String, and strings
-that are numbers can be converted to Numbers if the schema expects a Number.
-* `extendAutoValueContext` can be used to give your `autoValue` functions
+* `extendAutoValueContext`: This object will be added to the `this` context of autoValue functions. `extendAutoValueContext` can be used to give your `autoValue` functions
 additional valuable information, such as `userId`. (Note that operations done
 using the Collection2 package automatically add `userId` to the `autoValue`
 context already.)
+
+Example:
 
 ```js
 mySchema.clean(obj);
