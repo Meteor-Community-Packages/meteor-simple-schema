@@ -773,14 +773,12 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - Combined", fun
     }
   }, true, true, true);
   var requiredErrorCount = _.reduce(sc.invalidKeys(), function (memo, errorObj) {
-    if (errorObj.type === "required") {
-      memo++;
-    }
+    if (errorObj.type === SimpleSchema.ErrorTypes.REQUIRED) memo++;
     return memo;
   }, 0);
   test.equal(requiredErrorCount, 5);
   var regExErrorCount = _.reduce(sc.invalidKeys(), function (memo, errorObj) {
-    if (errorObj.type === "regEx") {
+    if (errorObj.type === SimpleSchema.ErrorTypes.FAILED_REGULAR_EXPRESSION) {
       memo++;
     }
     return memo;
@@ -802,14 +800,14 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - Combined", fun
     }
   }, true, true, true);
   requiredErrorCount = _.reduce(sc.invalidKeys(), function (memo, errorObj) {
-    if (errorObj.type === "required") {
+    if (errorObj.type === SimpleSchema.ErrorTypes.REQUIRED) {
       memo++;
     }
     return memo;
   }, 0);
   test.equal(requiredErrorCount, 5);
   regExErrorCount = _.reduce(sc.invalidKeys(), function (memo, errorObj) {
-    if (errorObj.type === "regEx") {
+    if (errorObj.type === SimpleSchema.ErrorTypes.FAILED_REGULAR_EXPRESSION) {
       memo++;
     }
     return memo;
@@ -995,12 +993,12 @@ Tinytest.add("SimpleSchema - Required Checks - Update - Invalid - $rename", func
   //rename from optional key to a key not in schema
   var sc = ss.newContext();
   sc.validate({$rename: {string: "newString"}}, {modifier: true});
-  test.equal(sc.invalidKeys()[0].type, "keyNotInSchema");
+  test.equal(sc.invalidKeys()[0].type, SimpleSchema.ErrorTypes.KEY_NOT_IN_SCHEMA);
 
   //rename from required key
   sc = ssr.newContext();
   sc.validate({$rename: {requiredString: "newRequiredString"}}, {modifier: true});
-  test.equal(sc.invalidKeys()[0].type, "required");
+  test.equal(sc.invalidKeys()[0].type, SimpleSchema.ErrorTypes.REQUIRED);
 });
 
 Tinytest.add("SimpleSchema - Minimum Checks - Insert", function(test) {

@@ -630,7 +630,7 @@ upsert operators? False by default.
 * `extendedCustomContext`: This object will be added to the `this` context in
 any custom validation functions that are run during validation. See the
 [Custom Validation](#custom-validation) section.
-* `ignore`: An array of validation error types to ignore.
+* `ignore`: An array of validation error types (in SimpleSchema.ErrorTypes enum) to ignore.
 
 ### Validating and Throwing ValidationErrors
 
@@ -667,9 +667,7 @@ All custom validation functions work the same way and have the same `this` conte
 
 * Do any necessary custom validation, and return a String describing the error type if you
 determine that the value is invalid. Any non-string return value means the value is valid.
-* The error type string can be one of the [built-in strings](#manually-adding-a-validation-error)
-or any string you want. If you return a custom string, you'll usually want to
-[define a message for it](#customizing-validation-messages).
+* The error type string can be one of the [built-in strings](#manually-adding-a-validation-error) or any string you want. If you return a built-in string, it's best to use the `SimpleSchema.ErrorTypes` enum to reference it. If you return a custom string, you'll usually want to [define a message for it](#customizing-validation-messages).
 * Within the function, `this` provides the following properties:
     * `key`: The name of the schema key (e.g., "addresses.0.street")
     * `genericKey`: The generic name of the schema key (e.g., "addresses.$.street")
@@ -696,26 +694,7 @@ If you want to reactively display an arbitrary validation error and it is not po
 ```
 
 * `name`: The schema key as specified in the schema.
-* `type`: The type of error. Any string you want, or one of the following built-in strings:
-    * required
-    * minString
-    * maxString
-    * minNumber
-    * maxNumber
-    * minDate
-    * maxDate
-    * badDate
-    * minCount
-    * maxCount
-    * noDecimal
-    * notAllowed
-    * expectedString
-    * expectedNumber
-    * expectedBoolean
-    * expectedArray
-    * expectedObject
-    * expectedConstructor
-    * regEx
+* `type`: The type of error. Any string you want, or one of the strings in the `SimpleSchema.ErrorTypes` enum.
 * `value`: Optional. The value that was not valid. Will be used to replace the
 `[value]` placeholder in error messages.
 
@@ -762,8 +741,7 @@ You can use a technique similar to this to work around asynchronicity issues in 
 Call `myContext.invalidKeys()` to get the full array of invalid key data. Each object
 in the array has two keys:
 * `name`: The schema key as specified in the schema.
-* `type`: The type of error. One of the `required*`, `min*`, `max*` etc. strings listed
-at [Manually Adding a Validation Error](#manually-adding-a-validation-error).
+* `type`: The type of error. See `SimpleSchema.ErrorTypes`.
 
 This is a reactive method.
 
@@ -821,7 +799,7 @@ You can also specify override messages for specific fields:
 }
 ```
 
-For the `regEx` error type, you must specify a special message array of objects:
+For the `SimpleSchema.ErrorTypes.FAILED_REGULAR_EXPRESSION` error type ("regEx"), you must specify a special message array of objects:
 
 ```js
 {
@@ -929,14 +907,14 @@ optional, and then use a custom function similar to this:
       if (shouldBeRequired) {
         // inserts
         if (!this.operator) {
-          if (!this.isSet || this.value === null || this.value === "") return "required";
+          if (!this.isSet || this.value === null || this.value === "") return SimpleSchema.ErrorTypes.REQUIRED;
         }
 
         // updates
         else if (this.isSet) {
-          if (this.operator === "$set" && this.value === null || this.value === "") return "required";
-          if (this.operator === "$unset") return "required";
-          if (this.operator === "$rename") return "required";
+          if (this.operator === "$set" && this.value === null || this.value === "") return SimpleSchema.ErrorTypes.REQUIRED;
+          if (this.operator === "$unset") return SimpleSchema.ErrorTypes.REQUIRED;
+          if (this.operator === "$rename") return SimpleSchema.ErrorTypes.REQUIRED;
         }
       }
     }

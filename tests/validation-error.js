@@ -9,9 +9,9 @@ Tinytest.add('SimpleSchema - ValidationErrors', function (test) {
     test.equal(error.error, 'validation-error');
     test.equal(error.details.length, 2);
     test.equal(error.details[0].name, 'int');
-    test.equal(error.details[0].type, 'expectedNumber');
+    test.equal(error.details[0].type, SimpleSchema.ErrorTypes.EXPECTED_NUMBER);
     test.equal(error.details[1].name, 'string');
-    test.equal(error.details[1].type, 'required');
+    test.equal(error.details[1].type, SimpleSchema.ErrorTypes.REQUIRED);
   }
 
   try {
