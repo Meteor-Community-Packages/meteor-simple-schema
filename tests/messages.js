@@ -7,8 +7,11 @@ Tinytest.add('SimpleSchema - messages - issue 363', function (test) {
       type: String,
     },
     comments: {
-      type: [Object],
+      type: Array,
       defaultValue: []
+    },
+    'comments.$': {
+      type: Object,
     },
     'comments.$.nick': {
       type: String
@@ -40,6 +43,9 @@ Tinytest.add('SimpleSchema - messages - issue 363', function (test) {
 });
 
 Tinytest.add('SimpleSchema - messages - extend regEx', function (test) {
+  var original = _.clone(SimpleSchema._globalMessages);
+  var originalRegEx = _.clone(SimpleSchema._globalMessages.regEx);
+
   test.equal(SimpleSchema._globalMessages.regEx, [
     {msg: "[label] failed regular expression validation"},
     {exp: SimpleSchema.RegEx.Email, msg: "[label] must be a valid e-mail address"},
@@ -143,4 +149,7 @@ Tinytest.add('SimpleSchema - messages - extend regEx', function (test) {
     {msg: "custom field default"},
     {exp: /foo/g, msg: "custom2"}
   ]);
+
+  SimpleSchema._globalMessages = original;
+  SimpleSchema._globalMessages.regEx = originalRegEx;
 });

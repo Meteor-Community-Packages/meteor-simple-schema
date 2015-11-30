@@ -42,7 +42,7 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
       }
     },
     updatesHistory: {
-      type: [Object],
+      type: Array,
       optional: true,
       autoValue: function () {
         var content = this.field("content");
@@ -63,6 +63,9 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
         }
       }
     },
+    'updatesHistory.$': {
+      type: Object
+    },
     'updatesHistory.$.date': {
       type: Date,
       optional: true
@@ -72,8 +75,11 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
       optional: true
     },
     avArrayOfObjects: {
-      type: [Object],
+      type: Array,
       optional: true
+    },
+    'avArrayOfObjects.$': {
+      type: Object,
     },
     'avArrayOfObjects.$.a': {
       type: String
@@ -428,10 +434,21 @@ Tinytest.add("SimpleSchema - autoValue - defaultValue", function (test) {
       defaultValue: "Test",
       optional: true
     },
+    a: {
+      type: Object,
+      optional: true
+    },
     'a.b': {
       type: String,
       defaultValue: "Test",
       optional: true
+    },
+    b: {
+      type: Array,
+      optional: true
+    },
+    'b.$': {
+      type: Object,
     },
     'b.$.a': {
       type: String,
@@ -439,9 +456,12 @@ Tinytest.add("SimpleSchema - autoValue - defaultValue", function (test) {
       optional: true
     },
     strVals: {
-      type: [String],
+      type: Array,
       defaultValue: [],
       optional: true
+    },
+    'strVals.$': {
+      type: String,
     }
   });
 
@@ -566,8 +586,11 @@ Tinytest.add('SimpleSchema - autoValue - objects in arrays', function (test) {
 
   var TestSchema = new SimpleSchema({
     children: {
-      type: [SubSchema]
-    }
+      type: Array
+    },
+    'children.$': {
+      type: SubSchema
+    },
   });
 
   var mod = {
@@ -585,11 +608,14 @@ Tinytest.add('SimpleSchema - autoValue - operator correct for $pull', function (
 
   var schema = new SimpleSchema({
     foo: {
-      type: [String],
+      type: Array,
       autoValue: function () {
         called = true;
         test.equal(this.operator, '$pull');
       }
+    },
+    'foo.$': {
+      type: String,
     }
   });
 
@@ -639,10 +665,14 @@ Tinytest.add('SimpleSchema - autoValue - issue 426', function (test) {
       type: String,
     },
     images: {
-      type: [Object],
+      type: Array,
       label: 'Images',
       minCount: 0,
       defaultValue: [],
+    },
+    'images.$': {
+      type: Object,
+      label: 'Image',
     }
   });
 
@@ -665,7 +695,6 @@ Tinytest.add('SimpleSchema - autoValue - array items', function (test) {
     'tags.$': {
       type: String,
       autoValue: function () {
-        console.log(this);
         if (this.isSet) {
           return this.value.toLowerCase();
         }

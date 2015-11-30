@@ -42,12 +42,15 @@ var ss = new SimpleSchema({
     regEx: /^[a-z0-9_]+$/
   },
   minMaxStringArray: {
-    type: [String],
+    type: Array,
     optional: true,
-    min: 10,
-    max: 20,
     minCount: 1,
     maxCount: 2
+  },
+  'minMaxStringArray.$': {
+    type: String,
+    min: 10,
+    max: 20,
   },
   allowedStrings: {
     type: String,
@@ -55,8 +58,11 @@ var ss = new SimpleSchema({
     allowedValues: ["tuna", "fish", "salad"]
   },
   allowedStringsArray: {
-    type: [String],
+    type: Array,
     optional: true,
+  },
+  'allowedStringsArray.$': {
+    type: String,
     allowedValues: ["tuna", "fish", "salad"]
   },
   boolean: {
@@ -64,11 +70,18 @@ var ss = new SimpleSchema({
     optional: true
   },
   booleanArray: {
-    type: [Boolean],
+    type: Array,
     optional: true
+  },
+  'booleanArray.$': {
+    type: Boolean,
   },
   number: {
     type: Number,
+    optional: true
+  },
+  sub: {
+    type: Object,
     optional: true
   },
   'sub.number': {
@@ -123,8 +136,11 @@ var ss = new SimpleSchema({
     allowedValues: [1, 2, 3]
   },
   allowedNumbersArray: {
-    type: [Number],
+    type: Array,
     optional: true,
+  },
+  'allowedNumbersArray.$': {
+    type: Number,
     allowedValues: [1, 2, 3]
   },
   decimal: {
@@ -137,8 +153,11 @@ var ss = new SimpleSchema({
     optional: true
   },
   dateArray: {
-    type: [Date],
+    type: Array,
     optional: true
+  },
+  'dateArray.$': {
+    type: Date,
   },
   minMaxDate: {
     type: Date,
@@ -177,8 +196,11 @@ var ss = new SimpleSchema({
     blackbox: true
   },
   oid: {
-    type: [Meteor.Collection.ObjectID],
+    type: Array,
     optional: true
+  },
+  'oid.$': {
+    type: Meteor.Collection.ObjectID,
   },
   noTrimString: {
     type: String,

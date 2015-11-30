@@ -163,8 +163,11 @@ CustomerSchema = new SimpleSchema({
     type: AddressSchema
   },
   shippingAddresses: {
-    type: [AddressSchema],
+    type: Array,
     minCount: 1
+  },
+  'shippingAddresses.$': {
+    type: AddressSchema,
   }
 });
 ```
@@ -204,8 +207,11 @@ var profileSchema = new SimpleSchema({
     type: String
   },
   comments: {
-    type: [String]
-  }
+    type: Array
+  },
+  'comments.$': {
+    type: String
+  },
 });
 
 var nameSchema = profileSchema.pick('comments', 'comments.$');
@@ -273,9 +279,12 @@ required and have a minimum and maximum array count:
 ```js
 MySchema = new SimpleSchema({
     addresses: {
-        type: [Object],
+        type: Array,
         minCount: 1,
         maxCount: 4
+    },
+    'addresses.$': {
+        type: Object,
     },
     "addresses.$.street": {
         type: String

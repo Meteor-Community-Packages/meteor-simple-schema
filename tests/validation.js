@@ -1,6 +1,7 @@
 Tinytest.add('SimpleSchema - validation - issue 314', function (test) {
   var arraySchema = new SimpleSchema({
-    names: { type: [String] },
+    names: { type: Array },
+    'names.$': { type: String },
     testField: { type: String, optional: true }
   });
 
@@ -47,9 +48,12 @@ Tinytest.add('SimpleSchema - validation - issue 314', function (test) {
 Tinytest.add('SimpleSchema - validation - issue 360', function (test) {
   var schema = new SimpleSchema({
     emails: {
-        type: [Object],
+        type: Array,
         optional: true,
         maxCount: 5
+    },
+    'emails.$': {
+        type: Object,
     },
     "emails.$.address": {
         type: String,

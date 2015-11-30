@@ -26,6 +26,10 @@ var ss = new SimpleSchema({
     type: Number,
     optional: true
   },
+  sub: {
+    type: Object,
+    optional: true
+  },
   'sub.number': {
     type: Number,
     optional: true
