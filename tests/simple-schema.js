@@ -2022,8 +2022,8 @@ Tinytest.add("SimpleSchema - Custom Types", function(test) {
 });
 
 Tinytest.add("SimpleSchema - Nested Schemas", function(test) {
-  var childDef = {type: String, min: 10, label: 'foo'};
-  var parentDef = {type: Number, min: 10, label: 'foo'};
+  var childDef = {type: String, min: 10, label: 'foo', optional: false};
+  var parentDef = {type: Number, min: 10, label: 'foo', optional: false};
 
   var child = new SimpleSchema({
     copied: childDef,
@@ -2236,21 +2236,25 @@ Tinytest.add("SimpleSchema - Basic Schema Merge", function(test) {
     {
       a: {
         type: Boolean,
-        label: 'foo'
+        label: 'foo',
+        optional: false
       },
       b: {
         type: String,
-        label: 'foo'
+        label: 'foo',
+        optional: false
       }
     },
     {
       c: {
         type: String,
-        label: 'foo'
+        label: 'foo',
+        optional: false
       },
       d: {
         type: String,
-        label: 'foo'
+        label: 'foo',
+        optional: false
       }
     }
   ]);
@@ -2258,19 +2262,23 @@ Tinytest.add("SimpleSchema - Basic Schema Merge", function(test) {
   test.equal(s1._schema, {
     a: {
       type: Boolean,
-      label: 'foo'
+      label: 'foo',
+      optional: false
     },
     b: {
       type: String,
-      label: 'foo'
+      label: 'foo',
+      optional: false
     },
     c: {
       type: String,
-      label: 'foo'
+      label: 'foo',
+      optional: false
     },
     d: {
       type: String,
-      label: 'foo'
+      label: 'foo',
+      optional: false
     }
   }, "schema was not merged correctly");
 
@@ -2286,33 +2294,39 @@ Tinytest.add("SimpleSchema - Mixed Schema Merge", function(test) {
   var s1 = new SimpleSchema({
     a: {
       type: Boolean,
-      label: 'foo'
+      label: 'foo',
+      optional: false
     },
     b: {
       type: [String],
-      label: 'foo'
+      label: 'foo',
+      optional: false
     }
   });
 
   var s2 = new SimpleSchema([s1, {
     c: {
       type: String,
-      label: 'foo'
+      label: 'foo',
+      optional: false
     },
     d: {
       type: String,
-      label: 'foo'
+      label: 'foo',
+      optional: false
     }
   }]);
 
   test.equal(s2._schema, {
     a: {
       type: Boolean,
-      label: 'foo'
+      label: 'foo',
+      optional: false
     },
     b: {
       type: Array,
-      label: 'foo'
+      label: 'foo',
+      optional: false
     },
     'b.$': {
       type: String,
@@ -2321,11 +2335,13 @@ Tinytest.add("SimpleSchema - Mixed Schema Merge", function(test) {
     },
     c: {
       type: String,
-      label: 'foo'
+      label: 'foo',
+      optional: false
     },
     d: {
       type: String,
-      label: 'foo'
+      label: 'foo',
+      optional: false
     }
   }, "schema was not merged correctly");
 
@@ -2341,40 +2357,48 @@ Tinytest.add("SimpleSchema - Mixed Schema Merge With Base Extend and Override", 
   var s1 = new SimpleSchema({
     a: {
       type: Boolean,
-      label: 'foo'
+      label: 'foo',
+      optional: false
     },
     b: {
       type: [String],
-      label: 'foo'
+      label: 'foo',
+      optional: false
     }
   });
 
   var s2 = new SimpleSchema([s1, {
     a: {
       type: Number,
-      label: 'foo'
+      label: 'foo',
+      optional: false
     },
     b: {
-      label: "Bacon"
+      label: "Bacon",
+      optional: false
     },
     c: {
       type: String,
-      label: 'foo'
+      label: 'foo',
+      optional: false
     },
     d: {
       type: String,
-      label: 'foo'
+      label: 'foo',
+      optional: false
     }
   }]);
 
   test.equal(s2._schema, {
     a: {
       type: Number,
-      label: 'foo'
+      label: 'foo',
+      optional: false
     },
     b: {
       type: Array,
-      label: "Bacon"
+      label: "Bacon",
+      optional: false
     },
     'b.$': {
       type: String,
@@ -2383,11 +2407,13 @@ Tinytest.add("SimpleSchema - Mixed Schema Merge With Base Extend and Override", 
     },
     c: {
       type: String,
-      label: 'foo'
+      label: 'foo',
+      optional: false
     },
     d: {
       type: String,
-      label: 'foo'
+      label: 'foo',
+      optional: false
     }
   }, "schema was not merged correctly");
 
@@ -2717,11 +2743,13 @@ Tinytest.add('SimpleSchema - extend', function (test) {
   var schema1 = new SimpleSchema({
     firstName: {
       type: String,
-      label: 'First name'
+      label: 'First name',
+      optional: false
     },
     lastName: {
       type: String,
-      label: 'Last name'
+      label: 'Last name',
+      optional: false
     }
   });
 
@@ -2735,7 +2763,8 @@ Tinytest.add('SimpleSchema - extend', function (test) {
     },
     lastName: {
       type: String,
-      label: 'Last name'
+      label: 'Last name',
+      optional: false
     }
   });
 });
