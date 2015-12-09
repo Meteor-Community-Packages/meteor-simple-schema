@@ -1147,9 +1147,9 @@ SimpleSchema.prototype.objectKeys = function(keyPrefix) {
   return self._objectKeys[keyPrefix + "."] || [];
 };
 
-SimpleSchema.prototype.validate = function (obj) {
+SimpleSchema.prototype.validate = function (obj, options) {
   var validationContext = this.newContext();
-  var isValid = validationContext.validate(obj);
+  var isValid = validationContext.validate(obj, options);
 
   if (isValid) return;
 
