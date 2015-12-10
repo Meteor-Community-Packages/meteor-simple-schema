@@ -86,6 +86,11 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 1.5.0
+
+- `mySimpleSchema.validate` now accepts the same second `options` argument that `validationContext.validate` does.
+- `mySimpleSchema.validator` now takes an `options` argument. If you set the `clean` option to `true`, then the object will be cleaned before it is validated. If you want to change any of the default cleaning options, you can pass in those, too.
+
 ### 1.4.0
 
 For compatibility with the new [mdg:method](https://github.com/meteor/method) package, two new functions have been added:
