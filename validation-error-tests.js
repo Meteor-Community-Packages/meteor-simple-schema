@@ -25,4 +25,10 @@ Tinytest.add('SimpleSchema - ValidationErrors', function (test) {
   } catch (error) {
     verify(error);
   }
+
+  try {
+    schema.validator({clean: true})({int: '5'});
+  } catch (error) {
+    test.ok();
+  }
 });

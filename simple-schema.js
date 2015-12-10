@@ -1166,11 +1166,11 @@ SimpleSchema.prototype.validate = function (obj, options) {
   throw new Package['mdg:validation-error'].ValidationError(errors);
 };
 
-SimpleSchema.prototype.validator = function () {
+SimpleSchema.prototype.validator = function (options) {
   var self = this;
-  // XXX Could eventually accept options and customize/filter the validation a bit
-  // or allow automatic cleaning
+  options = options || {};
   return function (obj) {
+    if (options.clean === true) self.clean(obj, options);
     self.validate(obj);
   };
 };
