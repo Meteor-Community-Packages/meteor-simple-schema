@@ -1148,6 +1148,11 @@ SimpleSchema.prototype.objectKeys = function(keyPrefix) {
 };
 
 SimpleSchema.prototype.validate = function (obj, options) {
+  if (Package['check'] && Package['audit-argument-checks']) {
+    // Call check but ignore the error to silence audit-argument-checks
+    try { check(obj) } catch (e) { /* ignore error */ }
+  }
+
   var validationContext = this.newContext();
   var isValid = validationContext.validate(obj, options);
 
