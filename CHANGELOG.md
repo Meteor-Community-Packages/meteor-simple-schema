@@ -86,6 +86,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 1.5.1
+
+`mySimpleSchema.validate` now satisfies `audit-argument-checks`
+
 ### 1.5.0
 
 - `mySimpleSchema.validate` now accepts the same second `options` argument that `validationContext.validate` does.
