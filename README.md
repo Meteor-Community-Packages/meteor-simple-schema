@@ -516,6 +516,29 @@ when you use sub-schemas or when you're dealing with arrays of objects.
 
 Refer to the [aldeed:collection2 package documentation](https://github.com/aldeed/meteor-collection2#autovalue) for examples.
 
+## Shorthand Syntax
+
+You can use shorthand for keys when your schema is extra super duper simple. For example, this:
+
+```js
+{
+  name: String,
+  age: Number,
+  friends: [String]
+}
+```
+
+will automatically convert to this for you:
+
+```js
+{
+  name: {type: String},
+  age: {type: Number},
+  friends: {type: Array},
+  'friends.$': {type: String}
+}
+```
+
 ## Cleaning Data
 
 You can call `mySimpleSchema.clean` or `mySimpleSchemaValidationContext.clean` to clean the object you're validating by mutating it. Do this prior to validating it to avoid any avoidable validation errors.

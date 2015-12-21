@@ -90,7 +90,8 @@ A simple, reactive schema validation smart package for Meteor.
 
 - `SimpleSchemaValidationContext` is now `SimpleSchema.ValidationContext`
 - If you prefer keys to be optional by default, you can pass `requiredByDefault: false` as a SimpleSchema constructor option and then use `required: true` for each key that should be required.
-- Implicit keys are no longer added for you. You must define every key.
+- Implicit keys are no longer added for you. You must define every key. The one exception is array items when using shorthand (see next change)
+- You can now use shorthand for keys when your schema is extra super duper simple. `name: String` will be converted to `name: {type: String}` for you. `name: [String]` will be converted to `name: {type: Array}` for you and `'name.$': {type: String}` will be added.
 
 ### 1.4.0
 
