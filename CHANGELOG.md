@@ -86,6 +86,10 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+### 1.5.2
+
+The `ValidationError` thrown by `validate` now provides a useful error message so that it is clear what the first error is if it is not caught and is printed to console above the stack trace.
+
 ### 1.5.1
 
 `mySimpleSchema.validate` now satisfies `audit-argument-checks`
