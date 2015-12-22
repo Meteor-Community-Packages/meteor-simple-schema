@@ -1148,9 +1148,9 @@ SimpleSchema.prototype.objectKeys = function(keyPrefix) {
 };
 
 SimpleSchema.prototype.validate = function (obj, options) {
-  if (Package['check'] && Package['audit-argument-checks']) {
+  if (Package.check && Package['audit-argument-checks']) {
     // Call check but ignore the error to silence audit-argument-checks
-    try { check(obj) } catch (e) { /* ignore error */ }
+    try { check(obj); } catch (e) { /* ignore error */ }
   }
 
   var validationContext = this.newContext();
@@ -1168,7 +1168,11 @@ SimpleSchema.prototype.validate = function (obj, options) {
     };
   });
 
-  throw new Package['mdg:validation-error'].ValidationError(errors);
+  // In order for the message at the top of the stack trace to be useful,
+  // we set it to the first validation error message.
+  var message = validationContext.keyErrorMessage(errors[0].name);
+
+  throw new Package['mdg:validation-error'].ValidationError(errors, message);
 };
 
 SimpleSchema.prototype.validator = function (options) {

@@ -16,7 +16,7 @@ Package.on_use(function(api) {
     api.use(['deps', 'underscore', 'check', 'random']);
   }
 
-  api.use('mdg:validation-error@0.1.0', {unordered: true});
+  api.use('mdg:validation-error@0.2.0', {unordered: true});
 
   api.add_files([
     'string-polyfills.js',
