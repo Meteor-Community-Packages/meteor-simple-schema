@@ -86,6 +86,12 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
+NOTE: There was an accidental breaking change in v1.4.0. Probably only aldeed:collection2 is affected. If you use aldeed:simple-schema v1.4.0 or higher along with aldeed:collection2, be sure to use aldeed:collection2 v2.7.1 or higher.
+
+### 1.5.3
+
+Removed the old `SimpleSchema.prototype.validator`
+
 ### 1.5.2
 
 The `ValidationError` thrown by `validate` now provides a useful error message so that it is clear what the first error is if it is not caught and is printed to console above the stack trace.
@@ -105,6 +111,8 @@ For compatibility with the new [mdg:method](https://github.com/meteor/method) pa
 
 - Call `mySimpleSchema.validate(doc)` to validate `doc` against the schema and throw a `ValidationError` if invalid. This is like `check(doc, mySimpleSchema)` but without the `check` dependency and with the ability to pass full schema error details back to a callback on the client.
 - Call `mySimpleSchema.validator()` to get a function that calls `mySimpleSchema.validate` for whatever object is passed to it. This means you can do `validate: mySimpleSchema.validator()` in the [mdg:method](https://github.com/meteor/method) package.
+
+NOTE: There was an accidental breaking change in this release. Probably only aldeed:collection2 is affected. If you use aldeed:simple-schema v1.4.0 or higher along with aldeed:collection2, be sure to use aldeed:collection2 v2.7.1 or higher.
 
 ### 1.3.3
 
