@@ -642,8 +642,7 @@ SimpleSchema.addValidator = function(func) {
 };
 
 // Instance custom validators
-// validator is deprecated; use addValidator
-SimpleSchema.prototype.addValidator = SimpleSchema.prototype.validator = function(func) {
+SimpleSchema.prototype.addValidator = function(func) {
   this._validators.push(func);
 };
 
