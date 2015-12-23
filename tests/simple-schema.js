@@ -2140,28 +2140,6 @@ Tinytest.add("SimpleSchema - Validation Against Another Key - Update - Invalid -
   test.equal(sc.invalidKeys()[0].type, "passwordMismatch");
 });
 
-Tinytest.add("SimpleSchema - Validate with the Match API", function (test) {
-  test.instanceOf(pss, SimpleSchema);
-  test.isFalse(Match.test({
-    password: 'pass'
-  }, pss));
-  test.isTrue(Match.test({
-    password: 'pass',
-    confirmPassword: 'pass'
-  }, pss));
-  try {
-    check({
-      password: 'pass'
-    }, pss);
-    test.fail({
-      type: 'exception',
-      message: 'expect the check validation to throws an exception'
-    });
-  } catch (exception) {
-    test.instanceOf(exception, Match.Error);
-  }
-});
-
 Tinytest.add("SimpleSchema - Validate Typed Arrays", function (test) {
   var taS = new SimpleSchema({
     ta: {
@@ -3009,40 +2987,6 @@ Tinytest.add("SimpleSchema - Mixed Schema Merge With Base Extend and Override", 
   });
   test.length(ctx.invalidKeys(), 4);
 
-});
-
-Tinytest.add("SimpleSchema - Optional regEx with check", function (test) {
-  try {
-    // None of these should throw an error
-    check({}, ss);
-    check({
-      url: null,
-      email: null
-    }, ss);
-    check({
-      url: "http://meteor.com",
-      email: null
-    }, ss);
-    check({
-      url: null,
-      email: "foo@meteor.com"
-    }, ss);
-    check({
-      url: null
-    }, ss);
-    check({
-      email: null
-    }, ss);
-    check({
-      url: "http://meteor.com"
-    }, ss);
-    check({
-      email: "foo@meteor.com"
-    }, ss);
-    test.isTrue(true);
-  } catch (err) {
-    test.isTrue(false);
-  }
 });
 
 Tinytest.add("SimpleSchema - Optional regEx in subobject", function (test) {

@@ -92,6 +92,11 @@ A simple, reactive schema validation smart package for Meteor.
 - If you prefer keys to be optional by default, you can pass `requiredByDefault: false` as a SimpleSchema constructor option and then use `required: true` for each key that should be required.
 - Implicit keys are no longer added for you. You must define every key. The one exception is array items when using shorthand (see next change)
 - You can now use shorthand for keys when your schema is extra super duper simple. `name: String` will be converted to `name: {type: String}` for you. `name: [String]` will be converted to `name: {type: Array}` for you and `'name.$': {type: String}` will be added.
+- `validationContext.resetValidation()` is renamed to `validationContext.reset()`
+- `validationContext.removeInvalidKeys()` has been removed since it is effectively the same as `validationContext.reset()`.
+- Removed `validationContext.getErrorObject()` since the `ValidationError` thrown by `simpleSchema.validate()` fills this need.
+- A `SimpleSchema` can no longer be used with the `check` package `check` function. Instead, use `simpleSchema.validate()`, which throws a more helpful ValidationError and satisfies `audit-argument-checks`.
+- `validationContext.validateOne()` is removed and instead you can pass a `keys` array as an option to `validationContext.validate()
 
 ### 1.4.0
 

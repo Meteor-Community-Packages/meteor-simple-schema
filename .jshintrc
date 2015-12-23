@@ -26,7 +26,7 @@
   "boss": false,
   "debug": false,
   "eqnull": false,
-  "esnext": false,
+  "esnext": true,
   "moz": false,
   "evil": false,
   "expr": true,

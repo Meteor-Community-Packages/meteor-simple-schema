@@ -114,11 +114,9 @@ obj = {title: "Ulysses", author: "James Joyce"};
 
 isValid = BookSchema.namedContext("myContext").validate(obj);
 // OR
-isValid = BookSchema.namedContext("myContext").validateOne(obj, "keyToValidate");
-// OR
-isValid = Match.test(obj, BookSchema);
-// OR
-check(obj, BookSchema);
+isValid = BookSchema.namedContext("myContext").validate(obj, {keys: ['keyToValidate']});
+// OR to throw a ValidationError
+BookSchema.validate(obj);
 
 // Validation errors are available through reactive methods
 if (Meteor.isClient) {
@@ -642,19 +640,15 @@ was found to be valid. This is a reactive method that returns true or false.
 
 For a list of options, see the [Validation Options](#validation-options) section.
 
-### Validating Only One Key in an Object
+### Validating Only Some Keys in an Object
 
-You may have the need to validate just one key. For this,
-use `myContext.validateOne(obj, key, options)`. This works the same way as the
-`validate` method, except that only the specified schema key will be validated.
-This may cause all of the reactive methods to react.
+You may have the need to (re)validate certain keys while leaving any errors for other keys unchanged. For example, if you have several errors on a form and you want to revalidate only the invalid field the user is currently typing in. For this situation, call `myContext.validate` with the `keys` option set to an array of keys that should be validated. This may cause all of the reactive methods to react.
 
-This method returns `true` if the specified schema key is valid according to
-the schema or `false` if it is not.
+This method returns `true` only if all the specified schema keys and their descendent keys are valid according to the schema. Otherwise it returns `false`.
 
 ### Validation Options
 
-Both `validate()` and `validateOne()` accept the following options:
+`validate()` accepts the following options:
 
 * `modifier`: Are you validating a Mongo modifier object? False by default.
 * `upsert`: Are you validating a Mongo modifier object potentially containing
@@ -663,6 +657,7 @@ upsert operators? False by default.
 any custom validation functions that are run during validation. See the
 [Custom Validation](#custom-validation) section.
 * `ignore`: An array of validation error types (in SimpleSchema.ErrorTypes enum) to ignore.
+* `keys`: An array of keys to validate. If not provided, revalidates the entire object.
 
 ### Validating and Throwing ValidationErrors
 

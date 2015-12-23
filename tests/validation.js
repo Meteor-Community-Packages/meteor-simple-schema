@@ -66,25 +66,25 @@ Tinytest.add('SimpleSchema - validation - issue 360', function (test) {
 
   var validationContext = schema.newContext();
 
-  var result = validationContext.validateOne({
+  var result = validationContext.validate({
     emails: [
       {
         address: 12321,
         verified: 'asdasd'
       }
     ]
-  }, 'emails');
+  }, {keys: ['emails']});
 
   test.isFalse(result);
 
-  result = validationContext.validateOne({
+  result = validationContext.validate({
     emails: [
       {
         address: 12321,
         verified: 'asdasd'
       }
     ]
-  }, 'emails.0');
+  }, {keys: ['emails.0']});
 
   test.isFalse(result);
 });
@@ -98,9 +98,12 @@ Tinytest.add('SimpleSchema - validation - ignore option', function (test) {
 
   var validationContext = schema.newContext();
 
-  var result = validationContext.validateOne({
+  var result = validationContext.validate({
     foo: 'bar',
-  }, 'foo', {ignore: ['notInSchema']});
+  }, {
+    keys: ['foo'],
+    ignore: ['notInSchema']
+  });
   test.isTrue(result);
 
   result = validationContext.validate({

@@ -98,7 +98,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
 
   // First do some basic checks of the object, and throw errors if necessary
   if (!_.isObject(obj)) {
-    throw new Error("The first argument of validate() or validateOne() must be an object");
+    throw new Error("The first argument of validate() must be an object");
   }
 
   if (isModifier) {
