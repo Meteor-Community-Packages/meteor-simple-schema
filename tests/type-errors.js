@@ -68,7 +68,7 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
     number: 1,
     date: new Date()
   });
-  test.equal(sc.invalidKeys(), []);
+  test.equal(sc.validationErrors(), []);
 
   /* STRING FAILURES */
 
@@ -76,31 +76,31 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   sc = validate({
     string: true
   });
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Number should be String
   sc = validate({
     string: 1
   });
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Object should be String
   sc = validate({
     string: {test: "test"}
   });
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   // Array should be String
   sc = validate({
     string: ["test"]
   });
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   // Date should be String
   sc = validate({
     string: new Date()
   });
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   /* BOOLEAN FAILURES */
 
@@ -108,31 +108,31 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   sc = validate({
     boolean: "test"
   });
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Number should be Boolean
   sc = validate({
     boolean: 1
   });
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Object should be Boolean
   sc = validate({
     boolean: {test: "test"}
   });
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   // Array should be Boolean
   sc = validate({
     boolean: ["test"]
   });
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   // Date should be Boolean
   sc = validate({
     boolean: new Date()
   });
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   /* NUMBER FAILURES */
 
@@ -140,37 +140,37 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   sc = validate({
     number: "test"
   });
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Boolean should be Number
   sc = validate({
     number: true
   });
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Object should be Number
   sc = validate({
     number: {test: "test"}
   });
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   // Array should be Number
   sc = validate({
     number: ["test"]
   });
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   // Date should be Number
   sc = validate({
     number: new Date()
   });
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // NaN should be Number
   sc = validate({
     number: NaN
   });
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   /* INSTANCE FAILURES */
 
@@ -178,31 +178,31 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
   sc = validate({
     date: "test"
   });
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Boolean should be Date
   sc = validate({
     date: true
   });
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Invalid Date should be Date
   sc = validate({
     date: new Date('foo')
   });
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Object should be Date
   sc = validate({
     date: {test: "test"}
   });
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   // Array should be Date
   sc = validate({
     date: ["test"]
   });
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 });
 
 Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
@@ -214,7 +214,7 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
       number: 1,
       date: new Date()
     }}, true, true);
-  test.equal(sc.invalidKeys(), []);
+  test.equal(sc.validationErrors(), []);
 
   /* STRING FAILURES */
 
@@ -222,31 +222,31 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
   sc = validate({$setOnInsert: {
     string: true
   }}, true, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Number should be String
   sc = validate({$setOnInsert: {
     string: 1
   }}, true, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Object should be String
   sc = validate({$setOnInsert: {
     string: {test: "test"}
   }}, true, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   // Array should be String
   sc = validate({$setOnInsert: {
     string: ["test"]
   }}, true, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   // Date should be String
   sc = validate({$setOnInsert: {
     string: new Date()
   }}, true, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   /* BOOLEAN FAILURES */
 
@@ -254,31 +254,31 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
   sc = validate({$setOnInsert: {
     boolean: "test"
   }}, true, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Number should be Boolean
   sc = validate({$setOnInsert: {
     boolean: 1
   }}, true, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Object should be Boolean
   sc = validate({$setOnInsert: {
     boolean: {test: "test"}
   }}, true, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   // Array should be Boolean
   sc = validate({$setOnInsert: {
     boolean: ["test"]
   }}, true, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   // Date should be Boolean
   sc = validate({$setOnInsert: {
     boolean: new Date()
   }}, true, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   /* NUMBER FAILURES */
 
@@ -286,31 +286,31 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
   sc = validate({$setOnInsert: {
     number: "test"
   }}, true, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Boolean should be Number
   sc = validate({$setOnInsert: {
     number: true
   }}, true, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Object should be Number
   sc = validate({$setOnInsert: {
     number: {test: "test"}
   }}, true, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   // Array should be Number
   sc = validate({$setOnInsert: {
     number: ["test"]
   }}, true, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   // Date should be Number
   sc = validate({$setOnInsert: {
     number: new Date()
   }}, true, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   /* INSTANCE FAILURES */
 
@@ -318,25 +318,25 @@ Tinytest.add("SimpleSchema - Type Checks - Upsert", function(test) {
   sc = validate({$setOnInsert: {
     date: "test"
   }}, true, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Boolean should be Date
   sc = validate({$setOnInsert: {
     date: true
   }}, true, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Object should be Date
   sc = validate({$setOnInsert: {
     date: {test: "test"}
   }}, true, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   // Array should be Date
   sc = validate({$setOnInsert: {
     date: ["test"]
   }}, true, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 });
 
 Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
@@ -346,7 +346,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
     number: 1,
     date: new Date()
   }}, true);
-  test.equal(sc.invalidKeys(), []);
+  test.equal(sc.validationErrors(), []);
 
   /* STRING FAILURES */
 
@@ -354,31 +354,31 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
   sc = validate({$set: {
     string: true
   }}, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Number should be String
   sc = validate({$set: {
     string: 1
   }}, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Object should be String
   sc = validate({$set: {
     string: {test: "test"}
   }}, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   // Array should be String
   sc = validate({$set: {
     string: ["test"]
   }}, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   //instance string failure
   sc = validate({$set: {
     string: (new Date())
   }}, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   /* BOOLEAN FAILURES */
 
@@ -386,31 +386,31 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
   sc = validate({$set: {
     boolean: "test"
   }}, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Number should be Boolean
   sc = validate({$set: {
     boolean: 1
   }}, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Object should be Boolean
   sc = validate({$set: {
     boolean: {test: "test"}
   }}, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   // Array should be Boolean
   sc = validate({$set: {
     boolean: ["test"]
   }}, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   // Date should be Boolean
   sc = validate({$set: {
     boolean: new Date()
   }}, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   /* NUMBER FAILURES */
 
@@ -418,55 +418,55 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
   sc = validate({$set: {
     number: "test"
   }}, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Boolean should be Number
   sc = validate({$set: {
     number: true
   }}, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Object should be Number
   sc = validate({$set: {
     number: {test: "test"}
   }}, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   // Array should be Number
   sc = validate({$set: {
     number: ["test"]
   }}, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   // Date should be Number
   sc = validate({$set: {
     number: new Date()
   }}, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Number should be Number in dotted $set
   sc = validate({$set: {
     'sub.number': 29
   }}, true);
-  test.length(sc.invalidKeys(), 0);
+  test.length(sc.validationErrors(), 0);
 
   // Number should be Number in $set to object
   sc = validate({$set: {
     sub: {number: 29}
   }}, true);
-  test.length(sc.invalidKeys(), 0);
+  test.length(sc.validationErrors(), 0);
 
   // Boolean should be Number in $set to object
   sc = validate({$set: {
     sub: {number: true}
   }}, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Array of Numbers should be Number in $set to object
   sc = validate({$set: {
     sub: {number: [29]}
   }}, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   /* INSTANCE FAILURES */
 
@@ -474,25 +474,25 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
   sc = validate({$set: {
     date: "test"
   }}, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Boolean should be Date
   sc = validate({$set: {
     date: true
   }}, true);
-  test.length(sc.invalidKeys(), 1);
+  test.length(sc.validationErrors(), 1);
 
   // Object should be Date
   sc = validate({$set: {
     date: {test: "test"}
   }}, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   // Array should be Date
   sc = validate({$set: {
     date: ["test"]
   }}, true);
-  test.length(sc.invalidKeys(), 2);
+  test.length(sc.validationErrors(), 2);
 
   /* ARRAY FAILURES */
 
@@ -503,7 +503,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
     allowedStringsArray: "tuna",
     allowedNumbersArray: 2
   }}, true);
-  test.length(sc.invalidKeys(), 4);
+  test.length(sc.validationErrors(), 4);
 
   // Should be Array
   sc = validate({$push: {
@@ -512,7 +512,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
     allowedStringsArray: "blah",
     allowedNumbersArray: 200
   }}, true);
-  test.length(sc.invalidKeys(), 4);
+  test.length(sc.validationErrors(), 4);
 
   // Should be Array
   sc = validate({$addToSet: {
@@ -521,7 +521,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
     allowedStringsArray: "blah",
     allowedNumbersArray: 200
   }}, true);
-  test.length(sc.invalidKeys(), 4);
+  test.length(sc.validationErrors(), 4);
 
   // Array should be Array
   sc = validate({$set: {
@@ -530,7 +530,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
     allowedStringsArray: ["tuna"],
     allowedNumbersArray: [2]
   }}, true);
-  test.equal(sc.invalidKeys(), []);
+  test.equal(sc.validationErrors(), []);
 
   // Check array item type if operator is $push
   sc = validate({$push: {
@@ -539,7 +539,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
     allowedStringsArray: "tuna",
     allowedNumbersArray: 2
   }}, true);
-  test.equal(sc.invalidKeys(), []);
+  test.equal(sc.validationErrors(), []);
 
   // Check array item type if operator is $addToSet
   sc = validate({$addToSet: {
@@ -548,7 +548,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
     allowedStringsArray: "tuna",
     allowedNumbersArray: 2
   }}, true);
-  test.equal(sc.invalidKeys(), []);
+  test.equal(sc.validationErrors(), []);
 
   // $push + $each with two invalid array items
   sc = validate({$push: {
@@ -566,7 +566,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
     }
   }
 }, true);
-  test.length(sc.invalidKeys(), 8);
+  test.length(sc.validationErrors(), 8);
 
   // $addToSet + $each with two invalid array items
   sc = validate({$addToSet: {
@@ -575,7 +575,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
     allowedStringsArray: {$each: ["foo", "bar"]},
     allowedNumbersArray: {$each: [200, 500]}
   }}, true);
-  test.length(sc.invalidKeys(), 8);
+  test.length(sc.validationErrors(), 8);
 
   // $push + $each with one invalid and one valid array item
   sc = validate({$push: {
@@ -584,7 +584,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
     allowedStringsArray: {$each: ["foo", "tuna"]},
     allowedNumbersArray: {$each: [200, 1]}
   }}, true);
-  test.length(sc.invalidKeys(), 4);
+  test.length(sc.validationErrors(), 4);
 
   // $addToSet + $each with one invalid and one valid array item
   sc = validate({$addToSet: {
@@ -593,7 +593,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
     allowedStringsArray: {$each: ["foo", "tuna"]},
     allowedNumbersArray: {$each: [200, 1]}
   }}, true);
-  test.length(sc.invalidKeys(), 4);
+  test.length(sc.validationErrors(), 4);
 
   // $push + $each with two valid array items
   sc = validate({$push: {
@@ -602,7 +602,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
     allowedStringsArray: {$each: ["tuna", "fish"]},
     allowedNumbersArray: {$each: [2, 1]}
   }}, true);
-  test.equal(sc.invalidKeys(), []);
+  test.equal(sc.validationErrors(), []);
 
   // $addToSet + $each with two valid array items
   sc = validate({$addToSet: {
@@ -611,7 +611,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
     allowedStringsArray: {$each: ["tuna", "fish"]},
     allowedNumbersArray: {$each: [2, 1]}
   }}, true);
-  test.equal(sc.invalidKeys(), []);
+  test.equal(sc.validationErrors(), []);
 
   // It ignores $slice
   sc = validate({$push: {
@@ -620,7 +620,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
     allowedStringsArray: {$each: ["tuna", "fish"], $slice: -5},
     allowedNumbersArray: {$each: [2, 1], $slice: -5}
   }}, true);
-  test.equal(sc.invalidKeys(), []);
+  test.equal(sc.validationErrors(), []);
 
   // Pull, pullAll, and pop should be ignored; no validation
   sc = validate({$pull: {
@@ -629,7 +629,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
     allowedStringsArray: "foo",
     allowedNumbersArray: 200
   }}, true);
-  test.equal(sc.invalidKeys(), []);
+  test.equal(sc.validationErrors(), []);
 
   sc = validate({$pull: {
     booleanArray: {$each: ["foo", "bar"]},
@@ -637,7 +637,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
     allowedStringsArray: {$each: ["foo", "bar"]},
     allowedNumbersArray: {$each: [200, 500]}
   }}, true);
-  test.equal(sc.invalidKeys(), []);
+  test.equal(sc.validationErrors(), []);
 
   sc = validate({$pullAll: {
     booleanArray: ["foo", "bar"],
@@ -645,7 +645,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
     allowedStringsArray: ["foo", "bar"],
     allowedNumbersArray: [200, 500]
   }}, true);
-  test.equal(sc.invalidKeys(), []);
+  test.equal(sc.validationErrors(), []);
 
   sc = validate({$pop: {
     booleanArray: 1,
@@ -653,7 +653,7 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
     allowedStringsArray: 1,
     allowedNumbersArray: 1
   }}, true);
-  test.equal(sc.invalidKeys(), []);
+  test.equal(sc.validationErrors(), []);
 
   sc = validate({$pop: {
     booleanArray: -1,
@@ -661,5 +661,5 @@ Tinytest.add("SimpleSchema - Type Checks - Update", function(test) {
     allowedStringsArray: -1,
     allowedNumbersArray: -1
   }}, true);
-  test.equal(sc.invalidKeys(), []);
+  test.equal(sc.validationErrors(), []);
 });

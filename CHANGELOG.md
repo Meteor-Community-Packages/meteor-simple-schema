@@ -97,6 +97,7 @@ A simple, reactive schema validation smart package for Meteor.
 - Removed `validationContext.getErrorObject()` since the `ValidationError` thrown by `simpleSchema.validate()` fills this need.
 - A `SimpleSchema` can no longer be used with the `check` package `check` function. Instead, use `simpleSchema.validate()`, which throws a more helpful ValidationError and satisfies `audit-argument-checks`.
 - `validationContext.validateOne()` is removed and instead you can pass a `keys` array as an option to `validationContext.validate()
+- `invalidKeys()` is changed to `validationErrors()`, `_invalidKeys` is changed to `_validationErrors`, and `addInvalidKeys` is changed to `addValidationErrors`
 
 ### 1.4.0
 

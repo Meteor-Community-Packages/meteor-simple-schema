@@ -124,7 +124,7 @@ if (Meteor.isClient) {
     Tracker.autorun(function() {
       var context = BookSchema.namedContext("myContext");
       if (!context.isValid()) {
-        console.log(context.invalidKeys());
+        console.log(context.validationErrors());
       }
     });
   });
@@ -714,7 +714,7 @@ on the client, refer to the [Asynchronous Custom Validation on the Client](#asyn
 
 ### Manually Adding a Validation Error
 
-If you want to reactively display an arbitrary validation error and it is not possible to use a custom validation function (perhaps you have to call a function `onSubmit` or wait for asynchronous results), you can add one or more errors to a validation context at any time by calling `myContext.addInvalidKeys(errors)`, where `errors` is an array of error objects with the following format:
+If you want to reactively display an arbitrary validation error and it is not possible to use a custom validation function (perhaps you have to call a function `onSubmit` or wait for asynchronous results), you can add one or more errors to a validation context at any time by calling `myContext.addValidationErrors(errors)`, where `errors` is an array of error objects with the following format:
 
 ```js
 {name: key, type: errorType, value: anyValue}
@@ -733,7 +733,7 @@ Example:
 ```js
 SimpleSchema.messages({wrongPassword: "Wrong password"});
 
-myContext.addInvalidKeys([{name: "password", type: "wrongPassword"}]);
+myContext.addValidationErrors([{name: "password", type: "wrongPassword"}]);
 ```
 
 ### Asynchronous Custom Validation on the Client
@@ -749,7 +749,7 @@ username: {
     if (Meteor.isClient && this.isSet) {
       Meteor.call("accountsIsUsernameAvailable", this.value, function (error, result) {
         if (!result) {
-          Meteor.users.simpleSchema().namedContext("createUserForm").addInvalidKeys([{name: "username", type: "notUnique"}]);
+          Meteor.users.simpleSchema().namedContext("createUserForm").addValidationErrors([{name: "username", type: "notUnique"}]);
         }
       });
     }
@@ -765,7 +765,7 @@ You can use a technique similar to this to work around asynchronicity issues in 
 
 ### Getting a List of Invalid Keys and Validation Error Messages
 
-Call `myContext.invalidKeys()` to get the full array of invalid key data. Each object
+Call `myContext.validationErrors()` to get the full array of invalid key data. Each object
 in the array has two keys:
 * `name`: The schema key as specified in the schema.
 * `type`: The type of error. See `SimpleSchema.ErrorTypes`.
@@ -774,10 +774,10 @@ This is a reactive method.
 
 There is no `message` property. Once you see what keys are invalid, you can call `ctxt.keyErrorMessage(key)` to get a reactive message string.
 
-If you want to add a `message` property to the invalidKeys array objects (which would no longer be reactive), you can do
+If you want to add a `message` property to the `validationErrors` array objects (which would no longer be reactive), you can do
 
 ```js
-var ik = ctxt.invalidKeys();
+var ik = ctxt.validationErrors();
 ik = _.map(ik, function (o) {
   return _.extend({message: ctxt.keyErrorMessage(o.name)}, o);
 });

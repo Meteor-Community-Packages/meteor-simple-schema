@@ -117,7 +117,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
     throw new Error("When the validation object contains mongo operators, you must set the modifier option to true");
   }
 
-  var invalidKeys = [];
+  var validationErrors = [];
   var mDoc; // for caching the MongoObject if necessary
 
   // Validation function called for each affected key
@@ -125,7 +125,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
 
     // Get the schema for this key, marking invalid if there isn't one.
     if (!def) {
-      invalidKeys.push({
+      validationErrors.push({
         name: affectedKey,
         type: SimpleSchema.ErrorTypes.KEY_NOT_IN_SCHEMA,
         value: val
@@ -143,7 +143,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
     //     * We're validating a key under the $set operator in a modifier, and it's an upsert.
     if (!skipRequiredCheck && !def.optional) {
       if (val === null || val === void 0) {
-        invalidKeys.push({
+        validationErrors.push({
           name: affectedKey,
           type: SimpleSchema.ErrorTypes.REQUIRED,
           value: null
@@ -158,7 +158,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
       // Check that value is of the correct type
       var typeError = doTypeChecks(def, val, op);
       if (typeError) {
-        invalidKeys.push({
+        validationErrors.push({
           name: affectedKey,
           type: typeError,
           value: val
@@ -168,7 +168,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
 
       // Check value against allowedValues array
       if (def.allowedValues && !_.contains(def.allowedValues, val)) {
-        invalidKeys.push({
+        validationErrors.push({
           name: affectedKey,
           type: SimpleSchema.ErrorTypes.VALUE_NOT_ALLOWED,
           value: val
@@ -211,7 +211,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
         }
       }, extendedCustomContext || {}));
       if (typeof result === "string") {
-        invalidKeys.push({
+        validationErrors.push({
           name: affectedKey,
           type: result,
           value: val
@@ -219,7 +219,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
         return false;
       }
       if (Utility.isBasicObject(result)) {
-        invalidKeys.push(result);
+        validationErrors.push(result);
         return false;
       }
       return true;
@@ -290,7 +290,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
 
   // Make sure there is only one error per fieldName
   var addedFieldNames = [];
-  invalidKeys = _.filter(invalidKeys, function(errObj) {
+  validationErrors = _.filter(validationErrors, function(errObj) {
     if (!_.contains(addedFieldNames, errObj.name)) {
       addedFieldNames.push(errObj.name);
       return true;
@@ -298,7 +298,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
     return false;
   });
 
-  return invalidKeys;
+  return validationErrors;
 };
 
 function convertModifierToDoc(mod, schema, isUpsert) {
