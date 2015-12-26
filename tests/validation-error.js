@@ -12,6 +12,11 @@ Tinytest.add('SimpleSchema - ValidationErrors', function (test) {
     test.equal(error.details[0].type, SimpleSchema.ErrorTypes.EXPECTED_NUMBER);
     test.equal(error.details[1].name, 'string');
     test.equal(error.details[1].type, SimpleSchema.ErrorTypes.REQUIRED);
+
+    // In order for the message at the top of the stack trace to be useful,
+    // we set it to the first validation error message.
+    test.equal(error.reason, 'Int must be a number');
+    test.equal(error.message, 'Int must be a number [validation-error]');
   }
 
   try {
