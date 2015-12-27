@@ -1,5 +1,5 @@
 Tinytest.add('SimpleSchema - ValidationErrors', function (test) {
-  var schema = new SimpleSchema({
+  let schema = new SimpleSchema({
     int: { type: Number },
     string: { type: String },
   });

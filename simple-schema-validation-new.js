@@ -7,7 +7,7 @@
 /* global doValidation2:true */
 
 function doTypeChecks(def, keyValue, op) {
-  var expectedType = def.type;
+  let expectedType = def.type;
 
   // String checks
   if (expectedType === String) {
@@ -20,7 +20,7 @@ function doTypeChecks(def, keyValue, op) {
     } else if (def.regEx instanceof RegExp && !def.regEx.test(keyValue)) {
       return SimpleSchema.ErrorTypes.FAILED_REGULAR_EXPRESSION;
     } else if (_.isArray(def.regEx)) {
-      var regExError;
+      let regExError;
       _.every(def.regEx, function(re, i) {
         if (!re.test(keyValue)) {
           regExError = SimpleSchema.ErrorTypes.FAILED_REGULAR_EXPRESSION + '.' + i;
@@ -102,7 +102,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
   }
 
   if (isModifier) {
-    var allKeysAreOperators = _.every(obj, function(v, k) {
+    let allKeysAreOperators = _.every(obj, function(v, k) {
       return (k.substring(0, 1) === "$");
     });
     if (!allKeysAreOperators) {
@@ -117,8 +117,8 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
     throw new Error("When the validation object contains mongo operators, you must set the modifier option to true");
   }
 
-  var validationErrors = [];
-  var mDoc; // for caching the MongoObject if necessary
+  let validationErrors = [];
+  let mDoc; // for caching the MongoObject if necessary
 
   // Validation function called for each affected key
   function validate(val, affectedKey, affectedKeyGeneric, def, op, skipRequiredCheck, strictRequiredCheck) {
@@ -156,7 +156,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
     if (Utility.isNotNullOrUndefined(val)) {
 
       // Check that value is of the correct type
-      var typeError = doTypeChecks(def, val, op);
+      let typeError = doTypeChecks(def, val, op);
       if (typeError) {
         validationErrors.push({
           name: affectedKey,
@@ -179,12 +179,12 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
     }
 
     // Perform custom validation
-    var lastDot = affectedKey.lastIndexOf('.');
-    var fieldParentName = lastDot === -1 ? '' : affectedKey.slice(0, lastDot + 1);
-    var validators = def.custom ? [def.custom] : [];
+    let lastDot = affectedKey.lastIndexOf('.');
+    let fieldParentName = lastDot === -1 ? '' : affectedKey.slice(0, lastDot + 1);
+    let validators = def.custom ? [def.custom] : [];
     validators = validators.concat(ss._validators).concat(SimpleSchema._validators);
     _.every(validators, function(validator) {
-      var result = validator.call(_.extend({
+      let result = validator.call(_.extend({
         key: affectedKey,
         genericKey: affectedKeyGeneric,
         definition: def,
@@ -193,7 +193,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
         operator: op,
         field: function(fName) {
           mDoc = mDoc || new MongoObject(obj, ss._blackboxKeys); //create if necessary, cache for speed
-          var keyInfo = mDoc.getInfoForKey(fName) || {};
+          let keyInfo = mDoc.getInfoForKey(fName) || {};
           return {
             isSet: (keyInfo.value !== void 0),
             value: keyInfo.value,
@@ -202,7 +202,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
         },
         siblingField: function(fName) {
           mDoc = mDoc || new MongoObject(obj, ss._blackboxKeys); //create if necessary, cache for speed
-          var keyInfo = mDoc.getInfoForKey(fieldParentName + fName) || {};
+          let keyInfo = mDoc.getInfoForKey(fieldParentName + fName) || {};
           return {
             isSet: (keyInfo.value !== void 0),
             value: keyInfo.value,
@@ -228,7 +228,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
 
   // The recursive function
   function checkObj(val, affectedKey, skipRequiredCheck, strictRequiredCheck) {
-    var affectedKeyGeneric, def;
+    let affectedKeyGeneric, def;
 
     if (affectedKey) {
 
@@ -264,12 +264,12 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
     else if (Utility.isBasicObject(val) && (!def || !def.blackbox)) {
 
       // Get list of present keys
-      var presentKeys = _.keys(val);
+      let presentKeys = _.keys(val);
 
       // Check all present keys plus all keys defined by the schema.
       // This allows us to detect extra keys not allowed by the schema plus
       // any missing required keys, and to run any custom functions for other keys.
-      var keysToCheck = _.union(presentKeys, ss._schemaKeys);
+      let keysToCheck = _.union(presentKeys, ss._schemaKeys);
 
       // If this object is within an array, make sure we check for
       // required as if it's not a modifier
@@ -289,7 +289,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
   checkObj(obj);
 
   // Make sure there is only one error per fieldName
-  var addedFieldNames = [];
+  let addedFieldNames = [];
   validationErrors = _.filter(validationErrors, function(errObj) {
     if (!_.contains(addedFieldNames, errObj.name)) {
       addedFieldNames.push(errObj.name);
@@ -303,23 +303,23 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
 
 function convertModifierToDoc(mod, schema, isUpsert) {
   // Create unmanaged LocalCollection as scratchpad
-  var t = new Meteor.Collection(null);
+  let t = new Meteor.Collection(null);
 
   // LocalCollections are in memory, and it seems
   // that it's fine to use them synchronously on
   // either client or server
-  var id;
+  let id;
   if (isUpsert) {
     // We assume upserts will be inserts (conservative
     // validation of requiredness)
     id = Random.id();
     t.upsert({_id: id}, mod);
   } else {
-    var mDoc = new MongoObject(mod);
+    let mDoc = new MongoObject(mod);
     // Create a ficticious existing document
-    var fakeDoc = new MongoObject({});
+    let fakeDoc = new MongoObject({});
     _.each(schema, function (def, fieldName) {
-      var setVal;
+      let setVal;
       // Prefill doc with empty arrays to avoid the
       // mongodb issue where it does not understand
       // that numeric pieces should create arrays.
@@ -346,8 +346,8 @@ function convertModifierToDoc(mod, schema, isUpsert) {
       }
 
       if (setVal !== void 0) {
-        var key = fieldName.replace(/\.\$/g, ".0");
-        var pos = MongoObject._keyToPosition(key, false);
+        let key = fieldName.replace(/\.\$/g, ".0");
+        let pos = MongoObject._keyToPosition(key, false);
         fakeDoc.setValueForPosition(pos, setVal);
       }
     });
@@ -358,7 +358,7 @@ function convertModifierToDoc(mod, schema, isUpsert) {
     t.update(id, mod);
   }
 
-  var doc = t.findOne(id);
+  let doc = t.findOne(id);
   // We're done with it
   t.remove(id);
   // Currently we don't validate _id unless it is

@@ -120,9 +120,9 @@ BookSchema.validate(obj);
 
 // Validation errors are available through reactive methods
 if (Meteor.isClient) {
-  Meteor.startup(function() {
-    Tracker.autorun(function() {
-      var context = BookSchema.namedContext("myContext");
+  Meteor.startup(() => {
+    Tracker.autorun(() => {
+      let context = BookSchema.namedContext("myContext");
       if (!context.isValid()) {
         console.log(context.validationErrors());
       }
@@ -184,35 +184,26 @@ cmsPageSchema = new SimpleSchema([cmsBaseSchema, {additionalField: {type: String
 Sometimes you have one large SimpleSchema object, and you need just a subset of it for some purpose. To pull out certain schema keys into a new schema, you can use the `pick` method:
 
 ```js
-var profileSchema = new SimpleSchema({
-  firstName: {type: String},
-  lastName: {type: String},
-  username: {type: String}
+let profileSchema = new SimpleSchema({
+  firstName: String,
+  lastName: String,
+  username: String,
 });
 
-var nameSchema = profileSchema.pick(['firstName', 'lastName']);
+let nameSchema = profileSchema.pick('firstName', 'lastName');
 ```
 
 **NOTE**: When using `pick` on a field of type Array you also need to pick the array item field.
 Take the following as an example:
 
 ```js
-var profileSchema = new SimpleSchema({
-  firstName: {
-    type: String
-  },
-  lastName: {
-    type: String
-  },
-  comments: {
-    type: Array
-  },
-  'comments.$': {
-    type: String
-  },
+let profileSchema = new SimpleSchema({
+  firstName: String,
+  lastName: String,
+  comments: [String],
 });
 
-var nameSchema = profileSchema.pick('comments', 'comments.$');
+let nameSchema = profileSchema.pick('comments');
 ```
 
 ### Extending SimpleSchemas
@@ -221,7 +212,7 @@ If you have a SimpleSchema and need to add fields or adjust existing ones, you c
 
 ```js
 // Take firstName and lastName fields from profileSchema, but make firstName optional
-var nameSchema = profileSchema.pick('firstName', 'lastName').extend({firstName: {optional: true}});
+let nameSchema = profileSchema.pick('firstName', 'lastName').extend({firstName: {optional: true}});
 ```
 
 ## The Object to Validate
@@ -299,21 +290,13 @@ Here are some specifics about the various rules you can define in your schema.
 
 ### type
 
-Type can be a standard Javascript object like:
 * `String`
 * `Number`
 * `Boolean`
 * `Object`
-
-Or it can be a constructor function like `Date` or any custom object.
-
-Or it can be any of those wrapped in array brackets, to indicate that you're
-expecting an array of values of that type.
-* `[String]`
-* `[Number]`
-* `[Boolean]`
-* `[Object]`
-* `[Date]`
+* `Array`
+* Any custom or built-in class like `Date`
+* Another `SimpleSchema` instance, meaning `Object` type with this schema
 
 ### label
 
@@ -328,9 +311,8 @@ circumstances you can provide a callback function as a label.
 MySchema = new SimpleSchema({
   firstName: {
     type: String,
-    label: function () {
-      return Session.get("lang") == "de"
-            ? "Vorname" : "first name";
+    label: () => {
+      return Session.get("lang") === "de" ? "Vorname" : "first name";
     }
   }
 });
@@ -341,7 +323,7 @@ the fly:
 
 ```js
 MySchema.labels({
-    password: "Enter your password"
+  password: "Enter your password"
 });
 ```
 
@@ -564,8 +546,8 @@ context already.)
 You can also set defaults for any of these options in your SimpleSchema constructor options:
 
 ```js
-var schema = new SimpleSchema({
-  name: {type: String}
+let schema = new SimpleSchema({
+  name: String
 }, {
   clean: {
     trimStrings: false,
@@ -599,12 +581,10 @@ methods.
 To obtain a named validation context, call `namedContext(name)`:
 
 ```js
-var ss = new SimpleSchema({
-    requiredString: {
-        type: String
-    }
+let ss = new SimpleSchema({
+    requiredString: String
 });
-var ssContext1 = ss.namedContext("userForm");
+let ssContext1 = ss.namedContext("userForm");
 ```
 
 The first time you request a context with a certain name, it is created. Calling
@@ -615,12 +595,10 @@ The first time you request a context with a certain name, it is created. Calling
 To obtain an unnamed validation context, call `newContext()`:
 
 ```js
-var ss = new SimpleSchema({
-    requiredString: {
-        type: String
-    }
+let ss = new SimpleSchema({
+    requiredString: String
 });
-var ssContext1 = ss.newContext();
+let ssContext1 = ss.newContext();
 ```
 
 An unnamed validation context is not persisted anywhere. It can be useful when
@@ -663,21 +641,6 @@ any custom validation functions that are run during validation. See the
 
 - Call `mySimpleSchema.validate(doc)` to validate `doc` against the schema and throw a `ValidationError` if invalid. This is like `check(doc, mySimpleSchema)` but without the `check` dependency and with the ability to pass full schema error details back to a callback on the client.
 - Call `mySimpleSchema.validator()` to get a function that calls `mySimpleSchema.validate` for whatever object is passed to it. This means you can do `validate: mySimpleSchema.validator()` in the [mdg:method](https://github.com/meteor/method) package.
-
-### Validating Using check() or Match.test()
-
-A schema can be passed as the second argument to Meteor's `check()` and
-`Match.test()` methods from the [Check package](http://docs.meteor.com/#/full/check_package).
-`check()` will throw a Match.Error if the object specified in the first argument
-is not valid according to the schema.
-
-```js
-var mySchema = new SimpleSchema({name: {type: String}});
-
-Match.test({name: "Steve"}, mySchema); // Return true
-Match.test({admin: true}, mySchema); // Return false
-check({admin: true}, mySchema); // throw a Match.Error
-```
 
 ### Custom Validation
 
@@ -777,7 +740,7 @@ There is no `message` property. Once you see what keys are invalid, you can call
 If you want to add a `message` property to the `validationErrors` array objects (which would no longer be reactive), you can do
 
 ```js
-var ik = ctxt.validationErrors();
+let ik = ctxt.validationErrors();
 ik = _.map(ik, function (o) {
   return _.extend({message: ctxt.keyErrorMessage(o.name)}, o);
 });
@@ -929,7 +892,7 @@ optional, and then use a custom function similar to this:
     type: String,
     optional: true,
     custom: function () {
-      var shouldBeRequired = this.field('saleType').value == 1;
+      let shouldBeRequired = this.field('saleType').value === 1;
 
       if (shouldBeRequired) {
         // inserts

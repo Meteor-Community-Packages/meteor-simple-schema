@@ -38,7 +38,7 @@ Address.prototype = {
   }
 };
 
-var ssr = new SimpleSchema({
+let ssr = new SimpleSchema({
   requiredString: {
     type: String
   },
@@ -84,7 +84,7 @@ ssr.messages({
   "regEx requiredUrl": "[label] is not a valid URL"
 });
 
-var ss = new SimpleSchema({
+let ss = new SimpleSchema({
   string: {
     type: String,
     optional: true
@@ -265,7 +265,7 @@ ss.messages({
   "regEx url": "[label] is not a valid URL"
 });
 
-var pss = new SimpleSchema({
+let pss = new SimpleSchema({
   password: {
     type: String
   },
@@ -279,7 +279,7 @@ var pss = new SimpleSchema({
   }
 });
 
-var friends = new SimpleSchema({
+let friends = new SimpleSchema({
   name: {
     type: String,
     optional: true
@@ -332,7 +332,7 @@ var friends = new SimpleSchema({
   }
 });
 
-var optCust = new SimpleSchema({
+let optCust = new SimpleSchema({
   foo: {
     type: String,
     optional: true,
@@ -342,7 +342,7 @@ var optCust = new SimpleSchema({
   }
 });
 
-var reqCust = new SimpleSchema({
+let reqCust = new SimpleSchema({
   a: {
     type: Array,
     custom: function () {
@@ -383,7 +383,7 @@ function validate(ss, doc, isModifier, isUpsert, skipClean) {
   //documents that should be valid
   if (!skipClean) doc = ss.clean(doc);
 
-  var context = ss.newContext();
+  let context = ss.newContext();
   context.validate(doc, {
     modifier: isModifier,
     upsert: isUpsert
@@ -404,7 +404,7 @@ function validateNoClean(ss, doc, isModifier, isUpsert) {
  */
 
 Tinytest.add("SimpleSchema - Required Checks - Insert - Valid", function (test) {
-  var sc = validate(ssr, {
+  let sc = validate(ssr, {
     requiredString: "test",
     requiredBoolean: true,
     requiredNumber: 1,
@@ -435,7 +435,7 @@ Tinytest.add("SimpleSchema - Required Checks - Insert - Valid", function (test) 
 });
 
 Tinytest.add("SimpleSchema - Required Checks - Insert - Invalid", function (test) {
-  var sc = validateNoClean(ssr, {});
+  let sc = validateNoClean(ssr, {});
   test.length(sc.validationErrors(), 8);
 
   sc = validateNoClean(ssr, {
@@ -546,7 +546,7 @@ Tinytest.add("SimpleSchema - Required Checks - Insert - Invalid", function (test
  */
 
 Tinytest.add("SimpleSchema - Required Checks - Upsert - Valid - $set", function (test) {
-  var sc = validate(ssr, {
+  let sc = validate(ssr, {
     $set: {
       requiredString: "test",
       requiredBoolean: true,
@@ -582,7 +582,7 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Valid - $set", function 
 });
 
 Tinytest.add("SimpleSchema - Required Checks - Upsert - Valid - $setOnInsert", function (test) {
-  var sc = validate(ssr, {
+  let sc = validate(ssr, {
     $setOnInsert: {
       requiredString: "test",
       requiredBoolean: true,
@@ -619,7 +619,7 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Valid - $setOnInsert", f
 
 Tinytest.add("SimpleSchema - Required Checks - Upsert - Valid - Combined", function (test) {
   //some in $set and some in $setOnInsert, make sure they're merged for validation purposes
-  var ssrCon = validate(ssr, {
+  let ssrCon = validate(ssr, {
     $set: {
       requiredString: "test",
       requiredBoolean: true,
@@ -657,7 +657,7 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Valid - Combined", funct
 });
 
 Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - $set", function (test) {
-  var sc = validateNoClean(ssr, {
+  let sc = validateNoClean(ssr, {
     $set: {}
   }, true, true, true);
   test.length(sc.validationErrors(), 8);
@@ -731,7 +731,7 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - $set", functio
 });
 
 Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - $setOnInsert", function (test) {
-  var sc = validateNoClean(ssr, {
+  let sc = validateNoClean(ssr, {
     $setOnInsert: {}
   }, true, true, true);
   test.length(sc.validationErrors(), 8);
@@ -807,7 +807,7 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - $setOnInsert",
 Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - Combined", function (test) {
   //some in $set and some in $setOnInsert, make sure they're merged for validation purposes
 
-  var sc = validateNoClean(ssr, {
+  let sc = validateNoClean(ssr, {
     $setOnInsert: {},
     $set: {}
   }, true, true, true);
@@ -859,7 +859,7 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - Combined", fun
       'optionalObject.requiredString': ""
     }
   }, true, true, true);
-  var requiredErrorCount = _.reduce(sc.validationErrors(), function (memo, errorObj) {
+  let requiredErrorCount = _.reduce(sc.validationErrors(), function (memo, errorObj) {
     if (errorObj.type === SimpleSchema.ErrorTypes.REQUIRED) memo++;
     return memo;
   }, 0);
