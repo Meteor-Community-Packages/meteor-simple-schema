@@ -40,7 +40,7 @@ function doTypeChecks(def, keyValue, op) {
        return !!def.exclusiveMax ? SimpleSchema.ErrorTypes.MAX_NUMBER_EXCLUSIVE : SimpleSchema.ErrorTypes.MAX_NUMBER;
     } else if (op !== "$inc" && def.min !== null && (!!def.exclusiveMin ? def.min >= keyValue : def.min > keyValue)) {
        return !!def.exclusiveMin ? SimpleSchema.ErrorTypes.MIN_NUMBER_EXCLUSIVE : SimpleSchema.ErrorTypes.MIN_NUMBER;
-    } else if (!def.decimal && keyValue.toString().indexOf(".") > -1) {
+    } else if (def.integer && keyValue.toString().indexOf('.') > -1) {
       return SimpleSchema.ErrorTypes.MUST_BE_INTEGER;
     }
   }

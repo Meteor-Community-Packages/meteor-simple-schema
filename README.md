@@ -26,7 +26,7 @@ A simple, reactive schema validation package for Meteor. It's used by the [Colle
   - [optional](#optional)
   - [min/max](#minmax)
   - [exclusiveMin/exclusiveMax](#exclusiveminexclusivemax)
-  - [decimal](#decimal)
+  - [integer](#integer)
   - [minCount/maxCount](#mincountmaxcount)
   - [allowedValues](#allowedvalues)
   - [regEx](#regex)
@@ -93,6 +93,7 @@ BookSchema = new SimpleSchema({
   },
   copies: {
     type: Number,
+    integer: true,
     label: "Number of copies",
     min: 0
   },
@@ -383,10 +384,9 @@ Set to `true` to indicate that the range of numeric values, as set by min/max,
 are to be treated as an exclusive range. Set to `false` (default) to treat ranges as
 inclusive.
 
-### decimal
+### integer
 
-Set to `true` if `type` is `Number` or `[Number]` and you want to allow
-non-integers. The default is `false`.
+Set to `true` if `type` is `Number` and you want to allow only integers. The default is `false`, meaning that floats are allowed.
 
 ### minCount/maxCount
 

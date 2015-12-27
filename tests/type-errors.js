@@ -24,6 +24,7 @@ var ss = new SimpleSchema({
   },
   number: {
     type: Number,
+    integer: true,
     optional: true
   },
   sub: {
@@ -32,6 +33,7 @@ var ss = new SimpleSchema({
   },
   'sub.number': {
     type: Number,
+    integer: true,
     optional: true
   },
   allowedNumbersArray: {
@@ -40,6 +42,7 @@ var ss = new SimpleSchema({
   },
   'allowedNumbersArray.$': {
     type: Number,
+    integer: true,
     allowedValues: [1, 2, 3]
   },
   date: {

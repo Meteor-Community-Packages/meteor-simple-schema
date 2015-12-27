@@ -46,7 +46,8 @@ let ssr = new SimpleSchema({
     type: Boolean
   },
   requiredNumber: {
-    type: Number
+    type: Number,
+    integer: true
   },
   requiredDate: {
     type: Date
@@ -63,7 +64,8 @@ let ssr = new SimpleSchema({
     type: Object
   },
   'requiredObject.requiredNumber': {
-    type: Number
+    type: Number,
+    integer: true
   },
   optionalObject: {
     type: Object,
@@ -133,6 +135,7 @@ let ss = new SimpleSchema({
   },
   number: {
     type: Number,
+    integer: true,
     optional: true
   },
   sub: {
@@ -141,26 +144,31 @@ let ss = new SimpleSchema({
   },
   'sub.number': {
     type: Number,
+    integer: true,
     optional: true
   },
   minMaxNumber: {
     type: Number,
+    integer: true,
     optional: true,
     min: 10,
     max: 20
   },
   minZero: {
     type: Number,
+    integer: true,
     optional: true,
     min: 0
   },
   maxZero: {
     type: Number,
+    integer: true,
     optional: true,
     max: 0
   },
   minMaxNumberCalculated: {
     type: Number,
+    integer: true,
     optional: true,
     min: function () {
       return 10;
@@ -171,6 +179,7 @@ let ss = new SimpleSchema({
   },
   minMaxNumberExclusive: {
     type: Number,
+    integer: true,
     optional: true,
     min: 10,
     max: 20,
@@ -179,6 +188,7 @@ let ss = new SimpleSchema({
   },
   minMaxNumberInclusive: {
     type: Number,
+    integer: true,
     optional: true,
     min: 10,
     max: 20,
@@ -187,6 +197,7 @@ let ss = new SimpleSchema({
   },
   allowedNumbers: {
     type: Number,
+    integer: true,
     optional: true,
     allowedValues: [1, 2, 3]
   },
@@ -196,12 +207,12 @@ let ss = new SimpleSchema({
   },
   'allowedNumbersArray.$': {
     type: Number,
+    integer: true,
     allowedValues: [1, 2, 3]
   },
   decimal: {
     type: Number,
-    optional: true,
-    decimal: true
+    optional: true
   },
   date: {
     type: Date,
@@ -305,6 +316,7 @@ let friends = new SimpleSchema({
   },
   'friends.$.a.b': {
     type: Number,
+    integer: true,
     optional: true
   },
   enemies: {
@@ -327,8 +339,7 @@ let friends = new SimpleSchema({
     type: String
   },
   'enemies.$.traits.$.weight': {
-    type: Number,
-    decimal: true
+    type: Number
   }
 });
 
@@ -2525,6 +2536,7 @@ Tinytest.add("SimpleSchema - Nested Schemas", function (test) {
   };
   var parentDef = {
     type: Number,
+    integer: true,
     min: 10,
     label: 'foo',
     optional: false
@@ -2933,6 +2945,7 @@ Tinytest.add("SimpleSchema - Mixed Schema Merge With Base Extend and Override", 
   var s2 = new SimpleSchema([s1, {
     a: {
       type: Number,
+      integer: true,
       label: 'foo',
       optional: false
     },
@@ -2955,6 +2968,7 @@ Tinytest.add("SimpleSchema - Mixed Schema Merge With Base Extend and Override", 
   test.equal(s2._schema, {
     a: {
       type: Number,
+      integer: true,
       label: 'foo',
       optional: false
     },
@@ -3153,7 +3167,8 @@ Tinytest.add("SimpleSchema - Required Custom", function (test) {
 Tinytest.add("SimpleSchema - Clean and Validate Object with Prototype", function (test) {
   var opS = new SimpleSchema({
     foo: {
-      type: Number
+      type: Number,
+      integer: true
     }
   });
 
@@ -3357,6 +3372,7 @@ Tinytest.add('SimpleSchema - Multi-Dimensional Arrays', function (test) {
 
     'geometry.coordinates.$.$.$': {
       type: Number,
+      integer: true,
     }
   });
 

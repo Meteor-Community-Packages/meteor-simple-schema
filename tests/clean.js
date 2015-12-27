@@ -78,6 +78,7 @@ var ss = new SimpleSchema({
   },
   number: {
     type: Number,
+    integer: true,
     optional: true
   },
   sub: {
@@ -86,26 +87,31 @@ var ss = new SimpleSchema({
   },
   'sub.number': {
     type: Number,
+    integer: true,
     optional: true
   },
   minMaxNumber: {
     type: Number,
+    integer: true,
     optional: true,
     min: 10,
     max: 20
   },
   minZero: {
     type: Number,
+    integer: true,
     optional: true,
     min: 0
   },
   maxZero: {
     type: Number,
+    integer: true,
     optional: true,
     max: 0
   },
   minMaxNumberCalculated: {
     type: Number,
+    integer: true,
     optional: true,
     min: function() {
       return 10;
@@ -115,23 +121,26 @@ var ss = new SimpleSchema({
     }
   },
   minMaxNumberExclusive: {
-     type: Number,
-     optional: true,
-     min: 10,
-     max: 20,
-     exclusiveMax: true,
-     exclusiveMin: true
+    type: Number,
+    integer: true,
+    optional: true,
+    min: 10,
+    max: 20,
+    exclusiveMax: true,
+    exclusiveMin: true
   },
   minMaxNumberInclusive: {
-     type: Number,
-     optional: true,
-     min: 10,
-     max: 20,
-     exclusiveMax: false,
-     exclusiveMin: false
+    type: Number,
+    integer: true,
+    optional: true,
+    min: 10,
+    max: 20,
+    exclusiveMax: false,
+    exclusiveMin: false
   },
   allowedNumbers: {
     type: Number,
+    integer: true,
     optional: true,
     allowedValues: [1, 2, 3]
   },
@@ -141,12 +150,12 @@ var ss = new SimpleSchema({
   },
   'allowedNumbersArray.$': {
     type: Number,
+    integer: true,
     allowedValues: [1, 2, 3]
   },
   decimal: {
     type: Number,
-    optional: true,
-    decimal: true
+    optional: true
   },
   date: {
     type: Date,
