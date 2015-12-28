@@ -221,50 +221,29 @@ let nameSchema = profileSchema.pick('firstName', 'lastName').extend({firstName: 
 The object you pass in when validating can be a normal object, or it can be
 a Mongo modifier object (with `$set`, etc. keys). In other words, you can pass
 in the exact object that you are going to pass to `Collection.insert()` or
-`Collection.update()`. This is what the [collection2](https://atmospherejs.com/aldeed/collection2)
-smart package does for you.
+`Collection.update()`. This is what the [collection2](https://atmospherejs.com/aldeed/collection2) package does for you.
 
 ## Schema Keys
 
-A basic schema key is just the name of the key (property) to expect in the
-objects that will be validated. If necessary, though, you can use string
-keys with mongo-style dot notation to validate nested arrays and objects.
+A basic schema key is just the name of the key (property) to expect in the objects that will be validated. Use string keys with MongoDB-style dot notation to validate nested arrays and objects.
 
 For example:
 
 ```js
 MySchema = new SimpleSchema({
-    "mailingAddress.street": {
-        type: String
-    },
-    "mailingAddress.city": {
-        type: String
-    }
+  mailingAddress: {
+    type: Object
+  },
+  'mailingAddress.street': {
+    type: String
+  },
+  'mailingAddress.city': {
+    type: String
+  }
 });
 ```
 
-To indicate the presence of an array, use a `$`:
-
-```js
-MySchema = new SimpleSchema({
-    "addresses.$.street": {
-        type: String
-    },
-    "addresses.$.city": {
-        type: String
-    }
-});
-```
-
-In the examples above, we did not explicitly define the `mailingAddress` object or
-the `addresses` array or the `addresses.$` object. This is fine because they will be
-implicitly defined for you. However,
-__note that implicit objects and arrays of objects are assumed to be optional__.
-This means their required properties will only be required if the object
-itself is present in the document or modifier being validated. So in general, it's
-clearer if you explicitly define objects and arrays of objects in your schema.
-Here's an example of explicitly defining an array of objects such that it will be
-required and have a minimum and maximum array count:
+To indicate array items, use a `$`:
 
 ```js
 MySchema = new SimpleSchema({
@@ -704,23 +683,16 @@ You can use a technique similar to this to work around asynchronicity issues in 
 
 ### Getting a List of Invalid Keys and Validation Error Messages
 
-Call `myContext.validationErrors()` to get the full array of invalid key data. Each object
-in the array has two keys:
+_This is a reactive method._
+
+Call `myContext.validationErrors()` to get the full array of validation errors. Each object
+in the array has at least two keys:
 * `name`: The schema key as specified in the schema.
 * `type`: The type of error. See `SimpleSchema.ErrorTypes`.
 
-This is a reactive method.
+There may also be a `value` property, which is the value that was invalid.
 
-There is no `message` property. Once you see what keys are invalid, you can call `ctxt.keyErrorMessage(key)` to get a reactive message string.
-
-If you want to add a `message` property to the `validationErrors` array objects (which would no longer be reactive), you can do
-
-```js
-let ik = ctxt.validationErrors();
-ik = _.map(ik, function (o) {
-  return _.extend({message: ctxt.keyErrorMessage(o.name)}, o);
-});
-```
+There may be a `message` property, but usually the error message is constructed from message templates. You should call `ctxt.keyErrorMessage(key)` to get a reactive message string rather than using `error.message` directly.
 
 ### Other Validation Context Methods
 
@@ -731,23 +703,17 @@ invalid, or false if it is valid. This is a reactive method.
 key if it is invalid. If it is valid, this method returns an empty string. This
 is a reactive method.
 
-Call `myContext.resetValidation()` if you need to reset the validation context,
-clearing out any invalid field messages and making it valid.
+Call `myContext.reset()` if you need to reset the validation context, clearing out any invalid field messages and making it valid.
 
 ### Other SimpleSchema Methods
 
-Call `MySchema.schema([key])` to get the schema definition object. If you specify a
-key, then only the schema definition for that key is returned.
+Call `MySchema.schema([key])` to get the schema definition object. If you specify a key, then only the schema definition for that key is returned.
 
-Note that this may not match exactly what you passed into the SimpleSchema
-constructor. The schema definition object is normalized internally, and this
-method returns the normalized copy.
+Note that this may not match exactly what you passed into the SimpleSchema constructor. The schema definition object is normalized internally, and this method returns the normalized copy.
 
 ## Customizing Validation Messages
 
-To customize validation messages, pass a messages object to either
-`SimpleSchema.messages()` or `mySimpleSchemaInstance.messages()`. Instance-specific
-messages are given priority over global messages.
+To customize validation messages, pass a messages object to either `SimpleSchema.messages()` or `mySimpleSchemaInstance.messages()`. Instance-specific messages are given priority over global messages.
 
 The format of the messages object is:
 
