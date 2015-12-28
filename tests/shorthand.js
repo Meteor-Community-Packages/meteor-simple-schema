@@ -1,7 +1,8 @@
 Tinytest.add('SimpleSchema - shorthand', function (test) {
   let ss1 = new SimpleSchema({
     name: String,
-    count: Number
+    count: Number,
+    exp: /foo/
   });
 
   let ss1SchemaObj = ss1.schema();
@@ -15,6 +16,12 @@ Tinytest.add('SimpleSchema - shorthand', function (test) {
     type: Number,
     optional: false,
     label: 'Count',
+  });
+  test.equal(ss1SchemaObj.exp, {
+    type: String,
+    regEx: /foo/,
+    optional: false,
+    label: 'Exp',
   });
 
   let ss2 = new SimpleSchema({

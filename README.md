@@ -452,7 +452,8 @@ You can use shorthand for keys when your schema is extra super duper simple. For
 {
   name: String,
   age: Number,
-  friends: [String]
+  friends: [String],
+  exp: /foo/
 }
 ```
 
@@ -463,7 +464,8 @@ will automatically convert to this for you:
   name: {type: String},
   age: {type: Number},
   friends: {type: Array},
-  'friends.$': {type: String}
+  'friends.$': {type: String},
+  exp: {type: String, regEx: /foo/}
 }
 ```
 
