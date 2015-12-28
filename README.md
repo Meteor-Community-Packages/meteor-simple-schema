@@ -26,7 +26,6 @@ A simple, reactive schema validation package for Meteor. It's used by the [Colle
   - [optional](#optional)
   - [min/max](#minmax)
   - [exclusiveMin/exclusiveMax](#exclusiveminexclusivemax)
-  - [integer](#integer)
   - [minCount/maxCount](#mincountmaxcount)
   - [allowedValues](#allowedvalues)
   - [regEx](#regex)
@@ -92,8 +91,7 @@ BookSchema = new SimpleSchema({
     label: "Author"
   },
   copies: {
-    type: Number,
-    integer: true,
+    type: SimpleSchema.Integer,
     label: "Number of copies",
     min: 0
   },
@@ -270,8 +268,11 @@ Here are some specifics about the various rules you can define in your schema.
 
 ### type
 
+One of the following:
+
 * `String`
 * `Number`
+* `SimpleSchema.Integer`
 * `Boolean`
 * `Object`
 * `Array`
@@ -331,7 +332,7 @@ That last point can be confusing, so let's look at a couple examples:
 
 ### min/max
 
-* If `type` is `Number`, these rules define the minimum or maximum numeric value.
+* If `type` is `Number` or `SimpleSchema.Integer`, these rules define the minimum or maximum numeric value.
 * If `type` is `String`, these rules define the minimum or maximum string length.
 * If `type` is `Date`, these rules define the minimum or maximum date, inclusive.
 
@@ -340,10 +341,6 @@ You can alternatively provide a function that takes no arguments and returns the
 ### exclusiveMin/exclusiveMax
 
 Set to `true` to indicate that the range of numeric values, as set by min/max, are to be treated as an exclusive range. Set to `false` (default) to treat ranges as inclusive.
-
-### integer
-
-Set to `true` if `type` is `Number` and you want to allow only integers. The default is `false`, meaning that floats are allowed.
 
 ### minCount/maxCount
 

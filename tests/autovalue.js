@@ -6,8 +6,7 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
       type: String
     },
     someDefault: {
-      type: Number,
-      integer: true,
+      type: SimpleSchema.Integer,
       autoValue: function () {
         if (!this.isSet) {
           return 5;
@@ -15,8 +14,7 @@ Tinytest.add('SimpleSchema - autoValue - base', function (test) {
       }
     },
     updateCount: {
-      type: Number,
-      integer: true,
+      type: SimpleSchema.Integer,
       autoValue: function () {
         if (!this.operator) {
           return 0;
@@ -636,8 +634,7 @@ Tinytest.add('SimpleSchema - autoValue - issue 340', function (test) {
 
   var schema = new SimpleSchema({
     field1: {
-      type: Number,
-      integer: true,
+      type: SimpleSchema.Integer,
     },
     field2: {
       type: String,

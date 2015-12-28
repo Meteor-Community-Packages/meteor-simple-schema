@@ -23,8 +23,7 @@ var ss = new SimpleSchema({
     type: Boolean
   },
   number: {
-    type: Number,
-    integer: true,
+    type: SimpleSchema.Integer,
     optional: true
   },
   sub: {
@@ -32,8 +31,7 @@ var ss = new SimpleSchema({
     optional: true
   },
   'sub.number': {
-    type: Number,
-    integer: true,
+    type: SimpleSchema.Integer,
     optional: true
   },
   allowedNumbersArray: {
@@ -41,8 +39,7 @@ var ss = new SimpleSchema({
     optional: true
   },
   'allowedNumbersArray.$': {
-    type: Number,
-    integer: true,
+    type: SimpleSchema.Integer,
     allowedValues: [1, 2, 3]
   },
   date: {

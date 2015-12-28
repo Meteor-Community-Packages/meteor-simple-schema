@@ -77,8 +77,7 @@ var ss = new SimpleSchema({
     type: Boolean,
   },
   number: {
-    type: Number,
-    integer: true,
+    type: SimpleSchema.Integer,
     optional: true
   },
   sub: {
@@ -86,32 +85,27 @@ var ss = new SimpleSchema({
     optional: true
   },
   'sub.number': {
-    type: Number,
-    integer: true,
+    type: SimpleSchema.Integer,
     optional: true
   },
   minMaxNumber: {
-    type: Number,
-    integer: true,
+    type: SimpleSchema.Integer,
     optional: true,
     min: 10,
     max: 20
   },
   minZero: {
-    type: Number,
-    integer: true,
+    type: SimpleSchema.Integer,
     optional: true,
     min: 0
   },
   maxZero: {
-    type: Number,
-    integer: true,
+    type: SimpleSchema.Integer,
     optional: true,
     max: 0
   },
   minMaxNumberCalculated: {
-    type: Number,
-    integer: true,
+    type: SimpleSchema.Integer,
     optional: true,
     min: function() {
       return 10;
@@ -121,8 +115,7 @@ var ss = new SimpleSchema({
     }
   },
   minMaxNumberExclusive: {
-    type: Number,
-    integer: true,
+    type: SimpleSchema.Integer,
     optional: true,
     min: 10,
     max: 20,
@@ -130,8 +123,7 @@ var ss = new SimpleSchema({
     exclusiveMin: true
   },
   minMaxNumberInclusive: {
-    type: Number,
-    integer: true,
+    type: SimpleSchema.Integer,
     optional: true,
     min: 10,
     max: 20,
@@ -139,8 +131,7 @@ var ss = new SimpleSchema({
     exclusiveMin: false
   },
   allowedNumbers: {
-    type: Number,
-    integer: true,
+    type: SimpleSchema.Integer,
     optional: true,
     allowedValues: [1, 2, 3]
   },
@@ -149,8 +140,7 @@ var ss = new SimpleSchema({
     optional: true,
   },
   'allowedNumbersArray.$': {
-    type: Number,
-    integer: true,
+    type: SimpleSchema.Integer,
     allowedValues: [1, 2, 3]
   },
   decimal: {

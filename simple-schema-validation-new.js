@@ -33,14 +33,14 @@ function doTypeChecks(def, keyValue, op) {
   }
 
   // Number checks
-  else if (expectedType === Number) {
+  else if (expectedType === Number || expectedType === SimpleSchema.Integer) {
     if (typeof keyValue !== "number" || isNaN(keyValue)) {
       return SimpleSchema.ErrorTypes.EXPECTED_NUMBER;
     } else if (op !== "$inc" && def.max !== null && (!!def.exclusiveMax ? def.max <= keyValue : def.max < keyValue)) {
        return !!def.exclusiveMax ? SimpleSchema.ErrorTypes.MAX_NUMBER_EXCLUSIVE : SimpleSchema.ErrorTypes.MAX_NUMBER;
     } else if (op !== "$inc" && def.min !== null && (!!def.exclusiveMin ? def.min >= keyValue : def.min > keyValue)) {
        return !!def.exclusiveMin ? SimpleSchema.ErrorTypes.MIN_NUMBER_EXCLUSIVE : SimpleSchema.ErrorTypes.MIN_NUMBER;
-    } else if (def.integer && keyValue.toString().indexOf('.') > -1) {
+    } else if (expectedType === SimpleSchema.Integer && keyValue.toString().indexOf('.') > -1) {
       return SimpleSchema.ErrorTypes.MUST_BE_INTEGER;
     }
   }
@@ -332,7 +332,7 @@ function convertModifierToDoc(mod, schema, isUpsert) {
         // TODO correct value type based on schema type
         if (def.type === Boolean) {
           setVal = true;
-        } else if (def.type === Number) {
+        } else if (def.type === Number || def.type === SimpleSchema.Integer) {
           setVal = def.min || 0;
         } else if (def.type === Date) {
           setVal = def.min || new Date();
