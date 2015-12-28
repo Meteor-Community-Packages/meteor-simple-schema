@@ -340,49 +340,27 @@ By default, all keys are required. Set `optional: true` to change that.
 With complex keys, it might be difficult to understand what "required" means.
 Here's a brief explanation of how requiredness is interpreted:
 
-* If `type` is `Array` or is an array (any type surrounded by array brackets),
-then "required" means that key must have a value, but an empty array is fine.
-(If an empty array is *not* fine, add the `minCount: 1` option.)
-* For items within an array, or when the key name ends with ".$", the `optional`
-option has no effect. That is, something cannot be "required" to be in an array.
-* If a key is required at a deeper level, the key must have a value *only if*
-the object it belongs to is present.
-* When the object being validated is a Mongo modifier object, changes that
-would unset or `null` a required key result in validation errors.
+* If `type` is `Array`, then "required" means that key must have a value, but an empty array is fine. (If an empty array is *not* fine, add the `minCount: 1` option.)
+* For array items (when the key name ends with ".$"), the `optional` option has no effect. That is, something cannot be "required" to be in an array.
+* If a key is required at a deeper level, the key must have a value *only if* the object it belongs to is present.
+* When the object being validated is a Mongo modifier object, changes that would unset or `null` a required key result in validation errors.
 
 That last point can be confusing, so let's look at a couple examples:
 
-* Say you have a required key "friends.address.city" but "friends.address" is
-optional. If "friends.address" is set in the object you're validating, but
-"friends.address.city" is not, there is a validation error. However, if
-"friends.address" is *not* set, then there is no validation error for
-"friends.address.city" because the object it belongs to is not present.
-* If you have a required key "friends.$.name", but the `friends` array has
-no objects in the object you are validating, there is no validation error
-for "friends.$.name". When the `friends` array *does* have objects,
-every present object is validated, and each object could potentially have a
-validation error if it is missing the `name` property. For example, when there
-are two objects in the friends array and both are missing the `name` property,
-there will be a validation error for both "friends.0.name" and "friends.1.name".
+* Say you have a required key "friends.address.city" but "friends.address" is optional. If "friends.address" is set in the object you're validating, but "friends.address.city" is not, there is a validation error. However, if "friends.address" is *not* set, then there is no validation error for "friends.address.city" because the object it belongs to is not present.
+* If you have a required key "friends.$.name", but the `friends` array has no objects in the object you are validating, there is no validation error for "friends.$.name". When the `friends` array *does* have objects, every present object is validated, and each object could potentially have a validation error if it is missing the `name` property. For example, when there are two objects in the friends array and both are missing the `name` property, there will be a validation error for both "friends.0.name" and "friends.1.name".
 
 ### min/max
 
-* If `type` is `Number` or `[Number]`, these rules define the minimum or
-maximum numeric value.
-* If `type` is `String` or `[String]`, these rules define the minimum or
-maximum string length.
-* If `type` is `Date` or `[Date]`, these rules define the minimum or
-maximum date, inclusive.
+* If `type` is `Number`, these rules define the minimum or maximum numeric value.
+* If `type` is `String`, these rules define the minimum or maximum string length.
+* If `type` is `Date`, these rules define the minimum or maximum date, inclusive.
 
-You can alternatively provide a function that takes no arguments and returns
-the appropriate minimum or maximum value. This is useful, for example, if
-the minimum Date for a field should be "today".
+You can alternatively provide a function that takes no arguments and returns the appropriate minimum or maximum value. This is useful, for example, if the minimum Date for a field should be "today".
 
 ### exclusiveMin/exclusiveMax
 
-Set to `true` to indicate that the range of numeric values, as set by min/max,
-are to be treated as an exclusive range. Set to `false` (default) to treat ranges as
-inclusive.
+Set to `true` to indicate that the range of numeric values, as set by min/max, are to be treated as an exclusive range. Set to `false` (default) to treat ranges as inclusive.
 
 ### integer
 
@@ -390,21 +368,17 @@ Set to `true` if `type` is `Number` and you want to allow only integers. The def
 
 ### minCount/maxCount
 
-Define the minimum or maximum array length. Used only when type is an array
-or is `Array`.
+Define the minimum or maximum array length. Used only when type is `Array`.
 
 ### allowedValues
 
-An array of values that are allowed. A key will be invalid if its value
-is not one of these.
+An array of values that are allowed. A key will be invalid if its value is not one of these.
 
 ### regEx
 
-Any regular expression that must be matched for the key to be valid, or
-an array of regular expressions that will be tested in order.
+Any regular expression that must be matched for the key to be valid, or an array of regular expressions that will be tested in order.
 
-The `SimpleSchema.RegEx` object defines standard regular
-expressions you can use as the value for the `regEx` key.
+The `SimpleSchema.RegEx` object defines standard regular expressions you can use as the value for the `regEx` key.
 - `SimpleSchema.RegEx.Email` for emails (uses a permissive regEx recommended by W3C, which most browsers use)
 - `SimpleSchema.RegEx.Domain` for external domains and the domain only (requires a tld like `.com`)
 - `SimpleSchema.RegEx.WeakDomain` for less strict domains and IPv4 and IPv6
@@ -415,9 +389,7 @@ expressions you can use as the value for the `regEx` key.
 - `SimpleSchema.RegEx.Id` for IDs generated by `Random.id()` of the random package, also usable to validate a relation id.
 - `SimpleSchema.RegEx.ZipCode` for 5- and 9-digit ZIP codes
 
-Feel free to add more with a pull request. If
-you use the built-in e-mail or url validation with an AutoForm, the
-form input will be of type `email` or `url`, respectively, by default.
+Feel free to add more with a pull request.
 
 ### blackbox
 
@@ -671,6 +643,7 @@ name (non-generic schema key) as the only argument. The return object will have
     * `siblingField()`: Use this method to get information about other fields that
 have the same parent object. Works the same way as `field()`. This is helpful
 when you use sub-schemas or when you're dealing with arrays of objects.
+    * `addValidationErrors(errors)`: Call this to add validation errors for any key. In general, you should use this to add errors for other keys. To add an error for the current key, return the error type string. If you do use this to add an error for the current key, return `false` from your custom validation function.
 
 NOTE: If you need to do some custom validation on the server and then display errors back
 on the client, refer to the [Asynchronous Custom Validation on the Client](#asynchronous-custom-validation-on-the-client) section.
@@ -684,7 +657,7 @@ If you want to reactively display an arbitrary validation error and it is not po
 ```
 
 * `name`: The schema key as specified in the schema.
-* `type`: The type of error. Any string you want, or one of the strings in the `SimpleSchema.ErrorTypes` enum.
+* `type`: The type of error. Any string you want, or one of the strings in the `SimpleSchema.ErrorTypes` list.
 * `value`: Optional. The value that was not valid. Will be used to replace the
 `[value]` placeholder in error messages.
 
@@ -712,7 +685,10 @@ username: {
     if (Meteor.isClient && this.isSet) {
       Meteor.call("accountsIsUsernameAvailable", this.value, function (error, result) {
         if (!result) {
-          Meteor.users.simpleSchema().namedContext("createUserForm").addValidationErrors([{name: "username", type: "notUnique"}]);
+          Meteor.users.simpleSchema().namedContext("createUserForm").addValidationErrors([{
+            name: "username",
+            type: "notUnique"
+          }]);
         }
       });
     }
