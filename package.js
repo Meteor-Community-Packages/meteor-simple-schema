@@ -54,6 +54,7 @@ Package.onTest(function(api) {
     'underscore',
     'check',
     'ecmascript@0.1.0',
+    'mongo',
   ]);
 
   api.addFiles([
