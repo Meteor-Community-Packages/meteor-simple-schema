@@ -108,7 +108,7 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
   var mDoc; // for caching the MongoObject if necessary
 
   // Validation function called for each affected key
-  function validate(val, affectedKey, affectedKeyGeneric, def, op, skipRequiredCheck, isInArrayItemObject, isInSubObject) {
+  function validate(val, affectedKey, affectedKeyGeneric, def, op, skipRequiredCheck, isInArrayItemObject, isInSubObject, context) {
 
     // Get the schema for this key, marking invalid if there isn't one.
     if (!def) {
@@ -167,32 +167,7 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
     var validators = def.custom ? [def.custom] : [];
     validators = validators.concat(ss._validators).concat(SimpleSchema._validators);
     _.every(validators, function(validator) {
-      var errorType = validator.call(_.extend({
-        key: affectedKey,
-        genericKey: affectedKeyGeneric,
-        definition: def,
-        isSet: (val !== void 0),
-        value: val,
-        operator: op,
-        field: function(fName) {
-          mDoc = mDoc || new MongoObject(obj, ss._blackboxKeys); //create if necessary, cache for speed
-          var keyInfo = mDoc.getInfoForKey(fName) || {};
-          return {
-            isSet: (keyInfo.value !== void 0),
-            value: keyInfo.value,
-            operator: keyInfo.operator
-          };
-        },
-        siblingField: function(fName) {
-          mDoc = mDoc || new MongoObject(obj, ss._blackboxKeys); //create if necessary, cache for speed
-          var keyInfo = mDoc.getInfoForKey(fieldParentName + fName) || {};
-          return {
-            isSet: (keyInfo.value !== void 0),
-            value: keyInfo.value,
-            operator: keyInfo.operator
-          };
-        }
-      }, extendedCustomContext || {}));
+      var errorType = validator.call(context);
       if (typeof errorType === "string") {
         invalidKeys.push(Utility.errorObject(errorType, affectedKey, val, def, ss));
         return false;
@@ -216,11 +191,13 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
       var lastDot = affectedKey.lastIndexOf('.');
       var fieldParentName = lastDot === -1 ? '' : affectedKey.slice(0, lastDot + 1);
       affectedKeyGeneric = SimpleSchema._makeGeneric(affectedKey);
-      def = ss.getDefinition(affectedKey, null, _.extend({
+      
+      var context = _.extend({
         key: affectedKey,
         genericKey: affectedKeyGeneric,
         isSet: (val !== void 0),
         value: val,
+        operator: operator,
         field: function(fName) {
           mDoc = mDoc || new MongoObject(obj, ss._blackboxKeys); //create if necessary, cache for speed
           var keyInfo = mDoc.getInfoForKey(fName) || {};
@@ -239,7 +216,10 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
             operator: keyInfo.operator
           };
         }
-      }, extendedCustomContext || {}));
+      }, extendedCustomContext || {});
+      
+      def = ss.getDefinition(affectedKey, null, context);
+      context.definition = def;
 
       // Perform validation for this key
       if (!keyToValidate || keyToValidate === affectedKey || keyToValidate === affectedKeyGeneric) {
@@ -249,7 +229,7 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
         var skipRequiredCheck = _.some(setKeys, function(sk) {
           return (sk.slice(0, affectedKey.length + 1) === affectedKey + ".");
         });
-        validate(val, affectedKey, affectedKeyGeneric, def, operator, skipRequiredCheck, isInArrayItemObject, isInSubObject);
+        validate(val, affectedKey, affectedKeyGeneric, def, operator, skipRequiredCheck, isInArrayItemObject, isInSubObject, context);
       }
     }
 
