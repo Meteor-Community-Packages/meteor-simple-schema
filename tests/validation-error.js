@@ -26,6 +26,21 @@ Tinytest.add('SimpleSchema - ValidationErrors', function (test) {
   }
 
   try {
+    SimpleSchema.validate({int: '5'}, schema);
+  } catch (error) {
+    verify(error);
+  }
+
+  try {
+    SimpleSchema.validate({int: '5'}, {
+      int: SimpleSchema.Integer,
+      string: String,
+    });
+  } catch (error) {
+    verify(error);
+  }
+
+  try {
     schema.validator()({int: '5'});
   } catch (error) {
     verify(error);

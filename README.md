@@ -5,7 +5,7 @@ SimpleSchema
 
 *aldeed:simple-schema*
 
-A simple, reactive schema validation package for Meteor. It's used by the [Collection2](https://github.com/aldeed/meteor-collection2) and [AutoForm](https://github.com/aldeed/meteor-autoform) packages, but you can use it by itself, too.
+A simple schema validation package for Meteor that supports reactive validation contexts and direct validation of MongoDB update modifier objects. It's used by the [Collection2](https://github.com/aldeed/meteor-collection2) and [AutoForm](https://github.com/aldeed/meteor-autoform) packages, but you can use it by itself, too.
 
 ## Table of Contents
 
@@ -589,39 +589,52 @@ any custom validation functions that are run during validation. See the
 
 ### Validating and Throwing ValidationErrors
 
-- Call `mySimpleSchema.validate(doc)` to validate `doc` against the schema and throw a `ValidationError` if invalid. This is like `check(doc, mySimpleSchema)` but without the `check` dependency and with the ability to pass full schema error details back to a callback on the client.
+- Call `mySimpleSchema.validate(obj, options)` to validate `obj` against the schema and throw a `ValidationError` if invalid.
+- Call `SimpleSchema.validate(obj, schema, options)` static function as a shortcut for `mySimpleSchema.validate` if you don't want to create `mySimpleSchema` first. The `schema` argument can be just the schema object, in which case it will be passed to the `SimpleSchema` constructor for you. This is like `check(obj, schema)` but without the `check` dependency and with the ability to pass full schema error details back to a callback on the client.
 - Call `mySimpleSchema.validator()` to get a function that calls `mySimpleSchema.validate` for whatever object is passed to it. This means you can do `validate: mySimpleSchema.validator()` in the [mdg:method](https://github.com/meteor/method) package.
 
 ### Custom Validation
 
-There are three ways to attach custom validation methods:
+There are three ways to attach custom validation methods.
 
-* To add a custom validation function that is called for all keys in all
-defined schemas, use `SimpleSchema.addValidator(myFunction)`.
-* To add a custom validation function that is called for all keys for a
-specific SimpleSchema instance, use `mySimpleSchema.addValidator(myFunction)`.
-* To add a custom validation function that is called for a specific key in
-a specific schema, use the `custom` option in the schema definition for that key.
+To add a custom validation function that is called for ALL keys in ALL schemas (for example, to publish a package that adds global support for some additional rule):
 
-All custom validation functions work the same way and have the same `this` context:
+```js
+SimpleSchema.addValidator(myFunction);
+```
 
-* Do any necessary custom validation, and return a String describing the error type if you
-determine that the value is invalid. Any non-string return value means the value is valid.
-* The error type string can be one of the [built-in strings](#manually-adding-a-validation-error) or any string you want. If you return a built-in string, it's best to use the `SimpleSchema.ErrorTypes` enum to reference it. If you return a custom string, you'll usually want to [define a message for it](#customizing-validation-messages).
-* Within the function, `this` provides the following properties:
-    * `key`: The name of the schema key (e.g., "addresses.0.street")
-    * `genericKey`: The generic name of the schema key (e.g., "addresses.$.street")
-    * `definition`: The schema definition object.
-    * `isSet`: Does the object being validated have this key set?
-    * `value`: The value to validate.
-    * `operator`: The Mongo operator for which we're doing validation. Might be `null`.
-    * `field()`: Use this method to get information about other fields. Pass a field
-name (non-generic schema key) as the only argument. The return object will have
-`isSet`, `value`, and `operator` properties for that field.
-    * `siblingField()`: Use this method to get information about other fields that
-have the same parent object. Works the same way as `field()`. This is helpful
-when you use sub-schemas or when you're dealing with arrays of objects.
-    * `addValidationErrors(errors)`: Call this to add validation errors for any key. In general, you should use this to add errors for other keys. To add an error for the current key, return the error type string. If you do use this to add an error for the current key, return `false` from your custom validation function.
+To add a custom validation function that is called for ALL keys for ONE schema:
+
+```js
+let mySimpleSchema = new SimpleSchema({ ... });
+mySimpleSchema.addValidator(myFunction);
+```
+
+To add a custom validation function that is called for ONE key in ONE schema:
+
+```js
+let mySimpleSchema = new SimpleSchema({
+  someKey: {
+    type: String,
+    custom: myFunction,
+  }
+});
+```
+
+All custom validation functions work the same way. First, do the necessary custom validation, use `this` to get whatever information you need. Then, if valid, return `undefined`. If invalid, return an error type string. The error type string can be one of the [built-in strings](#manually-adding-a-validation-error) or any string you want.
+* If you return a built-in string, it's best to use the `SimpleSchema.ErrorTypes` constants.
+* If you return a custom string, you'll usually want to [define a message for it](#customizing-validation-messages).
+
+Within your custom validation function, `this` provides the following properties:
+* `key`: The name of the schema key (e.g., "addresses.0.street")
+* `genericKey`: The generic name of the schema key (e.g., "addresses.$.street")
+* `definition`: The schema definition object.
+* `isSet`: Does the object being validated have this key set?
+* `value`: The value to validate.
+* `operator`: The Mongo operator for which we're doing validation. Might be `null`.
+* `field()`: Use this method to get information about other fields. Pass a field name (non-generic schema key) as the only argument. The return object will have `isSet`, `value`, and `operator` properties for that field.
+* `siblingField()`: Use this method to get information about other fields that have the same parent object. Works the same way as `field()`. This is helpful when you use sub-schemas or when you're dealing with arrays of objects.
+* `addValidationErrors(errors)`: Call this to add validation errors for any key. In general, you should use this to add errors for other keys. To add an error for the current key, return the error type string. If you do use this to add an error for the current key, return `false` from your custom validation function.
 
 NOTE: If you need to do some custom validation on the server and then display errors back
 on the client, refer to the [Asynchronous Custom Validation on the Client](#asynchronous-custom-validation-on-the-client) section.
@@ -639,8 +652,7 @@ If you want to reactively display an arbitrary validation error and it is not po
 * `value`: Optional. The value that was not valid. Will be used to replace the
 `[value]` placeholder in error messages.
 
-If you use a custom string for `type`, be sure to define a message for it.
-(See [Customizing Validation Messages](#customizing-validation-messages)).
+If you use a custom string for `type`, be sure to define a message for it. (See [Customizing Validation Messages](#customizing-validation-messages)).
 
 Example:
 
