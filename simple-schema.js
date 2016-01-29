@@ -1179,6 +1179,6 @@ SimpleSchema.prototype.validator = function (options) {
   options = options || {};
   return function (obj) {
     if (options.clean === true) self.clean(obj, options);
-    self.validate(obj);
+    self.validate(obj, options);
   };
 };
