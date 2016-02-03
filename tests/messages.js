@@ -48,8 +48,8 @@ Tinytest.add('SimpleSchema - messages - extend regEx', function (test) {
 
   test.equal(SimpleSchema._globalMessages.regEx, [
     {msg: "[label] failed regular expression validation"},
-    {exp: SimpleSchema.RegEx.Email, msg: "[label] must be a valid e-mail address"},
-    {exp: SimpleSchema.RegEx.WeakEmail, msg: "[label] must be a valid e-mail address"},
+    {exp: SimpleSchema.RegEx.Email, msg: "[label] must be a valid email address"},
+    {exp: SimpleSchema.RegEx.WeakEmail, msg: "[label] must be a valid email address"},
     {exp: SimpleSchema.RegEx.Domain, msg: "[label] must be a valid domain"},
     {exp: SimpleSchema.RegEx.WeakDomain, msg: "[label] must be a valid domain"},
     {exp: SimpleSchema.RegEx.IP, msg: "[label] must be a valid IPv4 or IPv6 address"},
@@ -67,8 +67,8 @@ Tinytest.add('SimpleSchema - messages - extend regEx', function (test) {
 
   test.equal(SimpleSchema._globalMessages.regEx, [
     {msg: "[label] failed regular expression validation"},
-    {exp: SimpleSchema.RegEx.Email, msg: "[label] must be a valid e-mail address"},
-    {exp: SimpleSchema.RegEx.WeakEmail, msg: "[label] must be a valid e-mail address"},
+    {exp: SimpleSchema.RegEx.Email, msg: "[label] must be a valid email address"},
+    {exp: SimpleSchema.RegEx.WeakEmail, msg: "[label] must be a valid email address"},
     {exp: SimpleSchema.RegEx.Domain, msg: "[label] must be a valid domain"},
     {exp: SimpleSchema.RegEx.WeakDomain, msg: "[label] must be a valid domain"},
     {exp: SimpleSchema.RegEx.IP, msg: "[label] must be a valid IPv4 or IPv6 address"},
@@ -87,8 +87,8 @@ Tinytest.add('SimpleSchema - messages - extend regEx', function (test) {
 
   test.equal(SimpleSchema._globalMessages.regEx, [
     {msg: "[label] failed regular expression validation"},
-    {exp: SimpleSchema.RegEx.Email, msg: "[label] must be a valid e-mail address"},
-    {exp: SimpleSchema.RegEx.WeakEmail, msg: "[label] must be a valid e-mail address"},
+    {exp: SimpleSchema.RegEx.Email, msg: "[label] must be a valid email address"},
+    {exp: SimpleSchema.RegEx.WeakEmail, msg: "[label] must be a valid email address"},
     {exp: SimpleSchema.RegEx.Domain, msg: "[label] must be a valid domain"},
     {exp: SimpleSchema.RegEx.WeakDomain, msg: "[label] must be a valid domain"},
     {exp: SimpleSchema.RegEx.IP, msg: "[label] must be a valid IPv4 or IPv6 address"},
@@ -107,8 +107,8 @@ Tinytest.add('SimpleSchema - messages - extend regEx', function (test) {
 
   test.equal(SimpleSchema._globalMessages.regEx, [
     {msg: "custom default"},
-    {exp: SimpleSchema.RegEx.Email, msg: "[label] must be a valid e-mail address"},
-    {exp: SimpleSchema.RegEx.WeakEmail, msg: "[label] must be a valid e-mail address"},
+    {exp: SimpleSchema.RegEx.Email, msg: "[label] must be a valid email address"},
+    {exp: SimpleSchema.RegEx.WeakEmail, msg: "[label] must be a valid email address"},
     {exp: SimpleSchema.RegEx.Domain, msg: "[label] must be a valid domain"},
     {exp: SimpleSchema.RegEx.WeakDomain, msg: "[label] must be a valid domain"},
     {exp: SimpleSchema.RegEx.IP, msg: "[label] must be a valid IPv4 or IPv6 address"},

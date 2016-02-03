@@ -80,7 +80,7 @@ let ssr = new SimpleSchema({
 });
 
 ssr.messages({
-  "regEx requiredEmail": "[label] is not a valid e-mail address",
+  "regEx requiredEmail": "[label] is not a valid email address",
   "regEx requiredUrl": "[label] is not a valid URL"
 });
 
@@ -260,7 +260,7 @@ let ss = new SimpleSchema({
 
 ss.messages({
   minCount: "blah",
-  "regEx email": "[label] is not a valid e-mail address",
+  "regEx email": "[label] is not a valid email address",
   "regEx url": "[label] is not a valid URL"
 });
 
@@ -2715,7 +2715,7 @@ Tinytest.add("SimpleSchema - Built-In RegEx and Messages", function (test) {
     email: "foo"
   });
   test.length(c1.validationErrors(), 1);
-  test.equal(c1.keyErrorMessage("email"), "Email must be a valid e-mail address");
+  test.equal(c1.keyErrorMessage("email"), "Email must be a valid email address");
 
   c1.validate({
     domain: "foo"
