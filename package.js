@@ -12,11 +12,8 @@ Package.onUse(function(api) {
     'check@1.0.0',
     'random@1.0.0',
     'ecmascript@0.1.0',
+    'mdg:validation-error@0.5.1',
   ]);
-
-  api.use('mdg:validation-error@0.2.0', {
-    unordered: true
-  });
 
   api.addFiles([
     'lib/string-polyfills.js',
