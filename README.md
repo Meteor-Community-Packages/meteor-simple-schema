@@ -408,6 +408,7 @@ an array of regular expressions that will be tested in order.
 The `SimpleSchema.RegEx` object defines standard regular
 expressions you can use as the value for the `regEx` key.
 - `SimpleSchema.RegEx.Email` for emails (uses a permissive regEx recommended by W3C, which most browsers use)
+- `SimpleSchema.RegEx.EmailWithTLD` for emails (the same like `Email` but needs a tld like `.com`)
 - `SimpleSchema.RegEx.Domain` for external domains and the domain only (requires a tld like `.com`)
 - `SimpleSchema.RegEx.WeakDomain` for less strict domains and IPv4 and IPv6
 - `SimpleSchema.RegEx.IP` for IPv4 or IPv6
@@ -997,7 +998,8 @@ Anyone is welcome to contribute. Fork, make and test your changes
 
 (Add your name if it's missing.)
 
-- @mquandalle
-- @Nemo64
+- [@mquandalle](https://github.com/mquandalle)
+- [@Nemo64](https://github.com/Nemo64)
+- [@ffflorian](https://github.com/ffflorian)
 
 [![Support via Gittip](https://rawgithub.com/twolfson/gittip-badge/0.2.0/dist/gittip.png)](https://www.gittip.com/aldeed/)

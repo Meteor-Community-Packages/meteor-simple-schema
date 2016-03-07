@@ -9,6 +9,11 @@ A simple, reactive schema validation smart package for Meteor.
 
 - [simple-schema](#simple-schema)
   - [Change Log](#change-log)
+    - [1.5.4](#154)
+    - [1.5.3](#153)
+    - [1.5.2](#152)
+    - [1.5.1](#151)
+    - [1.5.0](#150)
     - [1.4.0](#140)
     - [1.3.3](#133)
     - [1.3.2](#132)
@@ -87,6 +92,10 @@ A simple, reactive schema validation smart package for Meteor.
 ## Change Log
 
 NOTE: There was an accidental breaking change in v1.4.0. Probably only aldeed:collection2 is affected. If you use aldeed:simple-schema v1.4.0 or higher along with aldeed:collection2, be sure to use aldeed:collection2 v2.7.1 or higher.
+
+### 1.5.4
+
+Add `SimpleSchema.RegEx.EmailWithTLD`
 
 ### 1.5.3
 
