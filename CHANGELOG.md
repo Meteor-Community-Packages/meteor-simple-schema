@@ -101,6 +101,7 @@ A simple, reactive schema validation smart package for Meteor.
 - `decimal` is no longer a valid schema option. Instead, decimal/float is the default, and you can set the `type` to `SimpleSchema.Integer` to specify that you want only integers.
 - In custom validation functions, you can now do `this.addValidationErrors(errors)`, where errors is an array of error objects. This allows you to add errors for keys other than the one you are validating.
 - The `SimpleSchema.ErrorTypes` object now contains constants for all of the built-in error type strings.
+- If you returned the error strings "expectedString", "expectedNumber", "expectedBoolean", "expectedArray", "expectedObject", or "expectedConstructor" prior to 2.0, you should now return SimpleSchema.ErrorTypes.EXPECTED_TYPE instead.
 
 ### 1.4.0
 

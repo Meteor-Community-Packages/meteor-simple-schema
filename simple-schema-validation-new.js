@@ -1,10 +1,11 @@
 /* global Utility */
 /* global _ */
 /* global SimpleSchema */
-/* global MongoObject */
 /* global Meteor */
 /* global Random */
 /* global doValidation2:true */
+
+import MongoObject from 'mongo-object';
 
 function doTypeChecks(def, keyValue, op) {
   let expectedType = def.type;
@@ -12,7 +13,7 @@ function doTypeChecks(def, keyValue, op) {
   // String checks
   if (expectedType === String) {
     if (typeof keyValue !== "string") {
-      return SimpleSchema.ErrorTypes.EXPECTED_STRING;
+      return SimpleSchema.ErrorTypes.EXPECTED_TYPE;
     } else if (def.max !== null && def.max < keyValue.length) {
       return SimpleSchema.ErrorTypes.MAX_STRING;
     } else if (def.min !== null && def.min > keyValue.length) {
@@ -35,7 +36,7 @@ function doTypeChecks(def, keyValue, op) {
   // Number checks
   else if (expectedType === Number || expectedType === SimpleSchema.Integer) {
     if (typeof keyValue !== "number" || isNaN(keyValue)) {
-      return SimpleSchema.ErrorTypes.EXPECTED_NUMBER;
+      return SimpleSchema.ErrorTypes.EXPECTED_TYPE;
     } else if (op !== "$inc" && def.max !== null && (!!def.exclusiveMax ? def.max <= keyValue : def.max < keyValue)) {
        return !!def.exclusiveMax ? SimpleSchema.ErrorTypes.MAX_NUMBER_EXCLUSIVE : SimpleSchema.ErrorTypes.MAX_NUMBER;
     } else if (op !== "$inc" && def.min !== null && (!!def.exclusiveMin ? def.min >= keyValue : def.min > keyValue)) {
@@ -48,21 +49,21 @@ function doTypeChecks(def, keyValue, op) {
   // Boolean checks
   else if (expectedType === Boolean) {
     if (typeof keyValue !== "boolean") {
-      return SimpleSchema.ErrorTypes.EXPECTED_BOOLEAN;
+      return SimpleSchema.ErrorTypes.EXPECTED_TYPE;
     }
   }
 
   // Object checks
   else if (expectedType === Object) {
     if (!Utility.isBasicObject(keyValue)) {
-      return SimpleSchema.ErrorTypes.EXPECTED_OBJECT;
+      return SimpleSchema.ErrorTypes.EXPECTED_TYPE;
     }
   }
 
   // Array checks
   else if (expectedType === Array) {
     if (!_.isArray(keyValue)) {
-      return SimpleSchema.ErrorTypes.EXPECTED_ARRAY;
+      return SimpleSchema.ErrorTypes.EXPECTED_TYPE;
     } else if (def.minCount !== null && keyValue.length < def.minCount) {
       return SimpleSchema.ErrorTypes.MIN_COUNT;
     } else if (def.maxCount !== null && keyValue.length > def.maxCount) {
@@ -75,7 +76,7 @@ function doTypeChecks(def, keyValue, op) {
 
     // Generic constructor checks
     if (!(keyValue instanceof expectedType)) {
-      return SimpleSchema.ErrorTypes.EXPECTED_CONSTRUCTOR;
+      return SimpleSchema.ErrorTypes.EXPECTED_TYPE;
     }
 
     // Date checks

@@ -26,19 +26,34 @@ Tinytest.add('SimpleSchema - messages - issue 363', function (test) {
     'required category': 'Specific custom message for category field'
   });
 
-  var msg = Post.messageForError(SimpleSchema.ErrorTypes.REQUIRED, 'title');
+  var msg = Post.messageForError({
+    type: SimpleSchema.ErrorTypes.REQUIRED,
+    name: 'title',
+  });
   test.equal(msg, 'Generic custom message');
 
-  msg = Post.messageForError(SimpleSchema.ErrorTypes.REQUIRED, 'category');
+  msg = Post.messageForError({
+    type: SimpleSchema.ErrorTypes.REQUIRED,
+    name: 'category',
+  });
   test.equal(msg, 'Specific custom message for category field');
 
-  msg = Post.messageForError(SimpleSchema.ErrorTypes.REQUIRED, 'comments');
+  msg = Post.messageForError({
+    type: SimpleSchema.ErrorTypes.REQUIRED,
+    name: 'comments',
+  });
   test.equal(msg, 'Generic custom message');
 
-  msg = Post.messageForError(SimpleSchema.ErrorTypes.REQUIRED, 'comments.0.nick');
+  msg = Post.messageForError({
+    type: SimpleSchema.ErrorTypes.REQUIRED,
+    name: 'comments.0.nick',
+  });
   test.equal(msg, 'Generic custom message');
 
-  msg = Post.messageForError(SimpleSchema.ErrorTypes.REQUIRED, 'comments.0.content');
+  msg = Post.messageForError({
+    type: SimpleSchema.ErrorTypes.REQUIRED,
+    name: 'comments.0.content',
+  });
   test.equal(msg, 'Generic custom message');
 });
 

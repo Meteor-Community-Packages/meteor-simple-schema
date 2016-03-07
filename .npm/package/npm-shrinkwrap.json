@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "mongo-object": {
+      "version": "0.0.1",
+      "dependencies": {
+        "lodash": {
+          "version": "4.6.1"
+        }
+      }
+    }
+  }
+}

@@ -783,12 +783,7 @@ SimpleSchema.messages({
   maxCount: "You cannot specify more than [maxCount] values",
   noDecimal: "[label] must be an integer",
   notAllowed: "[value] is not an allowed value",
-  expectedString: "[label] must be a string",
-  expectedNumber: "[label] must be a number",
-  expectedBoolean: "[label] must be a boolean",
-  expectedArray: "[label] must be an array",
-  expectedObject: "[label] must be an object",
-  expectedConstructor: "[label] must be a [type]",
+  expectedType: "[label] must be a [type]",
   regEx: [
     {msg: "[label] failed regular expression validation"},
     {exp: SimpleSchema.RegEx.Email, msg: "[label] must be a valid email address"},
