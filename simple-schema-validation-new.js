@@ -1,11 +1,5 @@
-/* global Utility */
-/* global _ */
-/* global SimpleSchema */
-/* global Meteor */
-/* global Random */
-/* global doValidation2:true */
-
 import MongoObject from 'mongo-object';
+import { appendAffectedKey, looksLikeModifier, safariBugFix, shouldCheck } from './utility.js';
 
 function doTypeChecks(def, keyValue, op) {
   let expectedType = def.type;
@@ -55,7 +49,7 @@ function doTypeChecks(def, keyValue, op) {
 
   // Object checks
   else if (expectedType === Object) {
-    if (!Utility.isBasicObject(keyValue)) {
+    if (!MongoObject.isBasicObject(keyValue)) {
       return SimpleSchema.ErrorTypes.EXPECTED_TYPE;
     }
   }
@@ -72,7 +66,7 @@ function doTypeChecks(def, keyValue, op) {
   }
 
   // Constructor function checks
-  else if (expectedType instanceof Function || Utility.safariBugFix(expectedType)) {
+  else if (expectedType instanceof Function || safariBugFix(expectedType)) {
 
     // Generic constructor checks
     if (!(keyValue instanceof expectedType)) {
@@ -114,7 +108,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
     // would be in a worst case scenario. Then we validate that doc
     // so that we don't have to validate the modifier object directly.
     obj = convertModifierToDoc(obj, ss.schema(), isUpsert);
-  } else if (Utility.looksLikeModifier(obj)) {
+  } else if (looksLikeModifier(obj)) {
     throw new Error("When the validation object contains mongo operators, you must set the modifier option to true");
   }
 
@@ -154,7 +148,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
     }
 
     // Value checks are not necessary for null or undefined values
-    if (Utility.isNotNullOrUndefined(val)) {
+    if (val !== undefined && val !== null) {
 
       // Check that value is of the correct type
       let typeError = doTypeChecks(def, val, op);
@@ -219,7 +213,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
         });
         return false;
       }
-      if (Utility.isBasicObject(result)) {
+      if (MongoObject.isBasicObject(result)) {
         validationErrors.push(result);
         return false;
       }
@@ -262,7 +256,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
     }
 
     // Loop through object keys
-    else if (Utility.isBasicObject(val) && (!def || !def.blackbox)) {
+    else if (MongoObject.isBasicObject(val) && (!def || !def.blackbox)) {
 
       // Get list of present keys
       let presentKeys = _.keys(val);
@@ -278,8 +272,8 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
 
       // Check all keys in the merged list
       _.each(keysToCheck, function(key) {
-        if (Utility.shouldCheck(key)) {
-          checkObj(val[key], Utility.appendAffectedKey(affectedKey, key), skipRequiredCheck, strictRequiredCheck);
+        if (shouldCheck(key)) {
+          checkObj(val[key], appendAffectedKey(affectedKey, key), skipRequiredCheck, strictRequiredCheck);
         }
       });
     }
