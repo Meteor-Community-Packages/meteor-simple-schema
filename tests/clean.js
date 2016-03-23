@@ -1,3 +1,5 @@
+import { SimpleSchema } from 'meteor/aldeed:simple-schema';
+
 // Custom type for custom type checking
 Address = function(city, state) {
   this.city = city;

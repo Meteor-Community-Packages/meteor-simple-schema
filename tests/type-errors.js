@@ -1,3 +1,5 @@
+import { SimpleSchema } from 'meteor/aldeed:simple-schema';
+
 var ss = new SimpleSchema({
   string: {
     type: String,

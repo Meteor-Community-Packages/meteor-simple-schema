@@ -1,5 +1,4 @@
-/* global SimpleSchema */
-/* global Address:true */
+import { SimpleSchema } from 'meteor/aldeed:simple-schema';
 
 /*
  * BEGIN SETUP FOR TESTS
@@ -79,7 +78,7 @@ let ssr = new SimpleSchema({
   }
 });
 
-ssr.messages({
+ssr.messageBox.messages({
   "regEx requiredEmail": "[label] is not a valid email address",
   "regEx requiredUrl": "[label] is not a valid URL"
 });
@@ -258,7 +257,7 @@ let ss = new SimpleSchema({
   }
 });
 
-ss.messages({
+ss.messageBox.messages({
   minCount: "blah",
   "regEx email": "[label] is not a valid email address",
   "regEx url": "[label] is not a valid URL"
@@ -2576,93 +2575,6 @@ Tinytest.add("SimpleSchema - Labels", function (test) {
     }
   });
   test.equal(ss.label("sub.number"), "A callback label", '"sub.number" label should be "A callback label" through the callback function');
-});
-
-Tinytest.add("SimpleSchema - RegEx and Messages", function (test) {
-
-  // global
-  SimpleSchema.messages({
-    'regEx one': [{
-      msg: 'Global Message Two'
-    }, {
-      exp: /^A/,
-      msg: 'Global Message Three'
-    }, {
-      exp: /B$/,
-      msg: 'Global Message Four'
-    }]
-  });
-
-  var testSchema = new SimpleSchema({
-    one: {
-      type: String,
-      regEx: [
-        /^A/,
-        /B$/
-      ]
-    }
-  });
-
-  var c1 = testSchema.newContext();
-  c1.validate({
-    one: "BBB"
-  });
-  test.length(c1.validationErrors(), 1);
-  test.equal(c1.keyErrorMessage("one"), 'Global Message Three');
-
-  c1.validate({
-    one: "AAA"
-  });
-  test.length(c1.validationErrors(), 1);
-  test.equal(c1.keyErrorMessage("one"), 'Global Message Four');
-
-  c1.validate({
-    one: "CCC"
-  });
-  test.length(c1.validationErrors(), 1);
-  test.equal(c1.keyErrorMessage("one"), 'Global Message Three');
-
-  c1.validate({
-    one: "ACB"
-  });
-  test.length(c1.validationErrors(), 0);
-
-  // schema-specific messages
-  testSchema.messages({
-    'regEx one': [{
-      msg: 'Message Two'
-    }, {
-      exp: /^A/,
-      msg: 'Message Three'
-    }, {
-      exp: /B$/,
-      msg: 'Message Four'
-    }]
-  });
-
-  c1 = testSchema.newContext();
-  c1.validate({
-    one: "BBB"
-  });
-  test.length(c1.validationErrors(), 1);
-  test.equal(c1.keyErrorMessage("one"), 'Message Three');
-
-  c1.validate({
-    one: "AAA"
-  });
-  test.length(c1.validationErrors(), 1);
-  test.equal(c1.keyErrorMessage("one"), 'Message Four');
-
-  c1.validate({
-    one: "CCC"
-  });
-  test.length(c1.validationErrors(), 1);
-  test.equal(c1.keyErrorMessage("one"), 'Message Three');
-
-  c1.validate({
-    one: "ACB"
-  });
-  test.length(c1.validationErrors(), 0);
 });
 
 Tinytest.add("SimpleSchema - Built-In RegEx and Messages", function (test) {

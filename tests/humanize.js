@@ -1,3 +1,5 @@
+import { humanize } from 'meteor/aldeed:simple-schema';
+
 Tinytest.add("Humanize - Should humanize a string", function (test) {
   test.equal(humanize('super_snake_case'), 'Super snake case');
   test.equal(humanize('capitalizedCamelCase'), 'Capitalized camel case');

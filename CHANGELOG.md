@@ -88,6 +88,7 @@ A simple, reactive schema validation smart package for Meteor.
 
 ### 2.0.0 (WORK IN PROGRESS)
 
+- You must now `import { SimpleSchema } from 'meteor/aldeed:simple-schema';` wherever you use `SimpleSchema`
 - `SimpleSchemaValidationContext` is now `SimpleSchema.ValidationContext`
 - If you prefer keys to be optional by default, you can pass `requiredByDefault: false` as a SimpleSchema constructor option and then use `required: true` for each key that should be required.
 - Implicit keys are no longer added for you. You must define every key. The one exception is array items when using shorthand (see next change)
@@ -98,10 +99,18 @@ A simple, reactive schema validation smart package for Meteor.
 - A `SimpleSchema` can no longer be used with the `check` package `check` function. Instead, use `simpleSchema.validate()`, which throws a more helpful ValidationError and satisfies `audit-argument-checks`.
 - `validationContext.validateOne()` is removed and instead you can pass a `keys` array as an option to `validationContext.validate()
 - `invalidKeys()` is changed to `validationErrors()`, `_invalidKeys` is changed to `_validationErrors`, and `addInvalidKeys` is changed to `addValidationErrors`
+- The error objects returned by `validationErrors()` and attached to thrown `ValidationError` objects now have additional properties that help describe the particular error.
 - `decimal` is no longer a valid schema option. Instead, decimal/float is the default, and you can set the `type` to `SimpleSchema.Integer` to specify that you want only integers.
 - In custom validation functions, you can now do `this.addValidationErrors(errors)`, where errors is an array of error objects. This allows you to add errors for keys other than the one you are validating.
 - The `SimpleSchema.ErrorTypes` object now contains constants for all of the built-in error type strings.
 - If you returned the error strings "expectedString", "expectedNumber", "expectedBoolean", "expectedArray", "expectedObject", or "expectedConstructor" prior to 2.0, you should now return SimpleSchema.ErrorTypes.EXPECTED_TYPE instead.
+- Error message changes:
+  - SimpleSchema now uses `MessageBox` to manage validation error messages. Among other things, this means that placeholder text should now use handlebars syntax, `{{label}}` instead of `[label]`
+  - In the message context (for placeholders), `[type]` is now `{{dataType}}` and `[key]` is now `{{name}}`, though `key` still works for now.
+  - `SimpleSchema.messages` is removed. You can call `MessageBox.defaults` directly instead.
+  - `SimpleSchema.prototype.messages` is removed. You can call `simpleSchemaInstance.messageBox.messages()` instead, and you must pass in the messages in the format required by that package.
+  - `SimpleSchema._globalMessages` and `SimpleSchema._depsGlobalMessages` internal properties are removed.
+  - If you have custom regEx messages, you now need to do this by overriding the `regEx` messages function.
 
 ### 1.4.0
 

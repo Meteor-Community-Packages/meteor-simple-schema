@@ -1,3 +1,5 @@
+import { SimpleSchema } from 'meteor/aldeed:simple-schema';
+
 Tinytest.add('SimpleSchema - autoValue - base', function (test) {
   var o;
 

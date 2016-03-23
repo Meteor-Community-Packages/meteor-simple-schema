@@ -1,3 +1,5 @@
+import { SimpleSchema } from 'meteor/aldeed:simple-schema';
+
 Tinytest.add('SimpleSchema - shorthand', function (test) {
   let ss1 = new SimpleSchema({
     name: String,

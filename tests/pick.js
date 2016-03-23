@@ -1,3 +1,5 @@
+import { SimpleSchema } from 'meteor/aldeed:simple-schema';
+
 Tinytest.add('SimpleSchema - pick', function (test) {
   var schema = new SimpleSchema({
     foo: {type: Object},

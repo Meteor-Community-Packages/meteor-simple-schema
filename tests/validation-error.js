@@ -1,5 +1,7 @@
+import { SimpleSchema } from 'meteor/aldeed:simple-schema';
+
 Tinytest.add('SimpleSchema - ValidationErrors', function (test) {
-  let schema = new SimpleSchema({
+  const schema = new SimpleSchema({
     int: SimpleSchema.Integer,
     string: String,
   });

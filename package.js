@@ -17,17 +17,10 @@ Package.onUse(function(api) {
     'random@1.0.0',
     'ecmascript@0.1.0',
     'mdg:validation-error@0.5.1',
+    'aldeed:message-box@0.0.1',
   ]);
 
   api.mainModule('lib/main.js');
-
-  api.export([
-    'SimpleSchema'
-  ]);
-
-  api.export('humanize', {
-    testOnly: true
-  });
 });
 
 Package.onTest(function(api) {
@@ -37,7 +30,7 @@ Package.onTest(function(api) {
     'test-helpers',
     'underscore',
     'check',
-    'ecmascript@0.1.0',
+    'ecmascript',
     'mongo',
   ]);
 
@@ -47,7 +40,6 @@ Package.onTest(function(api) {
     "tests/humanize.js",
     "tests/pick.js",
     "tests/omit.js",
-    "tests/messages.js",
     "tests/autovalue.js",
     "tests/validation.js",
     "tests/validation-error.js",

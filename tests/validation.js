@@ -1,3 +1,5 @@
+import { SimpleSchema } from 'meteor/aldeed:simple-schema';
+
 Tinytest.add('SimpleSchema - validation - issue 314', function (test) {
   var arraySchema = new SimpleSchema({
     names: { type: Array },
