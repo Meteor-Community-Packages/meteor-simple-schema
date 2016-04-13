@@ -65,7 +65,7 @@ SimpleSchemaValidationContext.prototype.validate = function simpleSchemaValidati
 
 //validates doc against self._schema for one key and sets a reactive array of error objects
 SimpleSchemaValidationContext.prototype.validateOne = function simpleSchemaValidationContextValidateOne(doc, keyName, options) {
-  var self = this, i, ln, k;
+  var self = this, i, ln, k, arrayItemRegex = new RegExp('^' + keyName + '\\.', 'i');
   options = _.extend({
     modifier: false,
     upsert: false,
@@ -92,16 +92,40 @@ SimpleSchemaValidationContext.prototype.validateOne = function simpleSchemaValid
   self._invalidKeys = newInvalidKeys;
 
   //merge invalidKeys into self._invalidKeys
+  var exists = false;
   for (i = 0, ln = invalidKeys.length; i < ln; i++) {
     k = invalidKeys[i];
-    self._invalidKeys.push(k);
+    exists = _.find(self._invalidKeys, function(key){
+        return key.name === k.name;
+    });
+    if(!exists){
+      self._invalidKeys.push(k);
+    }
   }
 
   //mark key as changed due to new validation (they may be valid now, or invalid in a different way)
   self._markKeysChanged([keyName]);
 
+  // Also mark any invalid array items as changed
+  _.each(self._invalidKeys, function(key){
+    if(key.name.match(arrayItemRegex)){
+      self._markKeysChanged([key.name]);
+    }
+  });
+
+  var isInvalid = self._keyIsInvalid(keyName);
+  if(!isInvalid){
+    // Make sure no array items are invalid, otherwise this field is considered invalid as well
+    _.some(self._invalidKeys, function(value){
+      if(value.name.match(arrayItemRegex)){
+        isInvalid = true;
+        return true;
+      }
+    });
+  }
+
   // Return true if it was valid; otherwise, return false
-  return !self._keyIsInvalid(keyName);
+  return !isInvalid;
 };
 
 //reset the invalidKeys array
@@ -182,12 +206,12 @@ SimpleSchemaValidationContext.prototype.keyIsInvalid = function simpleSchemaVali
 SimpleSchemaValidationContext.prototype.keyErrorMessage = function simpleSchemaValidationContextKeyErrorMessage(name) {
   var self = this, genericName = SimpleSchema._makeGeneric(name);
   self._deps[genericName] && self._deps[genericName].depend();
-  
+
   var errorObj = self._getInvalidKeyObject(name, genericName);
   if (!errorObj) {
     return "";
   }
-  
+
   return self._simpleSchema.messageForError(errorObj.type, errorObj.name, null, errorObj.value);
 };
 
