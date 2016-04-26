@@ -275,8 +275,7 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
         if (current[subkey] === void 0 && value !== void 0) {
           //see if the next piece is a number
           nextPiece = subkeys[i + 1];
-          nextPiece = parseInt(nextPiece, 10);
-          current[subkey] = isNaN(nextPiece) ? {} : [];
+          current[subkey] = isNaN(+nextPiece) ? {} : [];
         }
 
         // Move deeper into the object
