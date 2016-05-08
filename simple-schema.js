@@ -215,7 +215,7 @@ var mergeSchemas = function(schemas) {
     if (Match.test(schema, SimpleSchema)) {
       schema = schema._schema;
     } else {
-      schema = addImplicitKeys(expandSchema(schema));
+      schema = expandSchema(schema);
     }
 
     // Loop through and extend each individual field
@@ -227,6 +227,9 @@ var mergeSchemas = function(schemas) {
     });
 
   });
+
+  // Adds implied keys on having all schemas merged
+  mergedSchema = addImplicitKeys(mergedSchema);
 
   // If we merged some schemas, do this again to make sure
   // extended definitions are pushed into array item field

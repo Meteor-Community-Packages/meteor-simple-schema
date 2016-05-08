@@ -3493,7 +3493,10 @@ Tinytest.add("SimpleSchema - Mixed Schema Merge With Base Extend and Override", 
     },
     b: {
       type: [String]
-    }
+    },
+    c: {
+      type: [Object]
+    },
   });
 
   var s2 = new SimpleSchema([s1, {
@@ -3503,10 +3506,13 @@ Tinytest.add("SimpleSchema - Mixed Schema Merge With Base Extend and Override", 
       b: {
         label: "Bacon"
       },
-      c: {
+      'c.$.1': {
         type: String
       },
       d: {
+        type: String
+      },
+      e: {
         type: String
       }
     }]);
@@ -3525,9 +3531,19 @@ Tinytest.add("SimpleSchema - Mixed Schema Merge With Base Extend and Override", 
       label: "Bacon"
     },
     c: {
+      type: Array
+    },
+    'c.$': {
+      type: Object,
+      optional: true
+    },
+    'c.$.1': {
       type: String
     },
     d: {
+      type: String
+    },
+    e: {
       type: String
     }
   }, "schema was not merged correctly");
@@ -3535,7 +3551,7 @@ Tinytest.add("SimpleSchema - Mixed Schema Merge With Base Extend and Override", 
   // test validation
   var ctx = s2.namedContext();
   ctx.validate({a: "Wrong"});
-  test.length(ctx.invalidKeys(), 4);
+  test.length(ctx.invalidKeys(), 5);
 
 });
 
