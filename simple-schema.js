@@ -20,7 +20,8 @@ var schemaDefinition = {
   blackbox: Match.Optional(Boolean),
   autoValue: Match.Optional(Function),
   defaultValue: Match.Optional(Match.Any),
-  trim: Match.Optional(Boolean)
+  trim: Match.Optional(Boolean),
+  hashmap: Match.Optional(Boolean)
 };
 
 /*
