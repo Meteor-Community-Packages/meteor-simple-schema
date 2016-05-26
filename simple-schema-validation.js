@@ -242,8 +242,17 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
       });
     }
 
+    if (Utility.isBasicObject(val) && def && def.hashmap) {
+      _.each(val, function (v, i) {
+        _.each(v, function (val, key) {
+          checkObj(val, affectedKey + '.*.' + key, operator, setKeys);
+        });
+
+      });
+    }
+
     // Loop through object keys
-    else if (Utility.isBasicObject(val) && (!def || !def.blackbox)) {
+    else if (Utility.isBasicObject(val) && (!def || !def.blackbox || !def.hashmap)) {
 
       // Get list of present keys
       var presentKeys = _.keys(val);
