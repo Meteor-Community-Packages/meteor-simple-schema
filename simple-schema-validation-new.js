@@ -244,8 +244,16 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
       });
     }
 
+    if (Utility.isBasicObject(val) && def && def.hashmap) {
+      _.each(val, function (v, i) {
+        _.each(v, function (val, key) {
+          checkObj(val, affectedKey + '.*.' + key, operator, setKeys);
+        });
+      });
+    }
+
     // Loop through object keys
-    else if (Utility.isBasicObject(val) && (!def || !def.blackbox)) {
+    else if (Utility.isBasicObject(val) && (!def || !def.blackbox || !def.hashmap)) {
 
       // Get list of present keys
       var presentKeys = _.keys(val);
@@ -290,7 +298,7 @@ function convertModifierToDoc(mod, schema, isUpsert) {
   var t = new Meteor.Collection(null);
 
   // LocalCollections are in memory, and it seems
-  // that it's fine to use them synchronously on 
+  // that it's fine to use them synchronously on
   // either client or server
   var id;
   if (isUpsert) {
@@ -341,7 +349,7 @@ function convertModifierToDoc(mod, schema, isUpsert) {
     // Now update it with the modifier
     t.update(id, mod);
   }
-  
+
   var doc = t.findOne(id);
   // We're done with it
   t.remove(id);
