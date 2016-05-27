@@ -21,7 +21,8 @@ var schemaDefinition = {
   autoValue: Match.Optional(Function),
   defaultValue: Match.Optional(Match.Any),
   trim: Match.Optional(Boolean),
-  hashmap: Match.Optional(Boolean)
+  hashmap: Match.Optional(Boolean),
+  fixedKeys: Match.Optional([String])
 };
 
 /*
