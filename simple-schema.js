@@ -564,8 +564,9 @@ SimpleSchema._makeGeneric = function(name) {
   if (typeof name !== "string") {
     return null;
   }
-
-  return name.replace(/\.[0-9]+(?=\.|$)/g, '.$');
+  var genericName = name.replace(/\.[0-9]+(?=\.|$)/g, '.$');
+  genericName = genericName.replace(/\.@#(.*?)#@/g, '.*');
+  return genericName;
 };
 
 SimpleSchema._depsGlobalMessages = new Deps.Dependency();

@@ -15,6 +15,9 @@ Utility = {
     return !_.contains(["$pull", "$pullAll", "$pop", "$slice"], key);
   },
   errorObject: function errorObject(errorType, keyName, keyValue) {
+    if (keyName.match(/@#(.*?)#@/g)) {
+      keyName = keyName.split(/@#(.*?)#@/g).join('');
+    }
     return {name: keyName, type: errorType, value: keyValue};
   },
   // Tests whether it's an Object as opposed to something that inherits from Object

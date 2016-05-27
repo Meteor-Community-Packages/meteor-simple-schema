@@ -202,7 +202,7 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
   }
 
   // The recursive function
-  function checkObj(val, affectedKey, operator, setKeys, isInArrayItemObject, isInSubObject, overrides) {
+  function checkObj(val, affectedKey, operator, setKeys, isInArrayItemObject, isInSubObject, genericKeys) {
     var affectedKeyGeneric, def;
 
     if (affectedKey) {
@@ -214,7 +214,7 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
       // Make a generic version of the affected key, and use that
       // to get the schema for this key.
       affectedKeyGeneric = SimpleSchema._makeGeneric(affectedKey);
-      def = _.extend(ss.getDefinition(affectedKey), overrides);
+      def = ss.getDefinition(affectedKey);
 
       // Perform validation for this key
       if (!keyToValidate || keyToValidate === affectedKey || keyToValidate === affectedKeyGeneric) {
@@ -244,15 +244,15 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
 
     // Validate hashmaps
     if (Utility.isBasicObject(val) && def && def.hashmap) {
-      var composedAffectedKey = affectedKey + '.*';
       _.each(val, function (v, i) {
+        var composedAffectedKey = affectedKey + '.@#' + i + '#@';
         _.each(v, function (value, key) {
           if (Utility.isBasicObject(v)) {
-            checkObj(value, composedAffectedKey + '.' + key, operator, setKeys, false, false, { hashKey: key});
+            checkObj(value, composedAffectedKey + '.' + key, operator, setKeys, false, false, genericKeys);
           }
         });
         if (!Utility.isBasicObject(v)) {
-          checkObj(v, composedAffectedKey, operator, setKeys, false, false, { hashKey: i });
+          checkObj(v, composedAffectedKey, operator, setKeys, false, false, genericKeys);
         }
       });
     }
