@@ -245,7 +245,6 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
     // Validate hashmaps
     if (Utility.isBasicObject(val) && def && def.hashmap) {
       var fixedKeys = def.fixedKeys || [];
-      var hashmapVal = _.omit(val, fixedKeys);
       _.each(val, function (v, i) {
         var composedAffectedKey = affectedKey + '.@#' + i + '#@';
         if (_.contains(fixedKeys, i)){
@@ -253,12 +252,19 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
         }
         _.each(v, function (value, key) {
           if (Utility.isBasicObject(v)) {
-            checkObj(value, composedAffectedKey + '.' + key, operator, setKeys, false, false);
+            checkObj(value, composedAffectedKey + '.' + key, operator, setKeys);
           }
         });
         // TODO: Add check of deeper keys to empty if object is empty
+        if (Utility.isBasicObject(v) && _.isEmpty(v)) {
+          var composedGenericAffectedKey = SimpleSchema._makeGeneric(composedAffectedKey);
+          var childKeys = ss.objectKeys(composedGenericAffectedKey);
+          _.each(childKeys, function(childKey) {
+            checkObj(v[childKey], composedAffectedKey + '.' + childKey, operator,setKeys);
+          });
+        }
         if (!Utility.isBasicObject(v)) {
-          checkObj(v, composedAffectedKey, operator, setKeys, false, false);
+          checkObj(v, composedAffectedKey, operator, setKeys);
         }
       });
     }
