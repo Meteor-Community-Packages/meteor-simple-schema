@@ -561,6 +561,7 @@ SimpleSchema.RegEx = {
   Phone: /^[0-9０-９٠-٩۰-۹]{2}$|^[+＋]*(?:[-x‐-―−ー－-／  ­​⁠　()（）［］.\[\]/~⁓∼～*]*[0-9０-９٠-٩۰-۹]){3,}[-x‐-―−ー－-／  ­​⁠　()（）［］.\[\]/~⁓∼～0-9０-９٠-٩۰-۹]*(?:;ext=([0-9０-９٠-٩۰-۹]{1,7})|[  \t,]*(?:e?xt(?:ensi(?:ó?|ó))?n?|ｅ?ｘｔｎ?|[,xｘ#＃~～]|int|anexo|ｉｎｔ)[:\.．]?[  \t,-]*([0-9０-９٠-٩۰-۹]{1,7})#?|[- ]+([0-9０-９٠-٩۰-۹]{1,5})#)?$/i
 };
 
+
 SimpleSchema._makeGeneric = function(name) {
   if (typeof name !== "string") {
     return null;
@@ -1051,7 +1052,7 @@ SimpleSchema.prototype.messageForError = function(type, key, def, value) {
 
   // [label]
   // The call to self.label() establishes a reactive dependency, too
-  message = message.replace("[label]", self.label(key));
+  message = message.replace("[label]", self.label(key) || key);
 
   // [minCount]
   if (typeof def.minCount !== "undefined") {
@@ -1172,10 +1173,23 @@ SimpleSchema.prototype.validate = function (obj, options) {
 
   // In order for the message at the top of the stack trace to be useful,
   // we set it to the first validation error message.
-  var message = validationContext.keyErrorMessage(errors[0].name);
+  var cleanErrors = errors.map(toCleanError);
+  var genericErrors = errors.map(toGenericError);
+  validationContext._invalidKeys = errors.map(toGenericError);
+  var message = validationContext.keyErrorMessage(genericErrors[0].name);
 
-  throw new Package['mdg:validation-error'].ValidationError(errors, message);
+  throw new Package['mdg:validation-error'].ValidationError(cleanErrors, message);
 };
+
+function toCleanError(error)  {
+  var cleanName = error.name.split(/@#(.*?)#@/g).join('');
+  return _.extend({}, error, { name: cleanName });
+}
+
+function toGenericError(error) {
+  var genericName = SimpleSchema._makeGeneric(error.name);
+  return _.extend({}, error, { name: genericName });
+}
 
 SimpleSchema.prototype.validator = function (options) {
   var self = this;

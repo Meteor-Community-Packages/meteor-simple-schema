@@ -182,12 +182,12 @@ SimpleSchemaValidationContext.prototype.keyIsInvalid = function simpleSchemaVali
 SimpleSchemaValidationContext.prototype.keyErrorMessage = function simpleSchemaValidationContextKeyErrorMessage(name) {
   var self = this, genericName = SimpleSchema._makeGeneric(name);
   self._deps[genericName] && self._deps[genericName].depend();
-  
+
   var errorObj = self._getInvalidKeyObject(name, genericName);
   if (!errorObj) {
     return "";
   }
-  
+
   return self._simpleSchema.messageForError(errorObj.type, errorObj.name, null, errorObj.value);
 };
 

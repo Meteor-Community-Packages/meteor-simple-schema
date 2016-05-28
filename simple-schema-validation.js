@@ -256,6 +256,7 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
             checkObj(value, composedAffectedKey + '.' + key, operator, setKeys, false, false);
           }
         });
+        // TODO: Add check of deeper keys to empty if object is empty
         if (!Utility.isBasicObject(v)) {
           checkObj(v, composedAffectedKey, operator, setKeys, false, false);
         }
