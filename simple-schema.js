@@ -586,8 +586,11 @@ SimpleSchema._makeGeneric = function(name, ss) {
     }
     return splittedKeys.join('.');
   }
-
-  return getGeneric(ss, genericName);
+  if (ss && ss.objectKeys) {
+      return getGeneric(ss, genericName);
+  } else {
+      return genericName;
+  }
 };
 
 SimpleSchema._depsGlobalMessages = new Deps.Dependency();
@@ -1200,21 +1203,20 @@ SimpleSchema.prototype.validate = function (obj, options) {
 
   // In order for the message at the top of the stack trace to be useful,
   // we set it to the first validation error message.
-  var genericErrors = errors.map(toGenericError.bind(this));
-  validationContext._invalidKeys = errors.map(toGenericError);
+  var genericErrors = errors.map(toGenericError(this));
+  validationContext._invalidKeys = genericErrors;
   var message = validationContext.keyErrorMessage(genericErrors[0].name);
 
   throw new Package['mdg:validation-error'].ValidationError(errors, message);
 };
-
-function toCleanError(error)  {
-  var cleanName = error.name.split(/@#(.*?)#@/g).join('');
-  return _.extend({}, error, { name: cleanName });
-}
-
-function toGenericError(error) {
-  var genericName = this.makeGeneric(error.name);
-  return _.extend({}, error, { name: genericName });
+/*
+  Returns a function that converts an error into an error with generic names
+ */
+function toGenericError(ss) {
+  return function toGeneric (error) {
+    var genericName = ss.makeGeneric(error.name);
+    return _.extend({}, error, { name: genericName });
+  }
 }
 
 SimpleSchema.prototype.validator = function (options) {
