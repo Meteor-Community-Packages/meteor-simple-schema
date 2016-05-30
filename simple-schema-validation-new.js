@@ -244,11 +244,23 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
       });
     }
 
+    // Validate hashmaps
     if (Utility.isBasicObject(val) && def && def.hashmap) {
+      var fixedKeys = def.fixedKeys || [];
+      var hashmapVal = _.omit(val, fixedKeys);
       _.each(val, function (v, i) {
-        _.each(v, function (val, key) {
-          checkObj(val, affectedKey + '.*.' + key, operator, setKeys);
+        var composedAffectedKey = affectedKey + '.@#' + i + '#@';
+        if (_.contains(fixedKeys, i)){
+          composedAffectedKey = affectedKey + '.' + i;
+        }
+        _.each(v, function (value, key) {
+          if (Utility.isBasicObject(v)) {
+            checkObj(value, composedAffectedKey + '.' + key, operator, setKeys, false, false);
+          }
         });
+        if (!Utility.isBasicObject(v)) {
+          checkObj(v, composedAffectedKey, operator, setKeys, false, false);
+        }
       });
     }
 
