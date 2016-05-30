@@ -148,7 +148,7 @@ SimpleSchemaValidationContext.prototype._markKeysChanged = function simpleSchema
   }
 
   _.each(keys, function(name) {
-    var genericName = SimpleSchema._makeGeneric(name);
+    var genericName = self._simpleSchema.makeGeneric(name);
     if (genericName in self._deps) {
       self._deps[genericName].changed();
     }
@@ -158,7 +158,7 @@ SimpleSchemaValidationContext.prototype._markKeysChanged = function simpleSchema
 
 SimpleSchemaValidationContext.prototype._getInvalidKeyObject = function simpleSchemaValidationContextGetInvalidKeyObject(name, genericName) {
   var self = this;
-  genericName = genericName || SimpleSchema._makeGeneric(name);
+  genericName = genericName || self._simpleSchema.makeGeneric(name);
 
   var errorObj = _.findWhere(self._invalidKeys, {name: name});
   if (!errorObj) {
@@ -173,14 +173,16 @@ SimpleSchemaValidationContext.prototype._keyIsInvalid = function simpleSchemaVal
 
 // Like the internal one, but with deps
 SimpleSchemaValidationContext.prototype.keyIsInvalid = function simpleSchemaValidationContextKeyIsInvalid(name) {
-  var self = this, genericName = SimpleSchema._makeGeneric(name);
+  var self = this;
+  var genericName = self._simpleSchema.makeGeneric(name);
   self._deps[genericName] && self._deps[genericName].depend();
 
   return self._keyIsInvalid(name, genericName);
 };
 
 SimpleSchemaValidationContext.prototype.keyErrorMessage = function simpleSchemaValidationContextKeyErrorMessage(name) {
-  var self = this, genericName = SimpleSchema._makeGeneric(name);
+  var self = this;
+  var genericName = self._simpleSchema.makeGeneric(name);
   self._deps[genericName] && self._deps[genericName].depend();
 
   var errorObj = self._getInvalidKeyObject(name, genericName);

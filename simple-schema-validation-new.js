@@ -117,7 +117,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
       // We use a LocalCollection to figure out what the resulting doc
       // would be in a worst case scenario. Then we validate that doc
       // so that we don't have to validate the modifier object directly.
-      obj = convertModifierToDoc(obj, ss.schema(), isUpsert);
+      obj = convertModifierToDoc(obj, ss.schema(), isUpsert, ss);
     }
   } else if (Utility.looksLikeModifier(obj)) {
     throw new Error("When the validation object contains mongo operators, you must set the modifier option to true");
@@ -182,7 +182,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
         value: val,
         operator: op,
         field: function(fName) {
-          mDoc = mDoc || new MongoObject(obj, ss._blackboxKeys); //create if necessary, cache for speed
+          mDoc = mDoc || new MongoObject(obj, ss); //create if necessary, cache for speed
           var keyInfo = mDoc.getInfoForKey(fName) || {};
           return {
             isSet: (keyInfo.value !== void 0),
@@ -191,7 +191,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
           };
         },
         siblingField: function(fName) {
-          mDoc = mDoc || new MongoObject(obj, ss._blackboxKeys); //create if necessary, cache for speed
+          mDoc = mDoc || new MongoObject(obj, ss); //create if necessary, cache for speed
           var keyInfo = mDoc.getInfoForKey(fieldParentName + fName) || {};
           return {
             isSet: (keyInfo.value !== void 0),
@@ -247,21 +247,37 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
     // Validate hashmaps
     if (Utility.isBasicObject(val) && def && def.hashmap) {
       var fixedKeys = def.fixedKeys || [];
-      var hashmapVal = _.omit(val, fixedKeys);
       _.each(val, function (v, i) {
-        var composedAffectedKey = affectedKey + '.@#' + i + '#@';
+        var composedAffectedKey = affectedKey + '.' + i;
         if (_.contains(fixedKeys, i)){
           composedAffectedKey = affectedKey + '.' + i;
         }
-        _.each(v, function (value, key) {
-          if (Utility.isBasicObject(v)) {
-            checkObj(value, composedAffectedKey + '.' + key, operator, setKeys, false, false);
-          }
-        });
+
+        if (Utility.isBasicObject(v)) {
+          _.each(v, function (value, key) {
+              checkObj(value, composedAffectedKey + '.' + key, operator, setKeys);
+          });
+        }
+
+        if (Utility.isBasicObject(v) && _.isEmpty(v)) {
+          var composedGenericAffectedKey = ss.makeGeneric(composedAffectedKey);
+          var childKeys = ss.objectKeys(composedGenericAffectedKey);
+          _.each(childKeys, function(childKey) {
+            checkObj(v[childKey], composedAffectedKey + '.' + childKey, operator,setKeys);
+          });
+        }
         if (!Utility.isBasicObject(v)) {
-          checkObj(v, composedAffectedKey, operator, setKeys, false, false);
+          checkObj(v, composedAffectedKey, operator, setKeys);
         }
       });
+      if (Utility.isBasicObject(val) && _.isEmpty(val)) {
+        var composedAffectedKey = affectedKey;
+        var composedGenericAffectedKey = ss.makeGeneric(composedAffectedKey);
+        var childKeys = ss.objectKeys(composedGenericAffectedKey);
+        _.each(childKeys, function(childKey) {
+          checkObj(val[childKey], composedAffectedKey + '.' + childKey, operator,setKeys);
+        });
+      }
     }
 
     // Loop through object keys
@@ -305,7 +321,7 @@ doValidation2 = function doValidation2(obj, isModifier, isUpsert, keyToValidate,
   return invalidKeys;
 };
 
-function convertModifierToDoc(mod, schema, isUpsert) {
+function convertModifierToDoc(mod, schema, isUpsert, simpleSchema) {
   // Create unmanaged LocalCollection as scratchpad
   var t = new Meteor.Collection(null);
 
@@ -319,9 +335,9 @@ function convertModifierToDoc(mod, schema, isUpsert) {
     id = Random.id();
     t.upsert({_id: id}, mod);
   } else {
-    var mDoc = new MongoObject(mod);
+    var mDoc = new MongoObject(mod, simpleSchema);
     // Create a ficticious existing document
-    var fakeDoc = new MongoObject({});
+    var fakeDoc = new MongoObject({}, simpleSchema);
     _.each(schema, function (def, fieldName) {
       var setVal;
       // Prefill doc with empty arrays to avoid the

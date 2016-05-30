@@ -175,7 +175,7 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
         value: val,
         operator: op,
         field: function(fName) {
-          mDoc = mDoc || new MongoObject(obj, ss._blackboxKeys); //create if necessary, cache for speed
+          mDoc = mDoc || new MongoObject(obj, ss); //create if necessary, cache for speed
           var keyInfo = mDoc.getInfoForKey(fName) || {};
           return {
             isSet: (keyInfo.value !== void 0),
@@ -184,7 +184,7 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
           };
         },
         siblingField: function(fName) {
-          mDoc = mDoc || new MongoObject(obj, ss._blackboxKeys); //create if necessary, cache for speed
+          mDoc = mDoc || new MongoObject(obj, ss); //create if necessary, cache for speed
           var keyInfo = mDoc.getInfoForKey(fieldParentName + fName) || {};
           return {
             isSet: (keyInfo.value !== void 0),
@@ -213,7 +213,7 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
 
       // Make a generic version of the affected key, and use that
       // to get the schema for this key.
-      affectedKeyGeneric = SimpleSchema._makeGeneric(affectedKey);
+      affectedKeyGeneric = ss.makeGeneric(affectedKey);
       def = ss.getDefinition(affectedKey);
 
       // Perform validation for this key
@@ -246,18 +246,20 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
     if (Utility.isBasicObject(val) && def && def.hashmap) {
       var fixedKeys = def.fixedKeys || [];
       _.each(val, function (v, i) {
-        var composedAffectedKey = affectedKey + '.@#' + i + '#@';
+        var composedAffectedKey = affectedKey + '.' + i;
         if (_.contains(fixedKeys, i)){
           composedAffectedKey = affectedKey + '.' + i;
         }
-        _.each(v, function (value, key) {
-          if (Utility.isBasicObject(v)) {
-            checkObj(value, composedAffectedKey + '.' + key, operator, setKeys);
-          }
-        });
+
+        if (Utility.isBasicObject(v)) {
+          _.each(v, function (value, key) {
+              checkObj(value, composedAffectedKey + '.' + key, operator, setKeys);
+          });
+        }
         // TODO: Add check of deeper keys to empty if object is empty
+
         if (Utility.isBasicObject(v) && _.isEmpty(v)) {
-          var composedGenericAffectedKey = SimpleSchema._makeGeneric(composedAffectedKey);
+          var composedGenericAffectedKey = ss.makeGeneric(composedAffectedKey);
           var childKeys = ss.objectKeys(composedGenericAffectedKey);
           _.each(childKeys, function(childKey) {
             checkObj(v[childKey], composedAffectedKey + '.' + childKey, operator,setKeys);
@@ -267,6 +269,14 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
           checkObj(v, composedAffectedKey, operator, setKeys);
         }
       });
+      if (Utility.isBasicObject(val) && _.isEmpty(val)) {
+        var composedAffectedKey = affectedKey;
+        var composedGenericAffectedKey = ss.makeGeneric(composedAffectedKey);
+        var childKeys = ss.objectKeys(composedGenericAffectedKey);
+        _.each(childKeys, function(childKey) {
+          checkObj(val[childKey], composedAffectedKey + '.' + childKey, operator,setKeys);
+        });
+      }
     }
 
     // Loop through object keys
