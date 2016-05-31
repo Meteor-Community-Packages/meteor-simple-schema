@@ -297,6 +297,48 @@ var friends = new SimpleSchema({
   }
 });
 
+var friendsWithObjects = new SimpleSchema({
+  name: {
+    type: String,
+    optional: true
+  },
+  friends: {
+    type: Object,
+    hashmap: true,
+    minCount: 1
+  },
+  'friends.*.name': {
+    type: String,
+    max: 3
+  },
+  'friends.*.type': {
+    type: String,
+    allowedValues: ["best", "good", "bad"]
+  },
+  'friends.*.a.b': {
+    type: Number,
+    optional: true
+  },
+  enemies: {
+    type: Object,
+    hashmap: true
+  },
+  'enemies.*.name': {
+    type: String
+  },
+  'enemies.*.traits': {
+    type: [Object],
+    optional: true
+  },
+  'enemies.*.traits.$.name': {
+    type: String
+  },
+  'enemies.*.traits.$.weight': {
+    type: Number,
+    decimal: true
+  }
+});
+
 var autoValues = new SimpleSchema({
   name: {
     type: String
@@ -474,9 +516,73 @@ function validateNoClean(ss, doc, isModifier, isUpsert) {
  * BEGIN TESTS
  */
 
-Tinytest.add("SimpleSchema - makeGeneric", function(test) {
+Tinytest.add("SimpleSchema - makeGeneric(Arrays)", function(test) {
   var generic = SimpleSchema._makeGeneric('foo.0.0.ab.c.123.4square.d.67e.f.g.1');
   test.equal(generic, 'foo.$.$.ab.c.$.4square.d.67e.f.g.$');
+});
+
+Tinytest.add("SimpleSchema - makeGeneric(Hashmaps not fixed)", function(test) {
+  var simpleSchema = new SimpleSchema({
+    'object': {
+      type: Object,
+      hashmap: true,
+    },
+    'object.*': {
+      type: Object
+    },
+    'object.*.test': {
+      type: Number
+    }
+  });
+
+  var genericNotFixed = SimpleSchema._makeGeneric('object.key.test', simpleSchema);
+  test.equal(genericNotFixed, 'object.*.test');
+});
+
+Tinytest.add("SimpleSchema - makeGeneric(Hashmaps fixed)", function(test) {
+  var simpleSchema = new SimpleSchema({
+    'object': {
+      type: Object,
+      hashmap: true,
+      fixedKeys: ['fixed']
+    },
+    'object.*': {
+      type: Object
+    },
+    'object.*.test': {
+      type: Number
+    },
+    'object.fixed': {
+      type: String
+    }
+  });
+
+  var genericWithFixed = SimpleSchema._makeGeneric('object.fixed', simpleSchema);
+  test.equal(genericWithFixed, 'object.fixed');
+});
+
+Tinytest.add("SimpleSchema - makeGeneric(Hashmaps mixed with Arrays)", function(test) {
+  var simpleSchema = new SimpleSchema({
+    'object': {
+      type: Object,
+      hashmap: true,
+      fixedKeys: ['fixed']
+    },
+    'object.*': {
+      type: Object
+    },
+    'object.*.test': {
+      type: [Number]
+    },
+    'object.fixed': {
+      type: [String]
+    }
+  });
+
+  var genericNotFixed = SimpleSchema._makeGeneric('object.key.test.1', simpleSchema);
+  test.equal(genericNotFixed, 'object.*.test.$');
+  var genericNotFixed = SimpleSchema._makeGeneric('object.fixed.1', simpleSchema);
+  test.equal(genericNotFixed, 'object.fixed.$');
 });
 
 Tinytest.add("SimpleSchema - Required Checks - Insert - Valid", function(test) {
@@ -611,6 +717,18 @@ Tinytest.add("SimpleSchema - Required Checks - Insert - Invalid", function(test)
   sc = validateNoClean(friends, {
     friends: [{name: 'Bob'}],
     enemies: [{}]
+  });
+  test.length(sc.invalidKeys(), 2);
+
+  sc = validateNoClean(friendsWithObjects, {
+    friends: {
+      friend1: {
+        name: 'Bob'
+      }
+    },
+    enemies: {
+      enemyOne: {}
+    }
   });
   test.length(sc.invalidKeys(), 2);
 });
@@ -842,6 +960,17 @@ Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - $setOnInsert",
       enemies: []
     }}, true, true, true);
   test.length(sc.invalidKeys(), 1);
+
+  //hashmap
+  sc = validateNoClean(friendsWithObjects, {$setOnInsert: {
+      friends: {
+        friend1: {
+          name: 'Bob'
+        }
+      },
+      enemies: {}
+    }}, true, true, true);
+  test.length(sc.invalidKeys(), 1);
 });
 
 Tinytest.add("SimpleSchema - Required Checks - Upsert - Invalid - Combined", function(test) {
@@ -981,6 +1110,19 @@ Tinytest.add("SimpleSchema - Required Checks - Update - Valid - $set", function(
       friends: [{name: 'Bob', type: 'good'}]
     }}, true);
   test.equal(sc.invalidKeys(), []);
+
+  //hashmap
+  sc = validateNoClean(friendsWithObjects, {$set: {
+      'friends.friend1.name': "Bob"
+    }}, true);
+  test.equal(sc.invalidKeys(), []);
+
+  sc = validateNoClean(friendsWithObjects, {$set: {
+      friends: {
+        friend1: {name: 'Bob', type: 'good'}
+      }
+    }}, true);
+  test.equal(sc.invalidKeys(), []);
 });
 
 Tinytest.add("SimpleSchema - Required Checks - Update - Invalid - $set", function(test) {
@@ -1045,6 +1187,22 @@ Tinytest.add("SimpleSchema - Required Checks - Update - Invalid - $set", functio
   t(friends, {$set: {
     friends: [{name: 'Bob'}]
   }}, 1);
+
+  //hashmap
+
+  //name is required
+  t(friendsWithObjects, {$set: {
+    'friends.friend1.name': null
+  }}, 1);
+
+  //type is required
+  t(friendsWithObjects, {$set: {
+    friends: {
+      friend1: {
+        name: 'Bob'
+      }
+    }
+  }}, 1);
 });
 
 Tinytest.add("SimpleSchema - Required Checks - Update - Valid - $unset", function(test) {
@@ -1081,6 +1239,32 @@ Tinytest.add("SimpleSchema - Required Checks - Update - Valid - $unset", functio
     }}, true);
   test.equal(sc.invalidKeys(), []);
 
+  //array of objects
+  sc = validateNoClean(friends, {$unset: {
+      'friends.1.a.b': ""
+    }}, true);
+  test.equal(sc.invalidKeys(), []);
+
+  sc = validateNoClean(friends, {$unset: {
+      'friends.1.a.b': 1,
+      'friends.2.a.b': 1,
+      'friends.3.a.b': 1
+    }}, true);
+  test.equal(sc.invalidKeys(), []);
+
+  //hashmaps
+  sc = validateNoClean(friendsWithObjects, {$unset: {
+      'friends.friend1.a.b': ""
+    }}, true);
+  test.equal(sc.invalidKeys(), []);
+
+  sc = validateNoClean(friendsWithObjects, {$unset: {
+      'friends.friend1.a.b': 1,
+      'friends.friend2.a.b': 1,
+      'friends.friend3.a.b': 1
+    }}, true);
+  test.equal(sc.invalidKeys(), []);
+
 });
 
 Tinytest.add("SimpleSchema - Required Checks - Update - Invalid - $unset", function(test) {
@@ -1104,6 +1288,19 @@ Tinytest.add("SimpleSchema - Required Checks - Update - Invalid - $unset", funct
       'friends.1.name': 1,
       'friends.2.name': 1,
       'friends.3.name': 1
+    }}, true);
+  test.length(sc.invalidKeys(), 3);
+
+  //hashmaps
+  sc = validateNoClean(friendsWithObjects, {$unset: {
+      'friends.friend1.name': 1
+    }}, true);
+  test.length(sc.invalidKeys(), 1);
+
+  sc = validateNoClean(friendsWithObjects, {$unset: {
+      'friends.friend1.name': 1,
+      'friends.friend2.name': 1,
+      'friends.friend3.name': 1
     }}, true);
   test.length(sc.invalidKeys(), 3);
 });
@@ -1949,7 +2146,7 @@ Tinytest.add("SimpleSchema - Minimum Checks - Insert", function(test) {
   test.length(sc.invalidKeys(), 1);
   /* NUMBER */
   sc = validate(ss, {
-    minMaxNumberExclusive: 20 
+    minMaxNumberExclusive: 20
   });
   test.length(sc.invalidKeys(), 1);
   sc = validate(ss, {
@@ -2356,9 +2553,24 @@ Tinytest.add("SimpleSchema - Minimum Array Count - Insert - Invalid", function(t
   test.length(sc.invalidKeys(), 1);
 });
 
+Tinytest.add("SimpleSchema - Minimum Hashmap Key Count - Insert - Invalid", function(test) {
+  var sc = validate(friendsWithObjects, {
+    friends: {},
+    enemies: {}
+  });
+  test.length(sc.invalidKeys(), 1);
+});
+
 Tinytest.add("SimpleSchema - Minimum Array Count - Update - Invalid", function(test) {
   var sc = validate(friends, {$set: {
       friends: []
+    }}, true);
+  test.length(sc.invalidKeys(), 1);
+});
+
+Tinytest.add("SimpleSchema - Minimum Hashmap Key Count - Update - Invalid", function(test) {
+  var sc = validate(friendsWithObjects, {$set: {
+      friends: {}
     }}, true);
   test.length(sc.invalidKeys(), 1);
 });
@@ -2367,6 +2579,14 @@ Tinytest.add("SimpleSchema - Minimum Array Count - Upsert - Invalid", function(t
   var sc = validate(friends, {$setOnInsert: {
       friends: [],
       enemies: []
+    }}, true, true);
+  test.length(sc.invalidKeys(), 1);
+});
+
+Tinytest.add("SimpleSchema - Minimum Hashmap Key Count - Upsert - Invalid", function(test) {
+  var sc = validate(friendsWithObjects, {$setOnInsert: {
+      friends: {},
+      enemies: {}
     }}, true, true);
   test.length(sc.invalidKeys(), 1);
 });
@@ -2390,6 +2610,15 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Insert - Valid", function(t
   });
   test.equal(sc.invalidKeys(), []);
 
+  //hashmap
+  sc = validate(friendsWithObjects, {
+    friends: {
+      friend1: {name: 'Bob', type: 'best'}
+    },
+    enemies: {}
+  });
+  test.equal(sc.invalidKeys(), []);
+
   /* NUMBER */
   sc = validate(ss, {
     allowedNumbers: 1
@@ -2405,6 +2634,15 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Insert - Valid", function(t
   sc = validate(friends, {
     friends: [{name: 'Bob', type: 'best', a: {b: 5000}}],
     enemies: []
+  });
+  test.equal(sc.invalidKeys(), []);
+
+  //hashmap
+  sc = validate(friendsWithObjects, {
+    friends: {
+      friend1: {name: 'Bob', type: 'best', a: {b: 5000}}
+    },
+    enemies: {}
   });
   test.equal(sc.invalidKeys(), []);
 });
@@ -2429,6 +2667,15 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Insert - Invalid", function
   });
   test.length(sc.invalidKeys(), 1);
 
+  //hashmap
+  sc = validate(friendsWithObjects, {
+    friends: {
+      friend1: {name: 'Bob', type: 'smelly'}
+    },
+    enemies: {}
+  });
+  test.length(sc.invalidKeys(), 1);
+
   /* NUMBER */
   sc = validate(ss, {
     allowedNumbers: 4
@@ -2445,6 +2692,15 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Insert - Invalid", function
   sc = validate(friends, {
     friends: [{name: 'Bob', type: 'best', a: {b: "wrong"}}],
     enemies: []
+  });
+  test.length(sc.invalidKeys(), 1);
+
+  //hashmaps
+  sc = validate(friendsWithObjects, {
+    friends: {
+      friend1: {name: 'Bob', type: 'best', a: {b: "wrong"}}
+    },
+    enemies: {}
   });
   test.length(sc.invalidKeys(), 1);
 });
@@ -2469,6 +2725,15 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Upsert - Valid - $setOnInse
     }}, true, true);
   test.equal(sc.invalidKeys(), []);
 
+  //hashmaps
+  sc = validate(friendsWithObjects, {$setOnInsert: {
+      friends: {
+        friend1: {name: 'Bob', type: 'best'}
+      },
+      enemies: {}
+    }}, true, true);
+  test.equal(sc.invalidKeys(), []);
+
   /* NUMBER */
   sc = validate(ss, {$setOnInsert: {
       allowedNumbers: 1
@@ -2485,6 +2750,15 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Upsert - Valid - $setOnInse
   sc = validate(friends, {$setOnInsert: {
       friends: [{name: 'Bob', type: 'best', a: {b: 5000}}],
       enemies: []
+    }}, true, true);
+  test.equal(sc.invalidKeys(), []);
+
+  //hashmaps
+  sc = validate(friendsWithObjects, {$setOnInsert: {
+      friends: {
+        friend1: { name: 'Bob', type: 'best', a: {b: 5000}}
+      },
+      enemies: {}
     }}, true, true);
   test.equal(sc.invalidKeys(), []);
 });
@@ -2509,6 +2783,15 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Upsert - Invalid - $setOnIn
     }}, true, true);
   test.length(sc.invalidKeys(), 1);
 
+  //hashmaps
+  sc = validate(friendsWithObjects, {$setOnInsert: {
+      friends: {
+        friend1: {name: 'Bob', type: 'smelly'}
+      },
+      enemies: {}
+    }}, true, true);
+  test.length(sc.invalidKeys(), 1);
+
   /* NUMBER */
   sc = validate(ss, {$setOnInsert: {
       allowedNumbers: 4
@@ -2525,6 +2808,15 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Upsert - Invalid - $setOnIn
   sc = validate(friends, {$setOnInsert: {
       friends: [{name: 'Bob', type: 'best', a: {b: "wrong"}}],
       enemies: []
+    }}, true, true);
+  test.length(sc.invalidKeys(), 1);
+
+  //hashmaps
+  sc = validate(friendsWithObjects, {$setOnInsert: {
+      friends: {
+        friend1: {name: 'Bob', type: 'best', a: {b: "wrong"}}
+      },
+      enemies: {}
     }}, true, true);
   test.length(sc.invalidKeys(), 1);
 });
@@ -2550,6 +2842,17 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Update - Valid - $set", fun
 
   sc = validate(friends, {$set: {
       'friends.1.name': 'Bob'
+    }}, true);
+  test.equal(sc.invalidKeys(), []);
+
+  //hashmaps
+  sc = validate(friendsWithObjects, {$set: {
+      'friends.*.name': 'Bob'
+    }}, true);
+  test.equal(sc.invalidKeys(), []);
+
+  sc = validate(friendsWithObjects, {$set: {
+      'friends.friend1.name': 'Bob'
     }}, true);
   test.equal(sc.invalidKeys(), []);
 
@@ -2587,6 +2890,17 @@ Tinytest.add("SimpleSchema - Allowed Values Checks - Update - Invalid - $set", f
 
   sc = validate(friends, {$set: {
       'friends.1.name': 'Bobby'
+    }}, true);
+  test.length(sc.invalidKeys(), 1);
+
+  //hashmaps
+  sc = validate(friendsWithObjects, {$set: {
+      'friends.*.name': 'Bobby'
+    }}, true);
+  test.length(sc.invalidKeys(), 1);
+
+  sc = validate(friendsWithObjects, {$set: {
+      'friends.friend1.name': 'Bobby'
     }}, true);
   test.length(sc.invalidKeys(), 1);
 
@@ -2748,6 +3062,65 @@ Tinytest.add("SimpleSchema - Extend Schema Definition", function(test) {
   } catch (exception) {
     test.fail({type: 'exception', message: 'define a schema with a unique option in field definition'});
   }
+});
+
+Tinytest.add("SimpleSchema - Hashmap of Objects", function(test) {
+
+  var sc = validate(friendsWithObjects, {$set: {
+      enemies: {
+        enemy1: {}
+      }
+    }}, true);
+  test.length(sc.invalidKeys(), 1);
+
+  sc = validate(friendsWithObjects, {$set: {
+      enemies: {
+        enemy1: {name: "Zach"}
+      }
+    }}, true);
+  test.length(sc.invalidKeys(), 0);
+
+  sc = validate(friendsWithObjects, {$set: {
+      enemies: {
+        enemy1: {name: "Zach", traits: []}
+      }
+    }}, true);
+  test.length(sc.invalidKeys(), 0);
+
+  sc = validate(friendsWithObjects, {$set: {
+      enemies: {
+        enemy1: {name: "Zach", traits: [{}]}
+      }
+    }}, true);
+  test.length(sc.invalidKeys(), 2);
+
+  sc = validate(friendsWithObjects, {$set: {
+      enemies: {
+        enemy1: {name: "Zach", traits: [{}, {}]}
+      }
+    }}, true);
+  test.length(sc.invalidKeys(), 4);
+
+  sc = validate(friendsWithObjects, {$set: {
+      enemies: {
+        friend1: {name: "Zach", traits: [{name: "evil"}]}
+      }
+    }}, true);
+  test.length(sc.invalidKeys(), 1);
+
+  sc = validate(friendsWithObjects, {$set: {
+      enemies: {
+        enemy1: {name: "Zach", traits: [{name: "evil", weight: "heavy"}]}
+      }
+    }}, true);
+  test.length(sc.invalidKeys(), 1);
+
+  sc = validate(friendsWithObjects, {$set: {
+      enemies: {
+        enemy1: {name: "Zach", traits: [{name: "evil", weight: 9.5}]}
+      }
+    }}, true);
+  test.length(sc.invalidKeys(), 0);
 });
 
 Tinytest.add("SimpleSchema - Array of Objects", function(test) {

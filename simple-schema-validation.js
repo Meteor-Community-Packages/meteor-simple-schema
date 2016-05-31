@@ -56,6 +56,10 @@ function doTypeChecks(def, keyValue, op) {
   else if (expectedType === Object) {
     if (!Utility.isBasicObject(keyValue)) {
       return "expectedObject";
+    } else if (def.minCount !== null && def.hashmap === true && _.size(keyValue) < def.minCount) {
+      return "minCount";
+    } else if (def.maxCount !== null && def.hashmap === true && _.size(keyValue) > def.maxCount) {
+      return "maxCount";
     }
   }
 
@@ -252,11 +256,12 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
         }
 
         if (Utility.isBasicObject(v)) {
-          _.each(v, function (value, key) {
-              checkObj(value, composedAffectedKey + '.' + key, operator, setKeys);
+          // Check all the possible keys
+          var keysToCheck = ss.objectKeys(ss.makeGeneric(composedAffectedKey));
+          _.each(keysToCheck, function (key) {
+              checkObj(v[key], composedAffectedKey + '.' + key, operator, setKeys);
           });
         }
-        // TODO: Add check of deeper keys to empty if object is empty
 
         if (Utility.isBasicObject(v) && _.isEmpty(v)) {
           var composedGenericAffectedKey = ss.makeGeneric(composedAffectedKey);
