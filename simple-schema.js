@@ -653,19 +653,42 @@ SimpleSchema.prototype.addValidator = function(func) {
  */
 SimpleSchema.prototype.pick = function(/* arguments */) {
   var self = this;
-  var args = _.toArray(arguments);
-  args.unshift(self._schema);
+  var args = _.flatten(arguments);
+  var keys = _.filter(_.keys(self._schema), function (key) {
+    return _.some(args, function (arg) {
+      return new RegExp('^' + arg).test(key);
+    });
+  });
 
-  var newSchema = _.pick.apply(null, args);
+  var newSchema = _.reduce(keys, function (newSchema, key) {
+    newSchema[key] = self._schema[key];
+
+    return newSchema;
+  }, {});
+
   return new SimpleSchema(newSchema);
 };
 
-SimpleSchema.prototype.omit = function() {
+/**
+ * @method SimpleSchema.prototype.omit
+ * @param {[fields]} The list of fields to omit to instantiate the subschema
+ * @returns {SimpleSchema} The subschema
+ */
+SimpleSchema.prototype.omit = function(/* arguments */) {
   var self = this;
-  var args = _.toArray(arguments);
-  args.unshift(self._schema);
+  var args = _.flatten(arguments);
+  var keys = _.filter(_.keys(self._schema), function (key) {
+    return _.every(args, function (arg) {
+      return !new RegExp('^' + arg).test(key);
+    });
+  });
 
-  var newSchema = _.omit.apply(null, args);
+  var newSchema = _.reduce(keys, function (newSchema, key) {
+    newSchema[key] = self._schema[key];
+
+    return newSchema;
+  }, {});
+
   return new SimpleSchema(newSchema);
 };
 
