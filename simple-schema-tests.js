@@ -1138,6 +1138,12 @@ Tinytest.add("SimpleSchema - Type Checks - Insert", function(test) {
     email: "test123@sub.example.edu"
   });
   test.equal(sc.invalidKeys(), []);
+
+  sc = validate(ss, {
+    url: "http://localhost:3000/"
+  });
+  test.length(sc.invalidKeys(), 0);
+
   /* STRING FAILURES */
 
   //boolean string failure
@@ -1949,7 +1955,7 @@ Tinytest.add("SimpleSchema - Minimum Checks - Insert", function(test) {
   test.length(sc.invalidKeys(), 1);
   /* NUMBER */
   sc = validate(ss, {
-    minMaxNumberExclusive: 20 
+    minMaxNumberExclusive: 20
   });
   test.length(sc.invalidKeys(), 1);
   sc = validate(ss, {
