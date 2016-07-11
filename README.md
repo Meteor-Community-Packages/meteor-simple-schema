@@ -619,7 +619,7 @@ any custom validation functions that are run during validation. See the
 ### Validating and Throwing ValidationErrors
 
 - Call `mySimpleSchema.validate(doc)` to validate `doc` against the schema and throw a `ValidationError` if invalid. This is like `check(doc, mySimpleSchema)` but without the `check` dependency and with the ability to pass full schema error details back to a callback on the client.
-- `mySimpleSchema.validateOne(obj, key)` is like `validate()` but it only checks they key you specify. 
+- `mySimpleSchema.validateOne(obj, key)` is like `validate()` but it only checks the key you specify. 
 - Call `mySimpleSchema.validator()` to get a function that calls `mySimpleSchema.validate` for whatever object is passed to it. This means you can do `validate: mySimpleSchema.validator()` in the [mdg:method](https://github.com/meteor/method) package. If you set the `clean` option to `true`, then the object will be cleaned before it is validated. If you want to change any of the default cleaning options, you can pass in those, too.
 
 ### Validating Using check() or Match.test()
