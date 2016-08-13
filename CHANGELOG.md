@@ -86,7 +86,7 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
-### 2.0.0 (WORK IN PROGRESS)
+### 2.0.0
 
 - You must now `import { SimpleSchema } from 'meteor/aldeed:simple-schema';` wherever you use `SimpleSchema`
 - `SimpleSchemaValidationContext` is now `SimpleSchema.ValidationContext`
@@ -97,7 +97,7 @@ A simple, reactive schema validation smart package for Meteor.
 - `validationContext.removeInvalidKeys()` has been removed since it is effectively the same as `validationContext.reset()`.
 - Removed `validationContext.getErrorObject()` since the `ValidationError` thrown by `simpleSchema.validate()` fills this need.
 - A `SimpleSchema` can no longer be used with the `check` package `check` function. Instead, use `simpleSchema.validate()`, which throws a more helpful ValidationError and satisfies `audit-argument-checks`.
-- `validationContext.validateOne()` is removed and instead you can pass a `keys` array as an option to `validationContext.validate()
+- `validationContext.validateOne()` is removed and instead you can pass a `keys` array as an option to `validationContext.validate()`
 - `invalidKeys()` is changed to `validationErrors()`, `_invalidKeys` is changed to `_validationErrors`, and `addInvalidKeys` is changed to `addValidationErrors`
 - The error objects returned by `validationErrors()` and attached to thrown `ValidationError` objects now have additional properties that help describe the particular error.
 - `decimal` is no longer a valid schema option. Instead, decimal/float is the default, and you can set the `type` to `SimpleSchema.Integer` to specify that you want only integers.
@@ -111,6 +111,10 @@ A simple, reactive schema validation smart package for Meteor.
   - `SimpleSchema.prototype.messages` is removed. You can call `simpleSchemaInstance.messageBox.messages()` instead, and you must pass in the messages in the format required by that package.
   - `SimpleSchema._globalMessages` and `SimpleSchema._depsGlobalMessages` internal properties are removed.
   - If you have custom regEx messages, you now need to do this by overriding the `regEx` messages function.
+- SimpleSchema constructor no longer accepts an array to merge schemas. Instead, pass a single schema and then use `schema.extend(otherSchema)` to extend it.
+- When validating, objects with a custom prototype were previously treated as blackbox objects. Now they are validated by default, so you must add `blackbox: true` to your schema if you want to keep the old behavior. The exceptions are Date objects and TypedArray objects, which are always treated as blackbox.
+- You can now specify multiple combinations of type and certain other validation criteria for a single field. This is done using `SimpleSchema.oneOf`. Refer to the documentation for details.
+- Cleaning an object no longer mutates it. However, you can pass `mutate: true` option to improve performance if you don't mind the object being mutated.
 
 ### 1.4.0
 
