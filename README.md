@@ -15,6 +15,12 @@ In your Meteor app directory, enter:
 $ meteor add aldeed:simple-schema
 ```
 
+## Usage
+
+```js
+import { SimpleSchema } from 'meteor/aldeed:simple-schema';
+```
+
 ## Reactivity
 
 ```js
