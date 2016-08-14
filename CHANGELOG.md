@@ -115,6 +115,8 @@ A simple, reactive schema validation smart package for Meteor.
 - When validating, objects with a custom prototype were previously treated as blackbox objects. Now they are validated by default, so you must add `blackbox: true` to your schema if you want to keep the old behavior. The exceptions are Date objects and TypedArray objects, which are always treated as blackbox.
 - You can now specify multiple combinations of type and certain other validation criteria for a single field. This is done using `SimpleSchema.oneOf`. Refer to the documentation for details.
 - Cleaning an object no longer mutates it. However, you can pass `mutate: true` option to improve performance if you don't mind the object being mutated.
+- You can now add custom whole-document validators, either globally or for one schema. See `SimpleSchema.addDocValidator` and `simpleSchemaInstance#addDocValidator`.
+- If you pass an array of objects to `simpleSchemaInstance#validate`, all objects will be validated, and an error will be thrown for the first invalid object.
 
 ### 1.4.0
 
