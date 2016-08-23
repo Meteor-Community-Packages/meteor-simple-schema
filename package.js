@@ -6,7 +6,7 @@ Package.describe({
 });
 
 Npm.depends({
-  'simpl-schema': '0.0.1'
+  'simpl-schema': '0.0.3'
 });
 
 Package.onUse(function(api) {
@@ -19,6 +19,9 @@ Package.onUse(function(api) {
   ]);
 
   api.mainModule('main.js');
+
+  // Need this for backwards compatibility for now
+  api.export('SimpleSchema');
 });
 
 // Package.onTest(function(api) {
