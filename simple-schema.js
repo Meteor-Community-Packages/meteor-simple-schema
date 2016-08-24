@@ -535,6 +535,7 @@ SimpleSchema.RegEx = {
   // This is probably the same logic used by most browsers when type=email, which is our goal. It is
   // a very permissive expression. Some apps may wish to be more strict and can write their own RegExp.
   Email: /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
+  EmailWithTLD: /^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+(?:\.[A-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[A-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[A-z0-9]{2,}(?:[a-z0-9-]*[a-z0-9])?$/,
 
   Domain: new RegExp('^' + RX_DOMAIN + '$'),
   WeakDomain: new RegExp('^' + RX_WEAK_DOMAIN + '$'),
@@ -930,6 +931,7 @@ SimpleSchema._globalMessages = {
   regEx: [
     {msg: "[label] failed regular expression validation"},
     {exp: SimpleSchema.RegEx.Email, msg: "[label] must be a valid e-mail address"},
+    {exp: SimpleSchema.RegEx.EmailWithTLD, msg: "[label] must be a valid e-mail address"},
     {exp: SimpleSchema.RegEx.WeakEmail, msg: "[label] must be a valid e-mail address"},
     {exp: SimpleSchema.RegEx.Domain, msg: "[label] must be a valid domain"},
     {exp: SimpleSchema.RegEx.WeakDomain, msg: "[label] must be a valid domain"},
