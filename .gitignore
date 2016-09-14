@@ -1,4 +1,5 @@
 .DS_Store
 .build*
-smart.lock
 /packages/
+.npm
+node_modules
