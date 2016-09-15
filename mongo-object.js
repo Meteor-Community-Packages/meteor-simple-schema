@@ -712,9 +712,8 @@ MongoObject.expandKey = function(val, key, obj) {
     } else {
       //see if the next piece is a number
       nextPiece = subkeys[i + 1];
-      nextPiece = parseInt(nextPiece, 10);
       if (!current[subkey]) {
-        current[subkey] = isNaN(nextPiece) ? {} : [];
+        current[subkey] = isNaN(+nextPiece) ? {} : [];
       }
     }
     current = current[subkey];
