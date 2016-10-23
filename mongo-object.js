@@ -62,7 +62,7 @@ var extractOp = function extractOp(position) {
 /*
  * @constructor
  * @param {Object} objOrModifier
- * @param {string[]} blackBoxKeys - A list of the names of keys that shouldn't be traversed
+ * @param {SimpleSchema} simpleSchema - A SimpleSchema instance
  * @returns {undefined}
  *
  * Creates a new MongoObject instance. The object passed as the first argument
@@ -75,7 +75,7 @@ MongoObject = function(objOrModifier, simpleSchema) {
   self._simpleSchema = simpleSchema;
   var blackBoxKeys = [];
   if (simpleSchema) {
-    blackBoxKeys = simpleSchema._blackBoxKeys;
+    blackBoxKeys = simpleSchema._blackboxKeys;
   }
   self._obj = objOrModifier;
   self._affectedKeys = {};
