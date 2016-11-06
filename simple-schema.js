@@ -2,14 +2,6 @@
 /* global SimpleSchemaValidationContext */
 /* global MongoObject */
 /* global Utility */
-/* global S:true */
-
-if (Meteor.isServer) {
-  S = Npm.require("string");
-}
-if (Meteor.isClient) {
-  S = window.S;
-}
 
 var schemaDefinition = {
   type: Match.Any,
@@ -49,7 +41,7 @@ var typeconvert = function(value, type) {
     return value;
   }
   if (type === Number) {
-    if (typeof value === "string" && !S(value).isEmpty()) {
+    if (typeof value === "string" && !_.isEmpty(value)) {
       //try to convert numeric strings to numbers
       var numberVal = Number(value);
       if (!isNaN(numberVal)) {
@@ -258,7 +250,7 @@ var getObjectKeys = function(schema, schemaKeyList) {
 
     loopArray = [];
     _.each(schemaKeyList, function(fieldName2) {
-      if (S(fieldName2).startsWith(keyPrefix)) {
+      if (fieldName2.startsWith(keyPrefix)) {
         remainingText = fieldName2.substring(keyPrefix.length);
         if (remainingText.indexOf(".") === -1) {
           loopArray.push(remainingText);
@@ -283,7 +275,7 @@ var inflectedLabel = function(fieldName) {
   if (label === "_id") {
     return "ID";
   }
-  return S(label).humanize().s;
+  return humanize(label);
 };
 
 /**
@@ -559,7 +551,12 @@ SimpleSchema.RegEx = {
   Id: /^[23456789ABCDEFGHJKLMNPQRSTWXYZabcdefghijkmnopqrstuvwxyz]{17}$/,
   // allows for a 5 digit zip code followed by a whitespace or dash and then 4 more digits
   // matches 11111 and 11111-1111 and 11111 1111
-  ZipCode: /^\d{5}(?:[-\s]\d{4})?$/
+  ZipCode: /^\d{5}(?:[-\s]\d{4})?$/,
+  // taken from google's libphonenumber library
+  // https://github.com/googlei18n/libphonenumber/blob/master/javascript/i18n/phonenumbers/phonenumberutil.js
+  // reference the VALID_PHONE_NUMBER_PATTERN key
+  // allows for common phone number symbols including + () and -
+  Phone: /^[0-9０-９٠-٩۰-۹]{2}$|^[+＋]*(?:[-x‐-―−ー－-／  ­​⁠　()（）［］.\[\]/~⁓∼～*]*[0-9０-９٠-٩۰-۹]){3,}[-x‐-―−ー－-／  ­​⁠　()（）［］.\[\]/~⁓∼～0-9０-９٠-٩۰-۹]*(?:;ext=([0-9０-９٠-٩۰-۹]{1,7})|[  \t,]*(?:e?xt(?:ensi(?:ó?|ó))?n?|ｅ?ｘｔｎ?|[,xｘ#＃~～]|int|anexo|ｉｎｔ)[:\.．]?[  \t,-]*([0-9０-９٠-٩۰-۹]{1,7})#?|[- ]+([0-9０-９٠-٩۰-۹]{1,5})#)?$/i
 };
 
 SimpleSchema._makeGeneric = function(name) {
@@ -567,7 +564,7 @@ SimpleSchema._makeGeneric = function(name) {
     return null;
   }
 
-  return name.replace(/\.[0-9]+\./g, '.$.').replace(/\.[0-9]+/g, '.$');
+  return name.replace(/\.[0-9]+(?=\.|$)/g, '.$');
 };
 
 SimpleSchema._depsGlobalMessages = new Deps.Dependency();
@@ -596,8 +593,15 @@ SimpleSchema.prototype.condition = function(obj) {
     throw new Match.Error("Object cannot contain modifier operators alongside other keys");
   }
 
-  if (!self.newContext().validate(obj, {modifier: isModifier, filter: false, autoConvert: false})) {
-    throw new Match.Error("One or more properties do not match the schema.");
+  var ctx = self.newContext();
+  if (!ctx.validate(obj, {modifier: isModifier, filter: false, autoConvert: false})) {
+    var error = ctx.getErrorObject();
+    var matchError = new Match.Error(error.message);
+    matchError.invalidKeys = error.invalidKeys;
+    if (Meteor.isServer) {
+      matchError.sanitizedError = error.sanitizedError;
+    }
+    throw matchError;
   }
 
   return true;
@@ -638,8 +642,7 @@ SimpleSchema.addValidator = function(func) {
 };
 
 // Instance custom validators
-// validator is deprecated; use addValidator
-SimpleSchema.prototype.addValidator = SimpleSchema.prototype.validator = function(func) {
+SimpleSchema.prototype.addValidator = function(func) {
   this._validators.push(func);
 };
 
@@ -656,6 +659,16 @@ SimpleSchema.prototype.pick = function(/* arguments */) {
   var newSchema = _.pick.apply(null, args);
   return new SimpleSchema(newSchema);
 };
+
+SimpleSchema.prototype.omit = function() {
+  var self = this;
+  var args = _.toArray(arguments);
+  args.unshift(self._schema);
+
+  var newSchema = _.omit.apply(null, args);
+  return new SimpleSchema(newSchema);
+};
+
 
 /**
  * @method SimpleSchema.prototype.clean
@@ -732,7 +745,7 @@ SimpleSchema.prototype.clean = function(doc, options) {
             var newVal = typeconvert(val, def.type);
             // trim strings
             if (options.trimStrings && typeof newVal === "string") {
-              newVal = S(newVal).trim().s;
+              newVal = newVal.trim();
             }
             if (newVal !== void 0 && newVal !== val) {
               // remove empty strings
@@ -740,7 +753,8 @@ SimpleSchema.prototype.clean = function(doc, options) {
                 // For a document, we remove any fields that are being set to an empty string
                 newVal = void 0;
                 // For a modifier, we $unset any fields that are being set to an empty string
-                if (this.operator === "$set") {
+                if (this.operator === "$set" && this.position.match(/\[.+?\]/g).length < 2) {
+
                   p = this.position.replace("$set", "$unset");
                   mDoc.setValueForPosition(p, "");
                 }
@@ -755,14 +769,14 @@ SimpleSchema.prototype.clean = function(doc, options) {
           if (!wasAutoConverted) {
             // trim strings
             if (options.trimStrings && typeof val === "string" && (!def || (def && def.trim !== false))) {
-              this.updateValue(S(val).trim().s);
+              this.updateValue(val.trim());
             }
             // remove empty strings
             if (options.removeEmptyStrings && (!this.operator || this.operator === "$set") && typeof val === "string" && !val.length) {
               // For a document, we remove any fields that are being set to an empty string
               this.remove();
-              // For a modifier, we $unset any fields that are being set to an empty string
-              if (this.operator === "$set") {
+              // For a modifier, we $unset any fields that are being set to an empty string. But only if we're not already within an entire object that is being set.
+              if (this.operator === "$set" && this.position.match(/\[.+?\]/g).length < 2) {
                 p = this.position.replace("$set", "$unset");
                 mDoc.setValueForPosition(p, "");
               }
@@ -775,6 +789,16 @@ SimpleSchema.prototype.clean = function(doc, options) {
 
   // Set automatic values
   options.getAutoValues && getAutoValues.call(self, mDoc, options.isModifier, options.extendAutoValueContext);
+
+  // Ensure we don't have any operators set to an empty object
+  // since MongoDB 2.6+ will throw errors.
+  if (options.isModifier) {
+    for (var op in doc) {
+      if (doc.hasOwnProperty(op) && _.isEmpty(doc[op])) {
+        delete doc[op];
+      }
+    }
+  }
 
   return doc;
 };
@@ -892,6 +916,7 @@ SimpleSchema._globalMessages = {
   maxNumberExclusive: "[label] must be less than [max]",
   minDate: "[label] must be on or after [min]",
   maxDate: "[label] cannot be after [max]",
+  badDate: "[label] is not a valid date",
   minCount: "You must specify at least [minCount] values",
   maxCount: "You cannot specify more than [maxCount] values",
   noDecimal: "[label] must be an integer",
@@ -1122,4 +1147,41 @@ SimpleSchema.prototype.objectKeys = function(keyPrefix) {
     return self._firstLevelSchemaKeys;
   }
   return self._objectKeys[keyPrefix + "."] || [];
+};
+
+SimpleSchema.prototype.validate = function (obj, options) {
+  if (Package.check && Package['audit-argument-checks']) {
+    // Call check but ignore the error to silence audit-argument-checks
+    try { check(obj); } catch (e) { /* ignore error */ }
+  }
+
+  var validationContext = this.newContext();
+  var isValid = validationContext.validate(obj, options);
+
+  if (isValid) return;
+
+  var errors = validationContext.invalidKeys().map(function (error) {
+    return {
+      name: error.name,
+      type: error.type,
+      details: {
+        value: error.value
+      }
+    };
+  });
+
+  // In order for the message at the top of the stack trace to be useful,
+  // we set it to the first validation error message.
+  var message = validationContext.keyErrorMessage(errors[0].name);
+
+  throw new Package['mdg:validation-error'].ValidationError(errors, message);
+};
+
+SimpleSchema.prototype.validator = function (options) {
+  var self = this;
+  options = options || {};
+  return function (obj) {
+    if (options.clean === true) self.clean(obj, options);
+    self.validate(obj);
+  };
 };
