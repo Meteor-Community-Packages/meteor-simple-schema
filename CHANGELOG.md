@@ -7,86 +7,130 @@ A simple, reactive schema validation smart package for Meteor.
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [simple-schema](#simple-schema)
-  - [Change Log](#change-log)
-    - [1.4.0](#140)
-    - [1.3.3](#133)
-    - [1.3.2](#132)
-    - [1.3.1](#131)
-    - [1.3.0](#130)
-    - [1.2.0](#120)
-    - [1.1.0](#110)
-    - [1.0.3](#103)
-    - [1.0.2](#102)
-    - [1.0.1](#101)
-    - [1.0.0](#100)
-    - [0.7.0](#070)
-    - [0.6.0](#060)
-    - [0.5.1](#051)
-    - [0.5.0](#050)
-    - [0.4.0](#040)
-    - [0.3.0](#030)
-    - [0.2.48](#0248)
-    - [0.2.47](#0247)
-    - [0.2.46](#0246)
-    - [0.2.45](#0245)
-    - [0.2.44](#0244)
-    - [0.2.43](#0243)
-    - [0.2.42](#0242)
-    - [0.2.41](#0241)
-    - [0.2.40](#0240)
-    - [0.2.39](#0239)
-    - [0.2.38](#0238)
-    - [0.2.37](#0237)
-    - [0.2.36](#0236)
-    - [0.2.35](#0235)
-    - [0.2.34](#0234)
-    - [0.2.33](#0233)
-    - [0.2.32](#0232)
-    - [0.2.31](#0231)
-    - [0.2.30](#0230)
-    - [0.2.29](#0229)
-    - [0.2.28](#0228)
-    - [0.2.27](#0227)
-    - [0.2.26](#0226)
-    - [0.2.25](#0225)
-    - [0.2.24](#0224)
-    - [0.2.23](#0223)
-    - [0.2.22](#0222)
-    - [0.2.21](#0221)
-    - [0.2.20](#0220)
-    - [0.2.19](#0219)
-    - [0.2.18](#0218)
-    - [0.2.17](#0217)
-    - [0.2.16](#0216)
-    - [0.2.15](#0215)
-    - [0.2.14](#0214)
-    - [0.2.13](#0213)
-    - [0.2.12](#0212)
-    - [0.2.11](#0211)
-    - [0.2.10](#0210)
-    - [0.2.9](#029)
-    - [0.2.8](#028)
-    - [0.2.7](#027)
-    - [0.2.6](#026)
-    - [0.2.5](#025)
-    - [0.2.4](#024)
-    - [0.2.3](#023)
-    - [0.2.2](#022)
-    - [0.2.1](#021)
-    - [0.2.0](#020)
-    - [0.1.13](#0113)
-    - [0.1.12](#0112)
-    - [0.1.11](#0111)
-    - [0.1.10](#0110)
-    - [0.1.9](#019)
-    - [0.1.8](#018)
+- [Change Log](#change-log)
+  - [2.0.0](#200)
+  - [1.5.3](#153)
+  - [1.5.2](#152)
+  - [1.5.1](#151)
+  - [1.5.0](#150)
+  - [1.4.0](#140)
+  - [1.3.3](#133)
+  - [1.3.2](#132)
+  - [1.3.1](#131)
+  - [1.3.0](#130)
+  - [1.2.0](#120)
+  - [1.1.0](#110)
+  - [1.0.3](#103)
+  - [1.0.2](#102)
+  - [1.0.1](#101)
+  - [1.0.0](#100)
+  - [0.7.0](#070)
+  - [0.6.0](#060)
+  - [0.5.1](#051)
+  - [0.5.0](#050)
+  - [0.4.0](#040)
+  - [0.3.0](#030)
+  - [0.2.48](#0248)
+  - [0.2.47](#0247)
+  - [0.2.46](#0246)
+  - [0.2.45](#0245)
+  - [0.2.44](#0244)
+  - [0.2.43](#0243)
+  - [0.2.42](#0242)
+  - [0.2.41](#0241)
+  - [0.2.40](#0240)
+  - [0.2.39](#0239)
+  - [0.2.38](#0238)
+  - [0.2.37](#0237)
+  - [0.2.36](#0236)
+  - [0.2.35](#0235)
+  - [0.2.34](#0234)
+  - [0.2.33](#0233)
+  - [0.2.32](#0232)
+  - [0.2.31](#0231)
+  - [0.2.30](#0230)
+  - [0.2.29](#0229)
+  - [0.2.28](#0228)
+  - [0.2.27](#0227)
+  - [0.2.26](#0226)
+  - [0.2.25](#0225)
+  - [0.2.24](#0224)
+  - [0.2.23](#0223)
+  - [0.2.22](#0222)
+  - [0.2.21](#0221)
+  - [0.2.20](#0220)
+  - [0.2.19](#0219)
+  - [0.2.18](#0218)
+  - [0.2.17](#0217)
+  - [0.2.16](#0216)
+  - [0.2.15](#0215)
+  - [0.2.14](#0214)
+  - [0.2.13](#0213)
+  - [0.2.12](#0212)
+  - [0.2.11](#0211)
+  - [0.2.10](#0210)
+  - [0.2.9](#029)
+  - [0.2.8](#028)
+  - [0.2.7](#027)
+  - [0.2.6](#026)
+  - [0.2.5](#025)
+  - [0.2.4](#024)
+  - [0.2.3](#023)
+  - [0.2.2](#022)
+  - [0.2.1](#021)
+  - [0.2.0](#020)
+  - [0.1.13](#0113)
+  - [0.1.12](#0112)
+  - [0.1.11](#0111)
+  - [0.1.10](#0110)
+  - [0.1.9](#019)
+  - [0.1.8](#018)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Change Log
 
 NOTE: There was an accidental breaking change in v1.4.0. Probably only aldeed:collection2 is affected. If you use aldeed:simple-schema v1.4.0 or higher along with aldeed:collection2, be sure to use aldeed:collection2 v2.7.1 or higher.
+
+### 2.0.0
+
+- SimpleSchema is now an NPM package located here: https://github.com/aldeed/node-simple-schema. The version numbering started over, but you can consider v0.x.x of the NPM package to be v2 of the Meteor package. The Meteor package will get critical fixes only. You should attempt to migrate to using the NPM package as soon as you can.
+- You should now `import SimpleSchema from 'simpl-schema'` (NPM package) in every file where you use `SimpleSchema`.
+- Renamed:
+  - `SimpleSchemaValidationContext` -> `SimpleSchema.ValidationContext`
+  - `validationContext.resetValidation()` -> `validationContext.reset()`
+  - `validationContext.invalidKeys()` -> `validationContext.validationErrors()`
+  - `validationContext.addInvalidKeys()` -> `validationContext.addValidationErrors()`
+- Removed:
+  - `validationContext.removeInvalidKeys()`: It was effectively the same as `validationContext.reset()`.
+  - `validationContext.getErrorObject()`: The `ValidationError` thrown by `simpleSchema.validate()` fills this need.
+  - `validationContext.validateOne()`: Instead you can pass a `keys` array as an option to `validationContext.validate()`.
+- Other Breaking Changes:
+  - `decimal` is no longer a valid schema option. Instead, decimal/float is the default, and you can set the `type` to `SimpleSchema.Integer` to specify that you want only integers.
+  - Error message changes:
+    - SimpleSchema now uses `MessageBox` to manage validation error messages. Among other things, this means that placeholder text should now use handlebars syntax, `{{label}}` instead of `[label]`
+    - In the message context (for placeholders), `[type]` is now `{{dataType}}` and `[key]` is now `{{name}}`, though `key` still works for now.
+    - `SimpleSchema.messages` is removed. You can call `MessageBox.defaults` directly instead.
+    - `SimpleSchema.prototype.messages` is removed. You can call `simpleSchemaInstance.messageBox.messages()` instead, and you must pass in the messages in the format required by that package.
+    - `SimpleSchema._globalMessages` and `SimpleSchema._depsGlobalMessages` internal properties are removed.
+    - If you have custom regEx messages, you now need to do this by overriding the `regEx` messages function.
+  - SimpleSchema constructor no longer accepts an array to merge schemas. Instead, pass a single schema and then use `schema.extend(otherSchema)` to extend it.
+  - When validating, objects with a custom prototype were previously treated as blackbox objects. Now they are validated by default, so you must add `blackbox: true` to your schema if you want to keep the old behavior. The exceptions are Date objects and TypedArray objects, which are always treated as blackbox.
+  - The internal storage of your schema object has changed, so calling `simpleSchemaInstance.schema()` will now return an object that looks different. One of the differences is that subschemas are not merged into it. To get an object with subschemas merged, you can call `simpleSchemaInstance.mergedSchema()`. However, there are still differences due to how groups/`oneOf` is handled internally.
+  - Implicit keys are no longer added for you. You must define every key.
+  - A `SimpleSchema` can no longer be used with the `check` package `check` function. Instead, use `simpleSchema.validate()`, which throws a more helpful ValidationError and satisfies `audit-argument-checks`.
+  - If you have custom validation that returns the error strings "expectedString", "expectedNumber", "expectedBoolean", "expectedArray", "expectedObject", or "expectedConstructor", you should now return `{ type: SimpleSchema.ErrorTypes.EXPECTED_TYPE, dataType: 'String' }` instead, where `dataType` is "Boolean", "String", "Object", "Array", "Integer", or "Number".
+  - Cleaning an object no longer mutates it. However, you can pass `mutate: true` option to improve performance if you don't mind the object being mutated.
+  - Reactivity of labels and error messages in client code is no longer automatic. When creating your `SimpleSchema` instance, pass `{ tracker: Tracker }` in the options to enable Tracker reactivity.
+- New Features
+  - If you prefer keys to be optional by default, you can pass `requiredByDefault: false` as a SimpleSchema constructor option and then use `required: true` for each key that should be required.
+  - You can now use shorthand for keys when your schema is extra super duper simple. See https://github.com/aldeed/node-simple-schema#shorthand-definitions
+  - The error objects returned by `validationErrors()` and attached to thrown `ValidationError` objects now have additional properties that help describe the particular error.
+  - In custom validation functions, you can now do `this.addValidationErrors(errors)`, where errors is an array of error objects. This allows you to add errors for keys other than the one you are validating.
+  - The `SimpleSchema.ErrorTypes` object now contains constants for all of the built-in error type strings.
+  - You can now specify multiple combinations of type and certain other validation criteria for a single field. This is done using `SimpleSchema.oneOf`. Refer to https://github.com/aldeed/node-simple-schema#multiple-definitions-for-one-key
+  - You can now add custom whole-document validators, either globally or for one schema. See `SimpleSchema.addDocValidator` and `simpleSchemaInstance#addDocValidator`.
+  - If you pass an array of objects to `simpleSchemaInstance#validate`, all objects will be validated, and an error will be thrown for the first invalid object.
 
 ### 1.5.3
 
