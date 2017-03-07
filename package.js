@@ -1,12 +1,11 @@
 Package.describe({
-  name: "aldeed:simple-schema",
-  summary: "A simple schema validation object with reactivity. Used by collection2 and autoform.",
-  version: "1.5.3",
-  git: "https://github.com/aldeed/meteor-simple-schema.git"
+  name: 'aldeed:simple-schema',
+  summary: 'A simple schema validation object with reactivity. Used by collection2 and autoform.',
+  version: '1.5.3',
+  git: 'https://github.com/aldeed/meteor-simple-schema.git'
 });
 
-Package.on_use(function(api) {
-
+Package.onUse(function (api) {
   if (api.versionsFrom) {
     api.use('deps@1.0.0');
     api.use('underscore@1.0.0');
@@ -18,7 +17,7 @@ Package.on_use(function(api) {
 
   api.use('mdg:validation-error@0.2.0', {unordered: true});
 
-  api.add_files([
+  api.addFiles([
     'string-polyfills.js',
     'string-humanize.js',
     'mongo-object.js',
@@ -29,26 +28,20 @@ Package.on_use(function(api) {
     'simple-schema-context.js',
   ]);
   api.export(['SimpleSchema', 'MongoObject'], ['client', 'server']);
-  api.export('humanize', {testOnly:true});
-
+  api.export('humanize', {testOnly: true});
 });
 
-Package.on_test(function(api) {
+Package.onTest(function (api) {
+  api.use('aldeed:simple-schema');
+  api.use('tinytest@1.0.0');
+  api.use('test-helpers@1.0.0');
+  api.use('underscore@1.0.0');
+  api.use('check@1.0.0');
 
-  if (api.versionsFrom) {
-    api.use("aldeed:simple-schema");
-    api.use('tinytest@1.0.0');
-    api.use('test-helpers@1.0.0');
-    api.use('underscore@1.0.0');
-    api.use('check@1.0.0');
-  } else {
-    api.use(["simple-schema", "tinytest", "test-helpers", "underscore", "check"]);
-  }
-
-  api.add_files([
-    "simple-schema-tests.js",
-    "mongo-object-tests.js",
-    "humanize-tests.js",
-    "validation-error-tests.js"
+  api.addFiles([
+    'simple-schema-tests.js',
+    'mongo-object-tests.js',
+    'humanize-tests.js',
+    'validation-error-tests.js'
   ], ['client', 'server']);
 });
