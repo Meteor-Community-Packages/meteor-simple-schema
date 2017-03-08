@@ -967,6 +967,18 @@ validation contexts to cause all named validation contexts to automatically
 log all invalid key errors to the browser console. This can be helpful while
 developing an app to figure out why certain actions are failing validation.
 
+You can also enable debug mode by adding this to your settings file:
+
+```js
+{
+  "public": {
+    "simpleSchema": {
+      "debug": true
+    }
+  }
+}
+```
+
 ## Extending the Schema Options
 
 You may find at some point that there is something extra you would really like to define within a schema for your package or app. However, if you add unrecognized options to your schema definition, you will get an error. To inform SimpleSchema about your custom option and avoid the error, you need to call `SimpleSchema.extendOptions`. By way of example, here is how the Collection2 package adds the additional schema options it provides:

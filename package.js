@@ -23,6 +23,7 @@ Package.onUse(function (api) {
     'mongo-object.js',
     'simple-schema-utility.js',
     'simple-schema.js',
+    'settings.js',
     'simple-schema-validation.js',
     'simple-schema-validation-new.js',
     'simple-schema-context.js',
