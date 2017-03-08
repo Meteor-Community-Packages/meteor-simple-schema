@@ -275,7 +275,6 @@ MongoObject = function(objOrModifier, blackBoxKeys) {
         if (current[subkey] === void 0 && value !== void 0) {
           //see if the next piece is a number
           nextPiece = subkeys[i + 1];
-          nextPiece = parseInt(nextPiece, 10);
           current[subkey] = isNaN(nextPiece) ? {} : [];
         }
 
@@ -713,7 +712,6 @@ MongoObject.expandKey = function(val, key, obj) {
     } else {
       //see if the next piece is a number
       nextPiece = subkeys[i + 1];
-      nextPiece = parseInt(nextPiece, 10);
       if (!current[subkey]) {
         current[subkey] = isNaN(nextPiece) ? {} : [];
       }
