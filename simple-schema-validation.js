@@ -217,7 +217,8 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
       def = ss.getDefinition(affectedKey);
 
       // Perform validation for this key
-      if (!keyToValidate || keyToValidate === affectedKey || keyToValidate === affectedKeyGeneric) {
+      var validateArrayItem = (keyToValidate && affectedKeyGeneric.match(new RegExp(keyToValidate + '\\.\\$', 'i')));
+      if (!keyToValidate || keyToValidate === affectedKey || keyToValidate === affectedKeyGeneric || validateArrayItem) {
         // We can skip the required check for keys that are ancestors
         // of those in $set or $setOnInsert because they will be created
         // by MongoDB while setting.
