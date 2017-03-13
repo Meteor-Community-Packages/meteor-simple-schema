@@ -17,9 +17,9 @@ Utility = {
   errorObject: function errorObject(errorType, keyName, keyValue) {
     return {name: keyName, type: errorType, value: keyValue};
   },
-  // Tests whether it's an Object as opposed to something that inherits from Object
+  // Tests whether it's an Object
   isBasicObject: function isBasicObject(obj) {
-    return _.isObject(obj) && Object.getPrototypeOf(obj) === Object.prototype;
+    return _.isObject(obj);
   },
   // The latest Safari returns false for Uint8Array, etc. instanceof Function
   // unlike other browsers.
