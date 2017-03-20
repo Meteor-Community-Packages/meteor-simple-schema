@@ -128,7 +128,7 @@ if (Meteor.isClient) {
     Tracker.autorun(function() {
       var context = BookSchema.namedContext("myContext");
       if (!context.isValid()) {
-        console.log(context.invalidKeys());
+        console.log(context.invalidKeys);
       }
     });
   });
@@ -743,7 +743,7 @@ You can use a technique similar to this to work around asynchronicity issues in 
 
 ### Getting a List of Invalid Keys and Validation Error Messages
 
-Call `myContext.invalidKeys()` to get the full array of invalid key data. Each object
+Call `myContext.invalidKeys` to get the full array of invalid key data. Each object
 in the array has two keys:
 * `name`: The schema key as specified in the schema.
 * `type`: The type of error. One of the `required*`, `min*`, `max*` etc. strings listed
@@ -756,7 +756,7 @@ There is no `message` property. Once you see what keys are invalid, you can call
 If you want to add a `message` property to the invalidKeys array objects (which would no longer be reactive), you can do
 
 ```js
-var ik = ctxt.invalidKeys();
+var ik = ctxt.invalidKeys;
 ik = _.map(ik, function (o) {
   return _.extend({message: ctxt.keyErrorMessage(o.name)}, o);
 });
