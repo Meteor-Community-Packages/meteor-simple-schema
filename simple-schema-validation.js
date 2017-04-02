@@ -40,8 +40,6 @@ function doTypeChecks(def, keyValue, op) {
        return !!def.exclusiveMax ? "maxNumberExclusive" : "maxNumber";
     } else if (op !== "$inc" && def.min !== null && (!!def.exclusiveMin ? def.min >= keyValue : def.min > keyValue)) {
        return !!def.exclusiveMin ? "minNumberExclusive" : "minNumber";
-    } else if (!def.decimal && keyValue.toString().indexOf(".") > -1) {
-      return "noDecimal";
     }
   }
 
