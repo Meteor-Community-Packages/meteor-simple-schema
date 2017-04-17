@@ -154,11 +154,12 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
       }
 
       // Check value against allowedValues array
-      if (def.allowedValues && !_.contains(def.allowedValues, val)) {
+      var allowedValues = _.isFunction(def.allowedValues) ? def.allowedValues() : def.allowedValues;
+
+      if (allowedValues && !_.contains(allowedValues, val)) {
         invalidKeys.push(Utility.errorObject("notAllowed", affectedKey, val, def, ss));
         return;
       }
-
     }
 
     // Perform custom validation
