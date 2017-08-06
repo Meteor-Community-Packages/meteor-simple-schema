@@ -107,6 +107,7 @@ NOTE: There was an accidental breaking change in v1.4.0. Probably only aldeed:co
   - `validationContext.validateOne()`: Instead you can pass a `keys` array as an option to `validationContext.validate()`.
 - Other Breaking Changes:
   - `decimal` is no longer a valid schema option. Instead, decimal/float is the default, and you can set the `type` to `SimpleSchema.Integer` to specify that you want only integers.
+  - The syntax of array-brackets `new SimpleSchema({ foo: { type: [String] } })` has been replaced by a more declarative solution: `new SimpleSchema({ foo: { type: Array }, 'foo.$': { type: String } })`
   - Error message changes:
     - SimpleSchema now uses `MessageBox` to manage validation error messages. Among other things, this means that placeholder text should now use handlebars syntax, `{{label}}` instead of `[label]`
     - In the message context (for placeholders), `[type]` is now `{{dataType}}` and `[key]` is now `{{name}}`, though `key` still works for now.
