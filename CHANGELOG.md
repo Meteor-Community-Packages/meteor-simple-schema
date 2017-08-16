@@ -95,7 +95,7 @@ NOTE: There was an accidental breaking change in v1.4.0. Probably only aldeed:co
 ### 2.0.0
 
 - SimpleSchema is now an NPM package located here: https://github.com/aldeed/node-simple-schema. The version numbering started over, but you can consider v0.x.x of the NPM package to be v2 of the Meteor package. The Meteor package will get critical fixes only. You should attempt to migrate to using the NPM package as soon as you can.
-- You should now `import SimpleSchema from 'simpl-schema'` (NPM package) in every file where you use `SimpleSchema`.
+- You should now `import SimpleSchema from 'simple-schema'` (NPM package) in every file where you use `SimpleSchema`.
 - Renamed:
   - `SimpleSchemaValidationContext` -> `SimpleSchema.ValidationContext`
   - `validationContext.resetValidation()` -> `validationContext.reset()`
