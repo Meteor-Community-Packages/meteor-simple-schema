@@ -109,10 +109,15 @@ doValidation1 = function doValidation1(obj, isModifier, isUpsert, keyToValidate,
 
   // Validation function called for each affected key
   function validate(val, affectedKey, affectedKeyGeneric, def, op, skipRequiredCheck, isInArrayItemObject, isInSubObject) {
-
     // Get the schema for this key, marking invalid if there isn't one.
     if (!def) {
-      invalidKeys.push(Utility.errorObject("keyNotInSchema", affectedKey, val, def, ss));
+      // If custom fields are allowed, pretend like we have a definition for unknown fields.
+      if (ss.allow_custom_fields) {
+        def = {optional: true};
+      } else {
+        invalidKeys.push(Utility.errorObject("keyNotInSchema", affectedKey, val, def, ss));
+      }
+      
       return;
     }
 

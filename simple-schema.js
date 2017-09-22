@@ -426,6 +426,12 @@ SimpleSchema = function(schemas, options) {
   options = options || {};
   schemas = schemas || {};
 
+  if (options.allow_custom_fields) {
+    self.allow_custom_fields = true;
+  } else {
+    self.allow_custom_fields = false;
+  }
+
   if (!_.isArray(schemas)) {
     schemas = [schemas];
   }
@@ -1106,6 +1112,12 @@ SimpleSchema.prototype.allowsKey = function(key) {
 
     // If the schema key is the test key, it's allowed.
     if (schemaKey === key) {
+      return true;
+    }
+
+    // If this is a simple top level key that isn't part of the schema and custom fields are
+    // allowed
+    if (key.indexOf(".") == -1 && self.allow_custom_fields) {
       return true;
     }
 

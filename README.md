@@ -7,6 +7,12 @@ SimpleSchema
 
 A simple, reactive schema validation package for Meteor. It's used by the [Collection2](https://github.com/aldeed/meteor-collection2) and [AutoForm](https://github.com/aldeed/meteor-autoform) packages, but you can use it by itself, too.
 
+## Additions to aldeed:simple-schema introduced in this fork:
+
+* A new option introduced `allow_custom_fields`. By passing this option to a
+created SimpleSchema, fields that aren't part of the schema won't be filtered
+and won't be considered as invalid.
+
 ## Table of Contents
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
