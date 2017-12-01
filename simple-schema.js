@@ -572,7 +572,7 @@ SimpleSchema._depsGlobalMessages = new Deps.Dependency();
 // Inherit from Match.Where
 // This allow SimpleSchema instance to be recognized as a Match.Where instance as well
 // as a SimpleSchema instance
-SimpleSchema.prototype = new Match.Where();
+SimpleSchema.prototype = Match.Where();
 
 // If an object is an instance of Match.Where, Meteor built-in check API will look at
 // the function named `condition` and will pass it the document to validate
