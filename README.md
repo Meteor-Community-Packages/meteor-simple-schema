@@ -7,6 +7,9 @@ SimpleSchema
 
 A simple, reactive schema validation package for Meteor. It's used by the [Collection2](https://github.com/aldeed/meteor-collection2) and [AutoForm](https://github.com/aldeed/meteor-autoform) packages, but you can use it by itself, too.
 
+
+## IMPORTANT NOTE! THE VERSION IN THIS REPO IS DEPRECATED
+
 NOTE: "v2" of this package is [an NPM package](https://github.com/aldeed/node-simple-schema). Please use the NPM package even in Meteor apps. This Meteor package will get only critical fixes. For help with migrating, see the [CHANGELOG](https://github.com/aldeed/meteor-simple-schema/blob/master/CHANGELOG.md#200).
 
 ## Table of Contents
