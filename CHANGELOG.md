@@ -133,6 +133,10 @@ NOTE: There was an accidental breaking change in v1.4.0. Probably only aldeed:co
   - You can now add custom whole-document validators, either globally or for one schema. See `SimpleSchema.addDocValidator` and `simpleSchemaInstance#addDocValidator`.
   - If you pass an array of objects to `simpleSchemaInstance#validate`, all objects will be validated, and an error will be thrown for the first invalid object.
 
+### 1.5.4
+
+Switched `Deps` to `Tracker` everywhere for compatibility with latest `tracker` package.
+
 ### 1.5.3
 
 Removed the old `SimpleSchema.prototype.validator`
