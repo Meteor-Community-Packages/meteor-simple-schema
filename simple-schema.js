@@ -448,7 +448,7 @@ SimpleSchema = function(schemas, options) {
   // a place to store custom error messages for this schema
   self._messages = {};
 
-  self._depsMessages = new Deps.Dependency();
+  self._depsMessages = new Tracker.Dependency();
   self._depsLabels = {};
 
   _.each(self._schema, function(definition, fieldName) {
@@ -487,7 +487,7 @@ SimpleSchema = function(schemas, options) {
       self._autoValues[fieldName] = definition.autoValue;
     }
 
-    self._depsLabels[fieldName] = new Deps.Dependency();
+    self._depsLabels[fieldName] = new Tracker.Dependency();
 
     if (definition.blackbox === true) {
       self._blackboxKeys.push(fieldName);
@@ -567,7 +567,7 @@ SimpleSchema._makeGeneric = function(name) {
   return name.replace(/\.[0-9]+(?=\.|$)/g, '.$');
 };
 
-SimpleSchema._depsGlobalMessages = new Deps.Dependency();
+SimpleSchema._depsGlobalMessages = new Tracker.Dependency();
 
 // Inherit from Match.Where
 // This allow SimpleSchema instance to be recognized as a Match.Where instance as well
@@ -609,7 +609,7 @@ SimpleSchema.prototype.condition = function(obj) {
 
 function logInvalidKeysForContext(context, name) {
   Meteor.startup(function() {
-    Deps.autorun(function() {
+    Tracker.autorun(function() {
       if (!context.isValid()) {
         console.log('SimpleSchema invalid keys for "' + name + '" context:', context.invalidKeys());
       }
@@ -627,7 +627,7 @@ SimpleSchema.prototype.namedContext = function(name) {
 
     // In debug mode, log all invalid key errors to the browser console
     if (SimpleSchema.debug && Meteor.isClient) {
-      Deps.nonreactive(function() {
+      Tracker.nonreactive(function() {
         logInvalidKeysForContext(self._validationContexts[name], name);
       });
     }

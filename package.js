@@ -6,14 +6,10 @@ Package.describe({
 });
 
 Package.onUse(function (api) {
-  if (api.versionsFrom) {
-    api.use('deps@1.0.0');
-    api.use('underscore@1.0.0');
-    api.use('check@1.0.0');
-    api.use('random@1.0.0');
-  } else {
-    api.use(['deps', 'underscore', 'check', 'random']);
-  }
+  api.use('tracker@1.0.0');
+  api.use('underscore@1.0.0');
+  api.use('check@1.0.0');
+  api.use('random@1.0.0');
 
   api.use('mdg:validation-error@0.2.0', {unordered: true});
 

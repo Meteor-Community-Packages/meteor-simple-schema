@@ -70,7 +70,6 @@
         "check",
         "Match",
         "Tracker",
-        "Deps",
         "EJSON",
         "Email",
         "Package",
