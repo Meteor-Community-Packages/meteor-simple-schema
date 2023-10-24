@@ -8,6 +8,7 @@ A simple, reactive schema validation smart package for Meteor.
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Change Log](#change-log)
+  - [3.0.0](#300)
   - [2.0.0](#200)
   - [1.5.3](#153)
   - [1.5.2](#152)
@@ -90,7 +91,13 @@ A simple, reactive schema validation smart package for Meteor.
 
 ## Change Log
 
-NOTE: There was an accidental breaking change in v1.4.0. Probably only aldeed:collection2 is affected. If you use aldeed:simple-schema v1.4.0 or higher along with aldeed:collection2, be sure to use aldeed:collection2 v2.7.1 or higher.
+### 3.0.0
+
+- This package is a fork from the npm package version [1.13.1](https://github.com/longshotlabs/simpl-schema/releases/tag/1.13.1)
+- Moved back into Meteor Package to keep Meteor compatibility
+- Async compatibility for all computed fields
+- Async Tracker compatibility
+- Maintenance mode documented
 
 ### 2.0.0
 
