@@ -1,0 +1,24 @@
+name: Add immediate comment on new issues
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  createComment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Comment
+        uses: peter-evans/create-or-update-comment@v1.4.2
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            Thank you for submitting an issue!
+
+            If this is a bug report, please be sure to include, at minimum, example code showing a small schema and any necessary calls with all their arguments, which will reproduce the issue. Even better, you can link to a saved online code editor example, where anyone can immediately run the code and see the issue.
+
+            If you are requesting a feature, include a code example of how you imagine it working if it were implemented.
+
+            If you need to edit your issue description, click the [**...**] and choose Edit.
+
+            Be patient. This is a free and freely licensed package that I maintain in my spare time. You may get a response in a day, but it could also take a month. If you benefit from this package and would like to see more of my time devoted to it, you can help by [sponsoring](https://github.com/sponsors/aldeed).
