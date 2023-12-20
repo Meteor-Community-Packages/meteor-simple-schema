@@ -1,584 +1,311 @@
-simple-schema
-=========================
-
-A simple, reactive schema validation smart package for Meteor.
+# aldeed:simple-schema CHANGELOG
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [Change Log](#change-log)
-  - [2.0.0](#200)
-  - [1.5.3](#153)
-  - [1.5.2](#152)
-  - [1.5.1](#151)
-  - [1.5.0](#150)
-  - [1.4.0](#140)
-  - [1.3.3](#133)
-  - [1.3.2](#132)
-  - [1.3.1](#131)
-  - [1.3.0](#130)
-  - [1.2.0](#120)
-  - [1.1.0](#110)
-  - [1.0.3](#103)
-  - [1.0.2](#102)
-  - [1.0.1](#101)
-  - [1.0.0](#100)
-  - [0.7.0](#070)
-  - [0.6.0](#060)
-  - [0.5.1](#051)
-  - [0.5.0](#050)
-  - [0.4.0](#040)
-  - [0.3.0](#030)
-  - [0.2.48](#0248)
-  - [0.2.47](#0247)
-  - [0.2.46](#0246)
-  - [0.2.45](#0245)
-  - [0.2.44](#0244)
-  - [0.2.43](#0243)
-  - [0.2.42](#0242)
-  - [0.2.41](#0241)
-  - [0.2.40](#0240)
-  - [0.2.39](#0239)
-  - [0.2.38](#0238)
-  - [0.2.37](#0237)
-  - [0.2.36](#0236)
-  - [0.2.35](#0235)
-  - [0.2.34](#0234)
-  - [0.2.33](#0233)
-  - [0.2.32](#0232)
-  - [0.2.31](#0231)
-  - [0.2.30](#0230)
-  - [0.2.29](#0229)
-  - [0.2.28](#0228)
-  - [0.2.27](#0227)
-  - [0.2.26](#0226)
-  - [0.2.25](#0225)
-  - [0.2.24](#0224)
-  - [0.2.23](#0223)
-  - [0.2.22](#0222)
-  - [0.2.21](#0221)
-  - [0.2.20](#0220)
-  - [0.2.19](#0219)
-  - [0.2.18](#0218)
-  - [0.2.17](#0217)
-  - [0.2.16](#0216)
-  - [0.2.15](#0215)
-  - [0.2.14](#0214)
-  - [0.2.13](#0213)
-  - [0.2.12](#0212)
-  - [0.2.11](#0211)
-  - [0.2.10](#0210)
-  - [0.2.9](#029)
-  - [0.2.8](#028)
-  - [0.2.7](#027)
-  - [0.2.6](#026)
-  - [0.2.5](#025)
-  - [0.2.4](#024)
-  - [0.2.3](#023)
-  - [0.2.2](#022)
-  - [0.2.1](#021)
-  - [0.2.0](#020)
-  - [0.1.13](#0113)
-  - [0.1.12](#0112)
-  - [0.1.11](#0111)
-  - [0.1.10](#0110)
-  - [0.1.9](#019)
-  - [0.1.8](#018)
+- [1.7.3 and higher](#173-and-higher)
+- [1.7.2](#172)
+- [1.7.1](#171)
+- [1.7.0](#170)
+- [1.6.2](#162)
+- [1.6.1](#161)
+- [1.6.0](#160)
+- [1.5.9](#159)
+- [1.5.8](#158)
+- [1.5.7](#157)
+- [1.5.6](#156)
+- [1.5.5](#155)
+- [1.5.4](#154)
+- [1.5.3](#153)
+- [1.5.2](#152)
+- [1.5.1](#151)
+- [1.5.0](#150)
+- [1.4.3](#143)
+- [1.4.2](#142)
+- [1.4.1](#141)
+- [1.4.0](#140)
+- [1.3.0](#130)
+- [1.2.2](#122)
+- [1.2.1](#121)
+- [1.2.0](#120)
+- [1.1.2](#112)
+- [1.1.1](#111)
+- [1.1.0](#110)
+- [1.0.0](#100)
+- [0.5.0](#050)
+- [0.4.2](#042)
+- [0.4.1](#041)
+- [0.4.0](#040)
+- [0.3.2](#032)
+- [0.3.1](#031)
+- [0.3.0](#030)
+- [0.2.3](#023)
+- [0.2.2](#022)
+- [0.2.1](#021)
+- [0.2.0](#020)
+- [0.1.1](#011)
+- [0.1.0](#010)
+- [0.0.4](#004)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-## Change Log
+## 2.0.0
 
-NOTE: There was an accidental breaking change in v1.4.0. Probably only aldeed:collection2 is affected. If you use aldeed:simple-schema v1.4.0 or higher along with aldeed:collection2, be sure to use aldeed:collection2 v2.7.1 or higher.
+- back in maintenance
+- moved all code from npm `simpl-schema@1.13.1` to this repo
+- updated all tests to use `meteortesting:mocha` + chai
+- prepare for Meteor 3.0 compatibility
+- update CI
+- publish as Meteor package
 
-### 2.0.0
+## 1.7.3 and higher
 
-- SimpleSchema is now an NPM package located here: https://github.com/aldeed/node-simple-schema. The version numbering started over, but you can consider v0.x.x of the NPM package to be v2 of the Meteor package. The Meteor package will get critical fixes only. You should attempt to migrate to using the NPM package as soon as you can.
-- You should now `import SimpleSchema from 'simpl-schema'` (NPM package) in every file where you use `SimpleSchema`.
-- Renamed:
-  - `SimpleSchemaValidationContext` -> `SimpleSchema.ValidationContext`
-  - `validationContext.resetValidation()` -> `validationContext.reset()`
-  - `validationContext.invalidKeys()` -> `validationContext.validationErrors()`
-  - `validationContext.addInvalidKeys()` -> `validationContext.addValidationErrors()`
-- Removed:
-  - `validationContext.removeInvalidKeys()`: It was effectively the same as `validationContext.reset()`.
-  - `validationContext.getErrorObject()`: The `ValidationError` thrown by `simpleSchema.validate()` fills this need.
-  - `validationContext.validateOne()`: Instead you can pass a `keys` array as an option to `validationContext.validate()`.
-- Other Breaking Changes:
-  - `decimal` is no longer a valid schema option. Instead, decimal/float is the default, and you can set the `type` to `SimpleSchema.Integer` to specify that you want only integers.
-  - The syntax of array-brackets `new SimpleSchema({ foo: { type: [String] } })` has been replaced by a more declarative solution: `new SimpleSchema({ foo: { type: Array }, 'foo.$': { type: String } })`. This only applies when defining the full type. The short version `new SimpleSchema({ foo: [String] })` is still valid.
-  - Error message changes:
-    - SimpleSchema now uses `MessageBox` to manage validation error messages. Among other things, this means that placeholder text should now use handlebars syntax, `{{label}}` instead of `[label]`
-    - In the message context (for placeholders), `[type]` is now `{{dataType}}` and `[key]` is now `{{name}}`, though `key` still works for now.
-    - `SimpleSchema.messages` is removed. You can call `MessageBox.defaults` directly instead.
-    - `SimpleSchema.prototype.messages` is removed. You can call `simpleSchemaInstance.messageBox.messages()` instead, and you must pass in the messages in the format required by that package.
-    - `SimpleSchema._globalMessages` and `SimpleSchema._depsGlobalMessages` internal properties are removed.
-    - If you have custom regEx messages, you now need to do this by overriding the `regEx` messages function.
-  - SimpleSchema constructor no longer accepts an array to merge schemas. Instead, pass a single schema and then use `schema.extend(otherSchema)` to extend it.
-  - When validating, objects with a custom prototype were previously treated as blackbox objects. Now they are validated by default, so you must add `blackbox: true` to your schema if you want to keep the old behavior. The exceptions are Date objects and TypedArray objects, which are always treated as blackbox.
-  - The internal storage of your schema object has changed, so calling `simpleSchemaInstance.schema()` will now return an object that looks different. One of the differences is that subschemas are not merged into it. To get an object with subschemas merged, you can call `simpleSchemaInstance.mergedSchema()`. However, there are still differences due to how groups/`oneOf` is handled internally.
-  - Implicit keys are no longer added for you. You must define every key.
-  - A `SimpleSchema` can no longer be used with the `check` package `check` function. Instead, use `simpleSchema.validate()`, which throws a more helpful ValidationError and satisfies `audit-argument-checks`.
-  - If you have custom validation that returns the error strings "expectedString", "expectedNumber", "expectedBoolean", "expectedArray", "expectedObject", or "expectedConstructor", you should now return `{ type: SimpleSchema.ErrorTypes.EXPECTED_TYPE, dataType: 'String' }` instead, where `dataType` is "Boolean", "String", "Object", "Array", "Integer", or "Number".
-  - Cleaning an object no longer mutates it. However, you can pass `mutate: true` option to improve performance if you don't mind the object being mutated.
-  - Reactivity of labels and error messages in client code is no longer automatic. When creating your `SimpleSchema` instance, pass `{ tracker: Tracker }` in the options to enable Tracker reactivity.
-- New Features
-  - If you prefer keys to be optional by default, you can pass `requiredByDefault: false` as a SimpleSchema constructor option and then use `required: true` for each key that should be required.
-  - You can now use shorthand for keys when your schema is extra super duper simple. See https://github.com/aldeed/node-simple-schema#shorthand-definitions
-  - The error objects returned by `validationErrors()` and attached to thrown `ValidationError` objects now have additional properties that help describe the particular error.
-  - In custom validation functions, you can now do `this.addValidationErrors(errors)`, where errors is an array of error objects. This allows you to add errors for keys other than the one you are validating.
-  - The `SimpleSchema.ErrorTypes` object now contains constants for all of the built-in error type strings.
-  - You can now specify multiple combinations of type and certain other validation criteria for a single field. This is done using `SimpleSchema.oneOf`. Refer to https://github.com/aldeed/node-simple-schema#multiple-definitions-for-one-key
-  - You can now add custom whole-document validators, either globally or for one schema. See `SimpleSchema.addDocValidator` and `simpleSchemaInstance#addDocValidator`.
-  - If you pass an array of objects to `simpleSchemaInstance#validate`, all objects will be validated, and an error will be thrown for the first invalid object.
+Release notes for versions 1.7.3 and higher can be found at https://github.com/aldeed/simpl-schema/releases
 
-### 1.5.4
+## 1.7.2
 
-Switched `Deps` to `Tracker` everywhere for compatibility with latest `tracker` package.
+Update `message-box` dependency again to fix IE11 support
 
-### 1.5.3
+## 1.7.1
 
-Removed the old `SimpleSchema.prototype.validator`
+Update `message-box` dependency to fix IE11 support
 
-### 1.5.2
+## 1.7.0
 
-The `ValidationError` thrown by `validate` now provides a useful error message so that it is clear what the first error is if it is not caught and is printed to console above the stack trace.
+If an array item (field ending with `.$`) has `optional: true`, this now allows it to have `null` items without any validation error being thrown. Previously adding `optional: true` to an array item had no effect.
 
-### 1.5.1
+## 1.6.2
 
-`mySimpleSchema.validate` now satisfies `audit-argument-checks`
+- Adds `SimpleSchema.regEx.idOfLength` for variable length IDs
+- Removes `deep-extend` dependency to fix undefined `Buffer` errors
 
-### 1.5.0
+## 1.6.1
 
-- `mySimpleSchema.validate` now accepts the same second `options` argument that `validationContext.validate` does.
-- `mySimpleSchema.validator` now takes an `options` argument. If you set the `clean` option to `true`, then the object will be cleaned before it is validated. If you want to change any of the default cleaning options, you can pass in those, too.
+Omit test files from the published package
 
-### 1.4.0
+## 1.6.0
 
-For compatibility with the new [mdg:method](https://github.com/meteor/method) package, two new functions have been added:
+- Removes all `lodash` packages
+- Replaces `extend` package with `deep-extend`, which is smaller and is the same package used by the `message-box` dependency
+- Improve the performance of handling fields with `blackbox: true` (thanks @cwouam)
+- Add a `this` context for all rule functions (see README) (thanks @Neobii)
+- Add a `this` context for all whole-doc validator functions (see README) (thanks @bhunjadi)
 
-- Call `mySimpleSchema.validate(doc)` to validate `doc` against the schema and throw a `ValidationError` if invalid. This is like `check(doc, mySimpleSchema)` but without the `check` dependency and with the ability to pass full schema error details back to a callback on the client.
-- Call `mySimpleSchema.validator()` to get a function that calls `mySimpleSchema.validate` for whatever object is passed to it. This means you can do `validate: mySimpleSchema.validator()` in the [mdg:method](https://github.com/meteor/method) package.
+## 1.5.9
 
-NOTE: There was an accidental breaking change in this release. Probably only aldeed:collection2 is affected. If you use aldeed:simple-schema v1.4.0 or higher along with aldeed:collection2, be sure to use aldeed:collection2 v2.7.1 or higher.
+Fix issues with autoValues not being available in other autoValues
 
-### 1.3.3
+## 1.5.8
 
-When using `check` to validate, the `Match.Error` that is thrown now explains which field failed to validate and why (only the first error). All errors can be found in an `invalidKeys` property on the `Match.Error` object.
+Update dependencies to fix vulnerabilities
 
-### 1.3.2
+## 1.5.7
 
-Bug fixes and MongoDB 2.6+ compatibility fixes
+Update Babel config in an attempt to fully support IE11s
 
-### 1.3.1
+## 1.5.6
 
-* Fix "undefined is not allowed by the schema" error message
-* Trim strings before removing empty strings so that `"   "` will be cleaned
-* Don't type convert $unset values when cleaning
+- Update dependencies
+- Adjust the way Babel builds so that you don't need to do `.default` when importing in a non-Babel Node project.
 
-### 1.3.0
+## 1.5.5
 
-Added built-in regular expression `SimpleSchema.RegEx.ZipCode`
+- Fix #294 - Now auto-converting values during cleaning does not convert if the value type is any of the types in a `oneOf` type
 
-### 1.2.0
+## 1.5.4
 
-* The `clean` function now automatically converts a number or string to a Date object. (Thanks @rlora)
-* Fix to `makeGeneric` handling when a property name starts with a number but also includes non-numeric characters. (Thanks @Nieziemski)
-* New `exclusiveMax` and `exclusiveMin` options allow you to specify that the `min` or `max` value itself should not be considered valid. (Thanks @sleiber)
+- Add `$setOnInsert` to modifiers for defaultValues only when `isUpsert` is set to `true` in clean options or in extended autoValue context. It used to be ignored but newer MongoDB versions throw an error. Might fix #304
+- Fix #307 - Test for empty object when creating schema (thanks @coagmano)
+- autoValue functions sort preserves fields order on the same depth (thanks @bhunjadi)
+- `getAllowedValues` now returns `null` when `allowedValues` isn't set (thanks @MohammedEssehemy)
+- Update Mocha and other dependencies
+- Readme updates (thanks @ozzywalsh)
 
-### 1.1.0
+## 1.5.3
 
-* Introduce the `pick` method on `SimpleSchema` instances to create subschemas
-* Fixed `minDate` default validation error message
-* Fix issue where `custom` functions were not run if the operator was $unset or $rename
+Update to latest mongo-object package dependency
 
-### 1.0.3
+## 1.5.2
 
-Fix blackbox handling during filtering (thanks @wojtkowiak)
+Include README.md and LICENSE in the published package
 
-### 1.0.2
+## 1.5.1
 
-Fix label reactivity when calling `label` method with a key that contains a specific index piece (like ".0.")
+- Fix issues with `$pull` modifier being incorrectly cleaned in some cases where some properties have `defaultValue` (thanks @vparpoil)
+- Other behind-the-scenes refactoring
 
-### 1.0.1
+## 1.5.0
 
-Minor fix
+- `allowedValues` may now be a `Set` instance (thanks @kevinkassimo)
+- Updated `EmailWithTLD` regular expression with one that is not susceptible to catastrophic backtracking attacks (thanks @davisjam)
 
-### 1.0.0
+## 1.4.3
 
-* Internal support for specifying many of the schema options as functions. Still largely untested, so not yet documented.
-* Removed some API functions from the `SimpleSchema` prototype: `requiredObjectKeys`, `requiredSchemaKeys`, `firstLevelSchemaKeys`, `customObjectKeys`. If you were using them, you should be able to use the new `objectKeys` function instead.
-* When you filter an object by calling `mySimpleSchema.clean` with the `filter: true` option, it no longer filters out `$unset` keys that aren't defined in the schema. This is helpful in a case where you've changed the schema, removing a key, and now you want to run some conversion code to unset that key in documents where it already exists.
-* Calling `mySimpleSchema.clean` now trims string values by default. To skip this, use the `trimStrings: false` option when you call `clean`. You can also set `trim: false` for any key in the schema definition to indicate that string values for that key must never be trimmed. This is useful for a property that stores a password or markdown or anything else where leading and trailing spaces may matter.
-* Added `getErrorObject` function to `SimpleSchemaValidationContext` prototype. Mainly intended to be used by collection2 and autoform packages, but can be used anywhere you want to have an `Error` object that reflects the invalid schema context.
-* Made `blackbox: true` work (and apply to all array item objects) when `type: [Object]`.
-* Bump to 1.0.0 version to begin following semantic versioning standards more precisely.
+- Forgetting to define the parent key of any key in a schema will now throw an error
+- use Array.forEach to remove empty objects fixes #244 (#246)
 
-### 0.7.0
+## 1.4.2
 
-BREAKING CHANGES!
+The SimpleSchema constructor or `.extend()` will now throw an error if you define an Array field but forget to define the corresponding array item field.
 
-* `SimpleSchema.RegEx.WeakEmail` has been removed, and `SimpleSchema.RegEx.Email` is now the regular expression recommended by W3C [here](http://www.w3.org/TR/html5/forms.html#valid-e-mail-address). This is a very permissive expression used by most browsers when `type=email`.
-* Empty strings no longer cause a "required" error. If you don't want empty strings to be considered valid for a required key, be sure to clean your object before validating it.
-* Fixed issue where `$set`ting an object property to an object that does not include all required properties was incorrectly considered to be valid.
+## 1.4.1
 
-### 0.6.0
+Fixed an issue where defaultValues would be incorrectly added to `$setOnInsert` when your modifier contained `$unset` for deeply nested fields.
 
-BREAKING CHANGES!
+## 1.4.0
 
-* `regEx` messages must now be defined in a different way. Refer to the README.
-* Removed support for `valueIsAllowed` option. Use `custom` instead.
-* Remove `SchemaRegEx` exported variable. Use `SimpleSchema.RegEx` instead.
-* Internal code reorg and cleanup
-* When `removeEmptyStrings` option is enabled during cleaning, empty strings in `$set` are now translated to `$unset`.
-* `$pull` operators that include a `query2` are now properly cleaned
+- Fixed an issue where the defaultValue `$setOnInsert` added to a modifier containing `$addToSet` would target an incorrect object path.
+- When cleaning, it no longer tries to convert the type of `null`.
+- Any value returned from autoValue/defaultValue is now cloned to prevent accidental mutation.
+- Added `this.key` in the function context when executing schema definition properties that are functions. This can help you determine what the array index is for keys that are within arrays.
+- Added a `clone()` function on SimpleSchema instances.
 
-### 0.5.1
+## 1.3.0
 
-Console logging about filtered and autoconverted fields now happens only when `SimpleSchema.debug = true`
+Add `this.key` and `this.closestSubschemaFieldName` to `autoValue` context to help with tricky situations when subschemas are used.
 
-### 0.5.0
+## 1.2.2
 
-* Additional built-in RegEx patterns, including an alternative e-mail pattern. See the readme. (Thanks @Nemo64)
-* `SimpleSchema.clean` now removes empty string values by default. To prevent this, set the `removeEmptyStrings` option to `false`.
+Fix an issue introduced by 1.2.1, where it was possible for a SimpleSchema instance passed to `extend` to be mutated.
 
-### 0.4.0
+## 1.2.1
 
-Add built-in regular expression `SimpleSchema.RegEx.Id` for id's generated by `Random.id()` of the random package, and also usable to validate a relation `_id`.
+Fix issues with Meteor Tracker reactivity sometimes not working when subschemas are involved.
 
-### 0.3.0
+## 1.2.0
 
-* Add `SimpleSchemaValidationContext.prototype.addInvalidKeys`. See "Manually Adding a Validation Error" in the README.
-* Fix minor issues with filtering
+The performance of `clean`, specifically of looping through the object to apply autoValues and defaultValues, has been greatly improved for large objects.
 
-### 0.2.48
+## 1.1.2
 
-Internal change: Add keepArrays option to mongoObject.getFlatObject, for use by autoform pkg.
+Passing a definition with no `type` to `extend` now works as expected, as long as the existing definition already has a `type`.
 
-### 0.2.47
+## 1.1.1
 
-Fix issue with setting autoValue for property of an object that's in an array, when cleaning a modifier.
+Passing an array of schemas to `new SimpleSchema()` or `extend()` now throws an error rather than failing silently with strange results.
 
-### 0.2.46
+## 1.1.0
 
-Fix issue where blackbox objects were being validated in update modifiers. (Thanks @Pugio!)
+- The `autoConvert` cleaning now converts strings that are "true" or "false" to Boolean if the schema expects a Boolean.
+- The `autoConvert` cleaning now converts numbers to Boolean if the schema expects a Boolean, with 0 being `false` and all other numbers being `true`.
 
-### 0.2.45
+## 1.0.0
 
-Fix issue where some implied schema keys were not automatically added to complex schema definitions
+*BREAKING CHANGE:* autoValue and defaultValue handling has been rewritten to fix all known issues. As part of this rewrite, the behavior has changed to address a point of common confusion.
 
-### 0.2.44
+Previously, when you cleaned an object to add autoValues, a `defaultValue` would be added (and an `autoValue` function would run) even if the parent object was not present. (It would be created.)
 
-* Ensure that custom validation functions are always called in even more situations,
-but make sure that this doesn't cause unnecessary "required" errors.
-* Add some `console.info` to help you see what is filtered out and autoconverted by the `clean` method.
+Now, an `autoValue`/`defaultValue` will run only if the object in which it appears exists. Usually this is what you want, but if you are relying on the previous behavior, you can achieve the same thing by making sure that all ancestor objects have a `defaultValue: {}`.
 
-### 0.2.43
-
-Fix issue where default values were being added to update modifiers.
-
-### 0.2.42
-
-Ensure custom validation functions are always called, even when the field is undefined.
-
-### 0.2.41
-
-Added userId or `null` to custom validation and autoValue contexts when on the client.
-
-### 0.2.40
-
-Generate auto values after type conversion so that autoValue functions don't
-have to handle type conversion. *(Thanks @mjgallag!)*
-
-### 0.2.39
-
-Fix issue with `autoValue` and `defaultValue` altering some updates.
-
-### 0.2.38
-
-* `autoValue` option moved from Collection2 package to SimpleSchema
-* `defaultValue` option added
-* Significant rewrite of `MongoObject` (used internally), which results in
-fixing some obscure bugs and hopefully not creating any new ones.
-* `clean` now does everything on the referenced object without cloning it. If
-this is not what you want, then you should pass in a clone of the object you
-want to protect and grab the resulting cleaned object from the return value.
-* All types of custom validation functions now have the same `this` context.
-* `siblingField()` method now available in `this` within both `autoValue` and
-custom validation functions.
-* `this.userId` is potentially available in custom validation functions. You
-must pass it to `validate` or `validateOne` in the `extendedCustomContext` option.
-Validation as part of Collection2 operations or AutoForm submissions provides
-this automatically.
-
-### 0.2.37
-
-Fix a small issue with debug option.
-
-### 0.2.36
-
-You can now set `SimpleSchema.debug = true` to cause all named validation
-contexts to automatically log all invalid key errors to the browser console.
-This can be helpful while developing an app to figure out why certain
-actions are failing validation.
-
-### 0.2.35
-
-* Fix an issue where properties could be removed during cleaning because they
-start with the same string of characters as an invalid property.
-* When determining which error message to display, we now look for the generic
-key after the specific key. For example, the error message for "addresses.$.street"
-will now be used for an error involving "addresses.0.street" when there is no
-specific error message for "addresses.0.street".
-
-### 0.2.34
-
-`label` method now works correctly when passing in specific array keys, e.g.,
-`array.0.name` as opposed to `array.$.name`
-
-### 0.2.33
-
-* Fix validation of `blackbox` objects
-* Fix `labels` method
-* Messages and labels are now reactive
-
-### 0.2.32
-
-* Add support for `blackbox` option. See README
-* Ensure that NaN isn't considered a valid number
-
-### 0.2.31
-
-* When combining and extending SimpleSchema instances, the individual field
-definitions are now extended, meaning that you can add or override the
-schema options for an already-defined schema key.
-* Error messages can now be defined globally using `SimpleSchema.messages()`.
-Instance-specific messages are still supported and are given precedence over
-global messages.
-* The `label` option can now be a function that returns a string. Whenever you
-need a schema key's label, use the new `mySchema.label(key)` method to get it.
-* Support `custom` option. This will likely replace `valueIsAllowed` eventually.
-Refer to "Custom Validation" and "Validating One Key Against Another" sections
-in the README.
-
-### 0.2.30
-
-Made a change that fixes an issue with the autoform package. When you specified
-a `doc` attribute for an autoform and that document was retrieved from a
-collection that had helpers attached using the `collection-helpers` package,
-the autoform fields were not populated with the values from the document. Now
-they are.
-
-### 0.2.29
-
-* Autoconvert to numbers from strings using `Number()` instead of `parseFloat()`.
-* Minor improvements to validation logic.
-* README additions
-
-### 0.2.28
-
-Remove automatic call to `clean` when validating. This has no effect on
-validation done through a collection with the `collection2` package. However,
-validation done directly with a SimpleSchema instance will now catch more
-schema issues than it previously did (since 0.2.18).
-
-### 0.2.27
-
-Clone schema argument before modifying it
-
-### 0.2.26
-
-Fix basic object checking for IE 8
-
-### 0.2.25
-
-Complete rewrite of the internal validation logic. This solves some sticky
-issues with array validation in more complex objects. It should not affect
-the API or validation results, but you may notice some additional or slightly
-different validation errors. Also, if you make use of the internally cached
-copy of the schema definitions (`ss._schema or ss.schema()`), you may notice
-some differences there.
-
-The main change internally is that an array definition is now split into two
-definitions. For example, if your schema is:
+For example, this:
 
 ```js
 {
-  myArray: {
-    type: [String]
-  }
-}
-```
-
-It is internally split and stored as:
-
-```js
-{
-  myArray: {
-    type: Array
+  profile: {
+    type: Object,
+    optional: true,
   },
-  'myArray.$': {
-    type: String
-  }
+  'profile.language': {
+    type: String,
+    defaultValue: 'en',
+  },
 }
 ```
 
-### 0.2.24
+previously cleaned `{}` to become `{ profile: { language: 'en' } }` but now would remain `{}`. If you want cleaning to result in `{ profile: { language: 'en' } }`, add the `profile` default value like:
 
-* Correctly validate $inc operator
-* Allow passing an array of schemas to SimpleSchema constructor, which merges
-them to create the actual schema definition.
+```js
+{
+  profile: {
+    type: Object,
+    optional: true,
+    defaultValue: {},
+  },
+  'profile.language': {
+    type: String,
+    defaultValue: 'en',
+  },
+}
+```
 
-### 0.2.23
+If `profile` were nested under another object, you'd have to add `defaultValue: {}` to that object definition, too, and so on.
 
-Fix an issue, introduced in 0.2.21, that prevented autoconversion of values
-in arrays.
+- Fix regression that resulted in `_constructorOptions key is missing "type"` error reappearing in some situations
+- Fix errors when validating an object that has a property named `length`
 
-### 0.2.22
+## 0.5.0
 
-Add tests for MongoObject and fix some issues found by the tests.
+- Remove underscore dependency in favor of seperated lodash modules
 
-### 0.2.21
+## 0.4.2
 
-Fix an issue where cleaning a doc would convert empty arrays to empty strings.
+- Fix to properly add defaultValues in objects that are being $pushed in an update modifier
+- Fix removeNullsFromArrays to remove only nulls
 
-### 0.2.20
+## 0.4.1
 
-Improve and export `MongoObject` class for use by collection2 and others.
+Fix cleaning an object with a `length` property
 
-### 0.2.19
+## 0.4.0
 
-Make sure min/max string length settings are respected when there is also
-a regEx option specified.
+- Added `getFormValidator()`, similar to `validator()` but instead of throwing an error, it returns a Promise that resolves with the errors. This can be used as a [Composable Form Specification validator](http://forms.dairystatedesigns.com/user/validation/).
+- Throw a better error when keys that conflict with Object prototype keys are used (Thanks @xavierpriour)
+- Fix the incorrect "Found both autoValue and defaultValue options" warning (Thanks @SachaG)
 
-### 0.2.18
+## 0.3.2
 
-* Add support for named contexts. Use `mySimpleSchema.namedContext(name)`
-method to access the named context, creating it if it does not exist yet.
-* The `validate` and `validateOne` methods on a SimpleSchema context now
-clean (filter and autoconvert) the doc before validating it. You should no
-longer call the `clean` method yourself before validating. If you do have a
-good reason to call the `clean` method before calling `validate` or
-`validateOne`, then set the `filter` and `autoConvert` options to `false`
-when calling `validate` or `validateOne` to prevent double cleaning.
-* The `validate` and `validateOne` methods on a SimpleSchema context now return
-`true` or `false` to indicate the validity of the document or field, respectively.
-You do not need to call a separate method to check validity.
+Bump dependencies to fix `messages` issues
 
-### 0.2.17
+## 0.3.1
 
-Throw an error when the modifier is an empty object for an update or upsert.
-This prevents overwriting the entire document with nothing, leaving only
-an `_id` field left.
+- When calling `pick` or `omit`, the `messageBox` and all original `SimpleSchema` constructor options are now properly kept. (Thanks @plumpudding)
+- Fixed #80 (Thanks @jasonphillips)
+- `getQuickTypeForKey` may now return additional strings "object" or "objectArray"
+- Fix erroneous "Found both autoValue and defaultValue" warning (Thanks @SachaG)
+- Fix passing of clean options when extending
+- Other fixes to extending logic
 
-### 0.2.16
+## 0.3.0
 
-Fix handling of min or max when set to 0.
+- Added human-friendly `message` to each validation error in the `details` array on a thrown ClientError (thanks @unknown4unnamed)
+- Fixed isInteger error on IE11 (thanks @lmachens)
+- Switched to duck typing for `SimpleSchema` instanceof checks to fix failures due to multiple instances of the package (thanks @dpankros)
+- Fixed multiple calls to `messages` for different schemas from affecting the other schemas (thanks @Josh-ES)
 
-### 0.2.15
+## 0.2.3
 
-Adjust handling of validation errors for arrays of objects. Now when a validation
-error is added to the list for a property of an object that is a member of an
-array, the key name is listed with the array index instead of a dollar sign. For
-example, `friends.0.name` instead of `friends.$.name`.
+- Add missing deep-extend dependency
 
-### 0.2.14
+## 0.2.2
 
-* Ensure valueIsAllowed function is called for undefined and null values. This
-change means that you must not ensure that your valueIsAllowed function returns
-true when the value is `null` or `undefined`, if you want the field to be optional.
-* Fix an issue with false "required" errors for some arrays of objects when
-validating a modifier.
+- Fixed Meteor Tracker reactivity
 
-### 0.2.13
+## 0.2.1
 
-Fix $pullAll and clean $pushAll by converting it to $push+$each rather than
-deleting it.
+- It is no longer considered a validation error when a key within $unset is not defined in the schema.
 
-### 0.2.12
+## 0.2.0
 
-Add workaround for Safari bug.
+- Added `ssInstance.getQuickTypeForKey(key)`
+- Added `ssInstance.getObjectSchema(key)`
 
-### 0.2.11
+## 0.1.1
 
-`Clean` method should now clean everything.
+- Improved error for missing `type` property
+- Use _.contains instead of Array.includes to fix some compatibility issues (thanks @DerekTBrown)
+- Various documentation and test fixes
 
-### 0.2.10
+## 0.1.0
 
-Validate upserts
+- Added `ssInstance.getAllowedValuesForKey(key)`
 
-### 0.2.9
+## 0.0.4
 
-Fix validation of required subobjects when omitted from a $set
-
-### 0.2.8
-
-* Add label inflection and allow labels to be changed dynamically with `labels` method.
-* Allow min and max to be a function that returns a min/max value
-* Allow array of regEx with specific messages for each
-
-### 0.2.7
-
-Refactor validation loop to improve and not use collapse/expand
-
-### 0.2.6
-
-Add subschema support (@sbking) and use Match.Any for `type` schema key test
-
-### 0.2.5
-
-Fix validation of $push or $addToSet for non-objects
-
-### 0.2.4
-
-Fix validation of objects as values of modifier keys
-
-### 0.2.3
-
-Fix validation of custom objects
-
-### 0.2.2
-
-Fix validation of arrays of objects
-
-### 0.2.1
-
-Fix minor issues related to $unset key validation
-
-### 0.2.0
-
-*(Backwards compatibility break!)*
-
-* Validation contexts are now supported, allowing you to track validity separately for multiple objects that use the same SimpleSchema
-* Some of the API has changed, related to the support for validation contexts
-* All mongo modifier operators are now recognized and properly validated; as part of this, you must now tell the validation functions whether you are passing them a normal object or a mongo modifier object
-* Validation errors are now thrown if fields not allowed by the schema are present in the object
-* When you create a schema, your definition object is now checked to make sure you didn't misspell any of the rules
-
-### 0.1.13
-
-* A SimpleSchema object is now a valid second parameter for the built-in `check` and `Match.test` functions
-* `.match()` method is deprecated
-
-### 0.1.12
-
-Return true from `match()`
-
-### 0.1.11
-
-Fix issue where `filter()` could strip out `$` keys
-
-### 0.1.10
-
-Support custom validation functions (used by collection2 package)
-
-### 0.1.9
-
-Pass doc to `valueIsAllowed` function so that validating one key against another is possible
-
-### 0.1.8
-
-Deprecated the regExMessage key in schema definition and replaced with the
-ability to customize all validation error messages per error type and per schema
-key if necessary. Refer to the Read Me.
+- Removed the `babel-polyfill` dependency. It may not cause problems, but to be safe you'll want to be sure that your app depends on and imports `babel-polyfill` or some other ES2015 polyfill package.
+- `this.validationContext` is now available in all custom validator functions (thanks @yanickrochon)
+- You can now call `SimpleSchema.setDefaultMessages(messages)`, passing in the same object you would pass to the `MessageBox` constructor, if you want to override the default messages for all schemas. This is in addition to being able to set `schema.messageBox` to your own custom `MessageBox` instance for a single schema, which you could already do. (thanks @clayne11)
+- Labels with certain characters like single quotes will now show up correctly in validation error messages. (thanks @clayne11)
+- `extend` is now chainable
+- Requiredness validation now works for required fields that are in subschemas
+- Fixed some issues with autoValues not being correctly added when they were deeply nested under several levels of arrays and objects.
