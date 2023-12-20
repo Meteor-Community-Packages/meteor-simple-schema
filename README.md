@@ -1,8 +1,11 @@
 # Meteor SimpleSchema
+[![Meteor Community Package](https://img.shields.io/badge/Meteor-Package-green?logo=meteor&logoColor=white)](https://meteor.com)
+[![Test suite](https://github.com/Meteor-Community-Packages/meteor-simple-schema/actions/workflows/lint-test-publish.yml/badge.svg)](https://github.com/Meteor-Community-Packages/meteor-simple-schema/actions/workflows/lint-test-publish.yml)
+[![CodeQL](https://github.com/Meteor-Community-Packages/meteor-simple-schema/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/Meteor-Community-Packages/meteor-simple-schema/actions/workflows/github-code-scanning/codeql)
+[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+![GitHub License](https://img.shields.io/github/license/Meteor-Community-Packages/meteor-simple-schema)
 
-> This package is back under maintenance by the Meteor Community Packages group
-
-
+> This package is back under maintenance by the Meteor Community Packages group 🚀
 
 SimpleSchema validates JavaScript objects to ensure they match a schema. It can also clean the objects to automatically convert types, remove unsupported properties, and add automatic values such that the object is then more likely to pass validation.
 
@@ -13,7 +16,7 @@ There are a lot of similar packages for validating objects. These are some of th
 - Optional `Tracker` reactivity
 - Powerful customizable error message system with decent English language defaults and support for localization, which makes it easy to drop this package in and display the validation error messages to end users.
 - Has hundreds of tests and is used in production apps of various sizes
-- Used by the [Collection2](https://github.com/aldeed/meteor-collection2) and [AutoForm](https://github.com/aldeed/meteor-autoform) Meteor packages.
+- Used by the [Collection2](https://github.com/Meteor-Community-Packages/meteor-collection2) and [AutoForm](https://github.com/Meteor-Community-Packages/meteor-autoform) Meteor packages.
 
 There are also reasons not to choose this package. Because of all it does, this package is more complex than (but still "simple" :) ) and slower than some other packages. Based on your needs, you should decide whether these tradeoffs are acceptable. One faster but less powerful option is [simplecheck](https://www.npmjs.com/package/simplecheck).
 
@@ -103,7 +106,8 @@ There are also reasons not to choose this package. Because of all it does, this 
 
 ## The History of SimpleSchema
 
-SimpleSchema was first released as a Meteor package in mid-2013. Version 1.0 was released in September 2014. In mid-2016, version 2.0 was released as an NPM package, which can be used in Meteor, NodeJS, or static browser apps.
+SimpleSchema was first released as a Meteor package in mid-2013. Version 1.0 was released in September 2014. 
+In mid-2016, new versions were released as an NPM package, which can be used in Meteor, NodeJS, or static browser apps.
 Afterwards it has been archived in favour of the NPM version.
 
 In 2022/2023 the NPM package has dropped all Meteor compatibility and this package got released again, starting with the latest commit
