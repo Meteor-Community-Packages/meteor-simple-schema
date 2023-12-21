@@ -1,0 +1,6 @@
+{
+  "include": [
+    "**/packages/simple-schema/**/*",
+    "**/packages/*aldeed_simple_schema.js"
+  ]
+}
