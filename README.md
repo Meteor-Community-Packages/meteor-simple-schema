@@ -5,8 +5,12 @@
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 ![GitHub License](https://img.shields.io/github/license/Meteor-Community-Packages/meteor-simple-schema)
 
+## Attention! 🧐
 > This package is back under maintenance by the Meteor Community Packages group 🚀
+> Consider this a hard-fork to ensure a future-proof maintenance with focus on
+> Meteor-Compatibility (Meteor 2.x; 3.x and beyond)! ☄️
 
+## About this package
 SimpleSchema validates JavaScript objects to ensure they match a schema. It can also clean the objects to automatically convert types, remove unsupported properties, and add automatic values such that the object is then more likely to pass validation.
 
 There are a lot of similar packages for validating objects. These are some of the features of this package that might be good reasons to choose this one over another:
@@ -20,10 +24,9 @@ There are a lot of similar packages for validating objects. These are some of th
 
 There are also reasons not to choose this package. Because of all it does, this package is more complex than (but still "simple" :) ) and slower than some other packages. Based on your needs, you should decide whether these tradeoffs are acceptable. One faster but less powerful option is [simplecheck](https://www.npmjs.com/package/simplecheck).
 
+## Table of Contents
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-
-**Table of Contents** _generated with [DocToc](https://github.com/thlorenz/doctoc)_
 
 - [The History of SimpleSchema](#the-history-of-simpleschema)
 - [Installation](#installation)
@@ -61,6 +64,7 @@ There are also reasons not to choose this package. Because of all it does, this 
   - [minCount/maxCount](#mincountmaxcount)
   - [allowedValues](#allowedvalues)
   - [regEx](#regex)
+  - [skipRegExCheckForEmptyStrings](#skipregexcheckforemptystrings)
   - [blackbox](#blackbox)
   - [trim](#trim)
   - [custom](#custom)
@@ -97,7 +101,6 @@ There are also reasons not to choose this package. Because of all it does, this 
 - [Extending the Schema Options](#extending-the-schema-options)
 - [Add On Packages](#add-on-packages)
 - [Contributors](#contributors)
-- [Sponsors](#sponsors)
 - [License](#license)
 - [Contributing](#contributing)
   - [Thanks](#thanks)
@@ -1417,12 +1420,9 @@ Obviously you need to ensure that `extendOptions` is called before any SimpleSch
 
 ## Contributors
 
-This project exists thanks to all the people who contribute. [[Contribute]](CONTRIBUTING.md).
+This project exists thanks to all the people who contribute.
+
 <a href="graphs/contributors"><img src="https://opencollective.com/simple-schema-js/contributors.svg?width=890" /></a>
-
-## Sponsors
-
-You can support this project by [becoming a sponsor](https://github.com/sponsors/aldeed).
 
 ## License
 
@@ -1430,7 +1430,8 @@ MIT
 
 ## Contributing
 
-Anyone is welcome to contribute. Before submitting a pull request, make sure that you've added tests for your changes, and that all tests pass when you run `npm test`.
+Anyone is welcome to contribute. Before submitting a pull request, make sure that you've read our
+[contribution guide](CONTRIBUTING.md).
 
 ### Thanks
 

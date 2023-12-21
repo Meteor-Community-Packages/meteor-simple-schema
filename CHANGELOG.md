@@ -4,6 +4,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
+- [1.13.1](#1131)
 - [1.7.3 and higher](#173-and-higher)
 - [1.7.2](#172)
 - [1.7.1](#171)
@@ -50,13 +51,17 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-## 2.0.0
+## 1.13.1
 
-- back in maintenance
-- moved all code from npm `simpl-schema@1.13.1` to this repo
+- back under community maintenance!
+- 100% compatibility with Meteor, used the last Meteor-compatible version from NPM
+- moved all code from npm simpl-schema@1.13.1 to this repo
+  - NPM link: https://www.npmjs.com/package/simpl-schema/v/1.13.1
+  - GitHub commit: [7f3ea1c2a185199e676726b6e4e82ab5fa722e97](https://github.com/longshotlabs/simpl-schema/tree/7f3ea1c2a185199e676726b6e4e82ab5fa722e97)
 - updated all tests to use `meteortesting:mocha` + chai
-- prepare for Meteor 3.0 compatibility
-- update CI
+- added coverage reporting to the tests!
+- prepare for Meteor 3.0 compatibility migration (will be done in the next version)
+- updated CI
 - publish as Meteor package
 
 ## 1.7.3 and higher
