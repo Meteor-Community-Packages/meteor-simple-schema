@@ -1,0 +1,6 @@
+tests/
+*.tests.js
+.github
+.prettierignore
+.markdownlint.json
+.coverage.json
