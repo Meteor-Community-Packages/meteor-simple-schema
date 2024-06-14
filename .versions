@@ -1,4 +1,4 @@
-aldeed:simple-schema@2.0.0-rc300.0
+aldeed:simple-schema@2.0.0-rc300.1
 babel-compiler@7.10.5
 babel-runtime@1.5.1
 dynamic-import@0.7.3
@@ -9,7 +9,7 @@ ecmascript-runtime-server@0.11.0
 fetch@0.1.4
 http@1.4.4
 inter-process-messaging@0.1.1
-local-test:aldeed:simple-schema@2.0.0-rc300.0
+local-test:aldeed:simple-schema@2.0.0-rc300.1
 meteor@1.11.5
 meteortesting:browser-tests@1.4.2
 meteortesting:mocha@2.1.0
