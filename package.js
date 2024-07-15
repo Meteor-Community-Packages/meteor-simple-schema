@@ -2,7 +2,7 @@
 Package.describe({
   name: 'aldeed:simple-schema',
   summary: 'A simple schema validation object with reactivity. Used by collection2 and autoform.',
-  version: '2.0.0-rc300.1',
+  version: '2.0.0',
   git: 'https://github.com/aldeed/meteor-simple-schema.git'
 });
 
@@ -13,13 +13,13 @@ Npm.depends({
 });
 
 Package.onUse(function (api) {
-  api.versionsFrom(['2.3', '3.0-rc.4']);
+  api.versionsFrom(['2.3', '3.0']);
   api.use('ecmascript');
   api.mainModule('lib/main.js');
 });
 
 Package.onTest(function (api) {
-  api.versionsFrom(['2.3', '3.0-rc.4']);
+  api.versionsFrom(['2.3', '3.0']);
   api.use([
     // 'lmieulet:meteor-legacy-coverage',
     // 'lmieulet:meteor-coverage',
