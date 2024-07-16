@@ -22,7 +22,7 @@
     "chai": "^4.2.0",
     "eslint-config-standard": "^16.0.2",
     "nyc": "^15.1.0",
-    "puppeteer": "^18.2.1",
+    "puppeteer": "^22.11.2",
     "sinon": "^9.2.1",
     "snazzy": "^9.0.0",
     "standardx": "^7.0.0"
