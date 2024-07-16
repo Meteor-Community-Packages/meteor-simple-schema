@@ -2,7 +2,7 @@
 Package.describe({
   name: 'aldeed:simple-schema',
   summary: 'A simple schema validation object with reactivity. Used by collection2 and autoform.',
-  version: '2.0.0',
+  version: '2.0.0-rc.300.10',
   git: 'https://github.com/aldeed/meteor-simple-schema.git'
 });
 
@@ -27,7 +27,7 @@ Package.onTest(function (api) {
     'ecmascript',
     'tracker',
     // 'mongo',
-    'aldeed:simple-schema@2.0.0-rc300.1'
+    'aldeed:simple-schema'
   ])
 
   api.addFiles([
