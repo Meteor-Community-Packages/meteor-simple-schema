@@ -3,9 +3,9 @@
   "private": true,
   "scripts": {
     "start": "meteor run",
-    "setup": "mkdir -p packages && ln -sfn ../../ ./packages/simple-schema",
-    "lint": "standardx -v ./packages/meteor-simple-schema/ | snazzy",
-    "lint:fix": "standardx --fix ./packages/meteor-simple-schema/ | snazzy",
+    "setup": "mkdir -p packages && ln -sfn ../../ ./packages/meteor-simple-schema",
+    "lint": "standardx -v ../ | snazzy",
+    "lint:fix": "standardx --fix ../ | snazzy",
     "test": "TEST_BROWSER_DRIVER=puppeteer METEOR_PACKAGE_DIRS='../:../../' TEST_BROWSER_DRIVER=puppeteer meteor test-packages --once --raw-logs --driver-package meteortesting:mocha ../",
     "test:watch": "TEST_BROWSER_DRIVER=puppeteer METEOR_PACKAGE_DIRS='../:../../'  TEST_WATCH=1 meteor test-packages --raw-logs --driver-package meteortesting:mocha ../",
     "test:browser": "METEOR_PACKAGE_DIRS='../:../../'  TEST_WATCH=1 meteor test-packages --raw-logs --driver-package meteortesting:mocha ../",
@@ -13,8 +13,8 @@
     "report": "nyc report -t .coverage"
   },
   "dependencies": {
-    "@babel/runtime": "^7.23.5",
-    "meteor-node-stubs": "^1.2.7"
+    "@babel/runtime": "^7.25.0",
+    "meteor-node-stubs": "^1.2.9"
   },
   "devDependencies": {
     "@babel/core": "^7.12.7",
@@ -23,7 +23,7 @@
     "chai": "^5.0.0",
     "eslint-config-standard": "^16.0.2",
     "nyc": "^15.1.0",
-    "puppeteer": "^18.2.1",
+    "puppeteer": "^23.1.0",
     "sinon": "^9.2.1",
     "snazzy": "^9.0.0",
     "standardx": "^7.0.0"
@@ -46,9 +46,7 @@
       "deps"
     ],
     "ignore": [
-      "**/.meteor/",
-      "**/examples/",
-      "**/tests"
+      "**/tests/"
     ]
   },
   "eslintConfig": {
