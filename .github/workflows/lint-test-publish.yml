@@ -36,7 +36,7 @@ jobs:
     strategy:
       matrix:
         meteorRelease:
-          - '3.0-rc.2'
+          - '3.0.2'
           # Latest version
     steps:
       - name: Checkout code
