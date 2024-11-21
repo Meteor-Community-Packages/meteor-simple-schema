@@ -12,20 +12,20 @@ jobs:
 #    runs-on: ubuntu-latest
 #    steps:
 #      - name: checkout
-#        uses: actions/checkout@v3
+#        uses: actions/checkout@v4
 #
 #      - name: setup node
-#        uses: actions/setup-node@v3
+#        uses: actions/setup-node@v4
 #        with:
-#          node-version: 16
+#          node-version: 20
 #
 #      - name: cache dependencies
-#        uses: actions/cache@v3
+#        uses: actions/cache@v4
 #        with:
 #          path: ~/.npm
-#          key: ${{ runner.os }}-node-16-${{ hashFiles('**/package-lock.json') }}
+#          key: ${{ runner.os }}-node-20-${{ hashFiles('**/package-lock.json') }}
 #          restore-keys: |
-#            ${{ runner.os }}-node-16-
+#            ${{ runner.os }}-node-20-
 #
 #      - run: cd tests && npm ci && npm run setup && npm run lint
 
@@ -36,17 +36,16 @@ jobs:
     strategy:
       matrix:
         meteorRelease:
-          - '2.3'
-          - '2.14'
+          - '3.0.2'
           # Latest version
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: 20
 
       - name: Setup meteor ${{ matrix.meteorRelease }}
         uses: meteorengineer/setup-meteor@v1
@@ -54,11 +53,11 @@ jobs:
           meteor-release: ${{ matrix.meteorRelease }}
 
       - name: cache dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: ${{ runner.os }}-node-16-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-node-20-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-node-16-
+            ${{ runner.os }}-node-20-
 
       - run: cd tests && npm ci && npm run setup && npm run test
