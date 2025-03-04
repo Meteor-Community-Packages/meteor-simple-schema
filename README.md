@@ -122,7 +122,7 @@ that included full Meteor support.
 meteor add aldeed:simple-schema
 ```
 
-> Make sure, you installed version 2.0.0 or grater!
+> Make sure, you installed version 2.0.0 or greater!
 
 ## Lingo
 
