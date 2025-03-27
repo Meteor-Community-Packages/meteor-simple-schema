@@ -319,7 +319,7 @@ import SimpleSchema from "meteor/aldeed:simple-schema";
 
 const mySchema = new SimpleSchema({ name: String });
 const doc = { name: 123 };
-const cleanDoc = mySchema.clean(doc);
+const cleanDoc = await mySchema.clean(doc);
 // cleanDoc is now mutated to hopefully have a better chance of passing validation
 console.log(typeof cleanDoc.name); // string
 ```
@@ -331,7 +331,7 @@ import SimpleSchema from "meteor/aldeed:simple-schema";
 
 const mySchema = new SimpleSchema({ name: String });
 const modifier = { $set: { name: 123 } };
-const cleanModifier = mySchema.clean(modifier);
+const cleanModifier = await mySchema.clean(modifier);
 // doc is now mutated to hopefully have a better chance of passing validation
 console.log(typeof cleanModifier.$set.name); // string
 ```
@@ -835,7 +835,7 @@ Prior to SimpleSchema 2.0, objects that are instances of a custom class were con
 
 _Used by the cleaning process but not by validation_
 
-When you call `simpleSchemaInstance.clean()` with `trimStrings` set to `true`, all string values are trimmed of leading and trailing whitespace. If you set `trim` to `false` for certain keys in their schema definition, those keys will be skipped.
+When you call `await simpleSchemaInstance.clean()` with `trimStrings` set to `true`, all string values are trimmed of leading and trailing whitespace. If you set `trim` to `false` for certain keys in their schema definition, those keys will be skipped.
 
 ### custom
 
@@ -845,7 +845,7 @@ Refer to the [Custom Validation](#custom-field-validation) section.
 
 _Used by the cleaning process but not by validation_
 
-Set this to any value that you want to be used as the default when an object does not include this field or has this field set to `undefined`. This value will be injected into the object by a call to `mySimpleSchema.clean()` with `getAutovalues: true`.
+Set this to any value that you want to be used as the default when an object does not include this field or has this field set to `undefined`. This value will be injected into the object by a call to `await mySimpleSchema.clean()` with `getAutovalues: true`.
 
 Note the following points of confusion:
 
@@ -861,6 +861,8 @@ To get the defaultValue for a field, use `schema.defaultValue(fieldName)`. It is
 _Used by the cleaning process but not by validation_
 
 The `autoValue` option allows you to specify a function that is called by `simpleSchemaInstance.clean()` to potentially change the value of a property in the object being cleaned. This is a powerful feature that allows you to set up either forced values or default values, potentially based on the values of other fields in the object.
+
+The `autoValue` function can be an `async` function
 
 An `autoValue` function `this` context provides a variety of properties and methods to help you determine what you should return:
 
