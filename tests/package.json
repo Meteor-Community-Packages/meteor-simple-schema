@@ -43,7 +43,9 @@
       "arrayTracker",
       "globalDefaultTemplate",
       "defaultTypeTemplates",
-      "deps"
+      "deps",
+      "describe",
+      "it"
     ],
     "ignore": [
       "**/tests/"
