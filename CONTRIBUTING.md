@@ -9,14 +9,14 @@
 
 - [Introduction](#introduction)
 - [Setup development env](#setup-development-env)
-  - [Clone project and create a new branch to work on](#clone-project-and-create-a-new-branch-to-work-on)
-  - [Initialize test app](#initialize-test-app)
+    - [Clone project and create a new branch to work on](#clone-project-and-create-a-new-branch-to-work-on)
+    - [Initialize test app](#initialize-test-app)
 - [Development toolchain](#development-toolchain)
-  - [Linter](#linter)
-  - [Tests](#tests)
-    - [Once](#once)
-    - [Watch](#watch)
-    - [Coverage](#coverage)
+    - [Linter](#linter)
+    - [Tests](#tests)
+        - [Once](#once)
+        - [Watch](#watch)
+        - [Coverage](#coverage)
 - [Open a pull request](#open-a-pull-request)
 - [Code review process](#code-review-process)
 - [Questions](#questions)
@@ -26,14 +26,16 @@
 
 ## Introduction
 
-First, thank you for considering contributing to simpl-schema! It's people like you that make the open source community such a great community! 😊
+First, thank you for considering contributing to simpl-schema! It's people like you that make the open source community
+such a great community! 😊
 
 We welcome any type of contribution, not only code. You can help with
 
 - **QA**: file bug reports, the more details you can give the better (e.g. screenshots with the console open)
 - **Marketing**: writing blog posts, howto's, printing stickers, ...
 - **Community**: presenting the project at meetups, organizing a dedicated meetup for the local community, ...
-- **Code**: take a look at the [open issues](issues). Even if you can't write code, commenting on them, showing that you care about a given issue matters. It helps us triage them.
+- **Code**: take a look at the [open issues](issues). Even if you can't write code, commenting on them, showing that you
+  care about a given issue matters. It helps us triage them.
 - **Money**: we [welcome financial contributions](https://github.com/https://github.com/Meteor-Community-Packages).
 
 ## Setup development env
@@ -41,12 +43,14 @@ We welcome any type of contribution, not only code. You can help with
 ### Clone project and create a new branch to work on
 
 First, clone this repository and create a new branch to work on.
-Branch names should follow the GitFlow standard and start with a descriptive prefix of their intended outcome, for example:
+Branch names should follow the GitFlow standard and start with a descriptive prefix of their intended outcome, for
+example:
 
 - `feature/` for features
 - `fix/` for general fixes
 
-Then the name of the branch should describe the purpose of the branch and potentially reference the issue number it is solving.
+Then the name of the branch should describe the purpose of the branch and potentially reference the issue number it is
+solving.
 
 ```shell
 $ git clone git@github.com:Meteor-Community-Packages/meteor-simple-schema.git
@@ -136,16 +140,15 @@ Please understand, that there will be a review process and your contribution
 might require changes before being merged. This is entirely to ensure quality and is
 never used as a personal offense.
 
-
 ## Code review process
 
-The bigger the pull request, the longer it will take to review and merge. Try to break down large pull requests in 
+The bigger the pull request, the longer it will take to review and merge. Try to break down large pull requests in
 smaller chunks that are easier to review and merge.
 It is also always helpful to have some context for your pull request. What was the purpose? Why does it matter to you?
 
 ## Questions
 
-If you have any questions, [create an issue](https://github.com/Meteor-Community-Packages/meteor-simple-schema/issues) 
+If you have any questions, [create an issue](https://github.com/Meteor-Community-Packages/meteor-simple-schema/issues)
 (protip: do a quick search first to see if someone else didn't ask the same question before!).
 
 ## Credits
