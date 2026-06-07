@@ -4,7 +4,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [3.0.0-rc.1](#300-rc1)
+- [3.0.0](#300)
 - [1.13.1](#1131)
 - [1.7.3 and higher](#173-and-higher)
 - [1.7.2](#172)
@@ -52,11 +52,11 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-## 3.0.0-rc.1
+## 3.0.0
 
 - Adds promise-based `clean`, `validate`, validation context validation, autoValue, custom field validators, and whole-document validators.
 - Converts tests and helpers to async validation flows.
-- Marks the package as a breaking 3.x release candidate for Meteor 3.
+- Marks the package as a breaking 3.x release for Meteor 3.
 
 ## 1.13.1
 

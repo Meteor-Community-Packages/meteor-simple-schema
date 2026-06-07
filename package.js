@@ -2,7 +2,7 @@
 Package.describe({
     name: 'aldeed:simple-schema',
     summary: 'A simple schema validation object with reactivity. Used by collection2 and autoform.',
-    version: '3.0.0-rc.1',
+    version: '3.0.0',
     git: 'https://github.com/Meteor-Community-Packages/meteor-simple-schema',
 });
 
@@ -26,7 +26,7 @@ Package.onTest(function (api) {
         'meteortesting:mocha@3.3.0',
         'ecmascript',
         'tracker',
-        'aldeed:simple-schema@3.0.0-rc.1',
+        'aldeed:simple-schema@3.0.0',
     ]);
 
     api.addFiles([
