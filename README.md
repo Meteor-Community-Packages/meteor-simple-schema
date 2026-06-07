@@ -10,6 +10,11 @@
 > Consider this a hard-fork to ensure a future-proof maintenance with focus on
 > Meteor-Compatibility (Meteor 2.x; 3.x and beyond)! ☄️
 
+## Version 3.x.x
+> This is a breaking release. `.clean()`, `.validate()`, validation-context `.validate()`, validator functions, `autoValue`, custom validators, and whole-document validators may now use promises.
+> Existing calls to `isValid()` and `validationErrors()` remain synchronous and report the last completed validation result.
+> This is not compatible with collection2 4.x.x or autoform 8.x.x or lower.
+
 ## About this package
 SimpleSchema validates JavaScript objects to ensure they match a schema. It can also clean the objects to automatically convert types, remove unsupported properties, and add automatic values such that the object is then more likely to pass validation.
 
@@ -28,6 +33,7 @@ There are also reasons not to choose this package. Because of all it does, this 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
+- [Version 3.x.x](#version-3xx)
 - [The History of SimpleSchema](#the-history-of-simpleschema)
 - [Installation](#installation)
 - [Lingo](#lingo)
@@ -138,9 +144,11 @@ In this documentation:
 ```js
 import SimpleSchema from "meteor/aldeed:simple-schema";
 
-new SimpleSchema({
+const schema = new SimpleSchema({
   name: String,
-}).validate({
+});
+
+await schema.validate({
   name: 2,
 });
 ```
@@ -152,9 +160,11 @@ An error is thrown for the first invalid object found.
 ```js
 import SimpleSchema from "meteor/aldeed:simple-schema";
 
-new SimpleSchema({
+const schema = new SimpleSchema({
   name: String,
-}).validate([{ name: "Bill" }, { name: 2 }]);
+});
+
+await schema.validate([{ name: "Bill" }, { name: 2 }]);
 ```
 
 ### Validate a Meteor Method Argument and Satisfy `audit-argument-checks`
@@ -176,8 +186,8 @@ SimpleSchema.defineValidationErrorTransform((error) => {
 const myMethodObjArgSchema = new SimpleSchema({ name: String }, { check });
 
 Meteor.methods({
-  myMethod(obj) {
-    myMethodObjArgSchema.validate(obj);
+  async myMethod(obj) {
+    await myMethodObjArgSchema.validate(obj);
 
     // Now do other method stuff knowing that obj satisfies the schema
   },
@@ -193,7 +203,7 @@ const validationContext = new SimpleSchema({
   name: String,
 }).newContext();
 
-validationContext.validate({
+await validationContext.validate({
   name: 2,
 });
 
@@ -210,7 +220,7 @@ const validationContext = new SimpleSchema({
   name: String,
 }).newContext();
 
-validationContext.validate(
+await validationContext.validate(
   {
     $set: {
       name: 2,
@@ -241,11 +251,11 @@ Tracker.autorun(function () {
   console.log(validationContext.validationErrors());
 });
 
-validationContext.validate({
+await validationContext.validate({
   name: 2,
 });
 
-validationContext.validate({
+await validationContext.validate({
   name: "Joe",
 });
 ```
@@ -319,7 +329,7 @@ import SimpleSchema from "meteor/aldeed:simple-schema";
 
 const mySchema = new SimpleSchema({ name: String });
 const doc = { name: 123 };
-const cleanDoc = mySchema.clean(doc);
+const cleanDoc = await mySchema.clean(doc);
 // cleanDoc is now mutated to hopefully have a better chance of passing validation
 console.log(typeof cleanDoc.name); // string
 ```
@@ -331,7 +341,7 @@ import SimpleSchema from "meteor/aldeed:simple-schema";
 
 const mySchema = new SimpleSchema({ name: String });
 const modifier = { $set: { name: 123 } };
-const cleanModifier = mySchema.clean(modifier);
+const cleanModifier = await mySchema.clean(modifier);
 // doc is now mutated to hopefully have a better chance of passing validation
 console.log(typeof cleanModifier.$set.name); // string
 ```
@@ -835,7 +845,7 @@ Prior to SimpleSchema 2.0, objects that are instances of a custom class were con
 
 _Used by the cleaning process but not by validation_
 
-When you call `simpleSchemaInstance.clean()` with `trimStrings` set to `true`, all string values are trimmed of leading and trailing whitespace. If you set `trim` to `false` for certain keys in their schema definition, those keys will be skipped.
+When you call `await simpleSchemaInstance.clean()` with `trimStrings` set to `true`, all string values are trimmed of leading and trailing whitespace. If you set `trim` to `false` for certain keys in their schema definition, those keys will be skipped.
 
 ### custom
 
@@ -845,7 +855,7 @@ Refer to the [Custom Validation](#custom-field-validation) section.
 
 _Used by the cleaning process but not by validation_
 
-Set this to any value that you want to be used as the default when an object does not include this field or has this field set to `undefined`. This value will be injected into the object by a call to `mySimpleSchema.clean()` with `getAutovalues: true`.
+Set this to any value that you want to be used as the default when an object does not include this field or has this field set to `undefined`. This value will be injected into the object by a call to `await mySimpleSchema.clean()` with `getAutovalues: true`.
 
 Note the following points of confusion:
 
@@ -860,7 +870,9 @@ To get the defaultValue for a field, use `schema.defaultValue(fieldName)`. It is
 
 _Used by the cleaning process but not by validation_
 
-The `autoValue` option allows you to specify a function that is called by `simpleSchemaInstance.clean()` to potentially change the value of a property in the object being cleaned. This is a powerful feature that allows you to set up either forced values or default values, potentially based on the values of other fields in the object.
+The `autoValue` option allows you to specify a function that is called by `await simpleSchemaInstance.clean()` to potentially change the value of a property in the object being cleaned. This is a powerful feature that allows you to set up either forced values or default values, potentially based on the values of other fields in the object.
+
+The `autoValue` function can be async.
 
 An `autoValue` function `this` context provides a variety of properties and methods to help you determine what you should return:
 
@@ -933,12 +945,12 @@ in the exact object that you are going to pass to `Collection.insert()` or
 
 ### Ways to Perform Validation
 
-There are three ways to validate an object against your schema:
+There are four ways to validate an object against your schema:
 
-1. With a throwaway context, throwing an Error for the first validation error found (schema.validate())
-1. With a unique unnamed validation context, not throwing any Errors (schema.newContext().validate())
-1. With a unique named validation context, not throwing any Errors (schema.namedContext('someUniqueString').validate())
-1. With the default validation context, not throwing any Errors. (schema.namedContext().validate())
+1. With a throwaway context, throwing an Error for the first validation error found (`await schema.validate()`)
+1. With a unique unnamed validation context, not throwing any Errors (`await schema.newContext().validate()`)
+1. With a unique named validation context, not throwing any Errors (`await schema.namedContext('someUniqueString').validate()`)
+1. With the default validation context, not throwing any Errors. (`await schema.namedContext().validate()`)
 
 A validation context provides reactive methods for validating and checking the validation status of a particular object.
 
@@ -978,7 +990,7 @@ An unnamed validation context is not persisted anywhere. It can be useful when y
 
 ### Validating an Object
 
-To validate an object against the schema in a validation context, call `validationContextInstance.validate(obj, options)`. This method returns `true` if the object is valid according to the schema or `false` if it is not. It also stores a list of invalid fields and corresponding error messages in the context object and causes the reactive methods to react if you injected Tracker reactivity.
+To validate an object against the schema in a validation context, call `await validationContextInstance.validate(obj, options)`. This method resolves to `true` if the object is valid according to the schema or `false` if it is not. It also stores a list of invalid fields and corresponding error messages in the context object and causes the reactive methods to react if you injected Tracker reactivity.
 
 You can call `myContext.isValid()` to see if the object last passed into `validate()` was found to be valid. This is a reactive method that returns `true` or `false`.
 
@@ -988,7 +1000,7 @@ For a list of options, see the [Validation Options](#validation-options) section
 
 You may have the need to (re)validate certain keys while leaving any errors for other keys unchanged. For example, if you have several errors on a form and you want to revalidate only the invalid field the user is currently typing in. For this situation, call `myContext.validate` with the `keys` option set to an array of keys that should be validated. This may cause all of the reactive methods to react.
 
-This method returns `true` only if all the specified schema keys and their descendent keys are valid according to the schema. Otherwise it returns `false`.
+This method resolves to `true` only if all the specified schema keys and their descendent keys are valid according to the schema. Otherwise it resolves to `false`.
 
 ### Validation Options
 
@@ -1002,9 +1014,9 @@ This method returns `true` only if all the specified schema keys and their desce
 
 ### Validating and Throwing ValidationErrors
 
-- Call `mySimpleSchema.validate(obj, options)` to validate `obj` against the schema and throw a `ValidationError` if invalid.
-- Call `SimpleSchema.validate(obj, schema, options)` static function as a shortcut for `mySimpleSchema.validate` if you don't want to create `mySimpleSchema` first. The `schema` argument can be just the schema object, in which case it will be passed to the `SimpleSchema` constructor for you. This is like `check(obj, schema)` but without the `check` dependency and with the ability to pass full schema error details back to a callback on the client.
-- Call `mySimpleSchema.validator()` to get a function that calls `mySimpleSchema.validate` for whatever object is passed to it. This means you can do `validate: mySimpleSchema.validator()` in the [mdg:validated-method](https://github.com/meteor/validated-method) package.
+- Call `await mySimpleSchema.validate(obj, options)` to validate `obj` against the schema and throw a `ValidationError` if invalid.
+- Call `await SimpleSchema.validate(obj, schema, options)` static function as a shortcut for `mySimpleSchema.validate` if you don't want to create `mySimpleSchema` first. The `schema` argument can be just the schema object, in which case it will be passed to the `SimpleSchema` constructor for you. This is like `check(obj, schema)` but without the `check` dependency and with the ability to pass full schema error details back to a callback on the client.
+- Call `mySimpleSchema.validator()` to get an async function that calls `mySimpleSchema.validate` for whatever object is passed to it. This means you can do `validate: mySimpleSchema.validator()` in the [mdg:validated-method](https://github.com/meteor/validated-method) package.
 - Call `mySimpleSchema.getFormValidator()` to get a function that validates whatever object is passed to it and returns a Promise that resolves with errors. The returned function is compatible with the [Composable Form Specification](http://forms.dairystatedesigns.com/user/validation/).
 
 #### Customize the Error That is Thrown
@@ -1066,7 +1078,7 @@ const schema = new SimpleSchema({
 });
 ```
 
-All custom validation functions work the same way. First, do the necessary custom validation, use `this` to get whatever information you need. Then, if valid, return `undefined`. If invalid, return an error type string. The error type string can be one of the [built-in strings](#manually-adding-a-validation-error) or any string you want.
+All custom validation functions work the same way. First, do the necessary custom validation, use `this` to get whatever information you need. Then, if valid, return `undefined`. If invalid, return an error type string. The error type string can be one of the [built-in strings](#manually-adding-a-validation-error) or any string you want. Custom validators can also be async and return a promise for the same values.
 
 - If you return a built-in string, it's best to use the `SimpleSchema.ErrorTypes` constants.
 - If you return a custom string, you'll usually want to [define a message for it](#customizing-validation-messages).
@@ -1084,8 +1096,7 @@ Within your custom validation function, `this` provides the following properties
 - `siblingField()`: Use this method to get information about other fields that have the same parent object. Works the same way as `field()`. This is helpful when you use sub-schemas or when you're dealing with arrays of objects.
 - `addValidationErrors(errors)`: Call this to add validation errors for any key. In general, you should use this to add errors for other keys. To add an error for the current key, return the error type string. If you do use this to add an error for the current key, return `false` from your custom validation function.
 
-NOTE: If you need to do some custom validation on the server and then display errors back
-on the client, refer to the [Asynchronous Custom Validation on the Client](#asynchronous-custom-validation-on-the-client) section.
+NOTE: If you need asynchronous custom validation, refer to the [Asynchronous Custom Validation on the Client](#asynchronous-custom-validation-on-the-client) section.
 
 ### Custom Whole-Document Validators
 
@@ -1099,6 +1110,8 @@ SimpleSchema.addDocValidator((obj) => {
   return [{ name: "firstName", type: "TOO_SILLY", value: "Reepicheep" }];
 });
 ```
+
+Whole-document validators can also be async, as long as they resolve to an array of error objects.
 
 Add a validator for one schema:
 
@@ -1157,35 +1170,22 @@ myValidationContext.addValidationErrors([
 
 ### Asynchronous Custom Validation on the Client
 
-NOTE: To use the `unique` option in this example, you need to be in a Meteor app with the `aldeed:schema-index` package added.
-
-Validation runs synchronously for many reasons, and likely always will. This makes it difficult to wait for asynchronous results as part of custom validation. Here's one example of how you might validate that a username is unique on the client, without publishing all usernames to every client:
+Custom validation functions may be async on both the client and the server. Here's one example of how you might validate that a username is unique on the client:
 
 ```js
 username: {
   type: String,
   regEx: /^[a-z0-9A-Z_]{3,15}$/,
-  unique: true,
-  custom() {
+  async custom() {
     if (Meteor.isClient && this.isSet) {
-      Meteor.call("accountsIsUsernameAvailable", this.value, (error, result) => {
-        if (!result) {
-          this.validationContext.addValidationErrors([{
-            name: "username",
-            type: "notUnique"
-          }]);
-        }
-      });
+      const isAvailable = await Meteor.callAsync("accountsIsUsernameAvailable", this.value);
+      if (!isAvailable) return "notUnique";
     }
   }
 }
 ```
 
-Note that we're calling our "accountsIsUsernameAvailable" server method and waiting for an asynchronous result, which is a boolean that indicates whether that username is available. If it's taken, we manually invalidate the `username` key with a "notUnique" error.
-
-This doesn't change the fact that validation is synchronous. If you use this with an autoform and there are no validation errors, the form would still be submitted. However, the user creation would fail and a second or two later, the form would display the "notUnique" error, so the end result is very similar to actual asynchronous validation.
-
-You can use a technique similar to this to work around asynchronicity issues in both client and server code.
+The validation call must be awaited so SimpleSchema can wait for the custom validation result before reporting errors.
 
 ### Getting a List of Invalid Keys and Validation Error Messages
 
@@ -1249,7 +1249,7 @@ Note that this may not match exactly what you passed into the SimpleSchema const
 
 ## Cleaning Objects
 
-You can call `simpleSchemaInstance.clean()` or `simpleSchemaValidationContextInstance.clean()` to clean the object you're validating. Do this prior to validating it to avoid any avoidable validation errors.
+You can call `await simpleSchemaInstance.clean()` or `await simpleSchemaValidationContextInstance.clean()` to clean the object you're validating. Do this prior to validating it to avoid any avoidable validation errors.
 
 The `clean` function takes the object to be cleaned as its first argument and the following optional options as its second argument:
 
