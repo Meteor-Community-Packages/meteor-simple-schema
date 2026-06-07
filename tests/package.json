@@ -13,7 +13,7 @@
     "report": "nyc report -t .coverage"
   },
   "dependencies": {
-    "@babel/runtime": "^7.25.0",
+    "@babel/runtime": "^7.26.10",
     "meteor-node-stubs": "^1.2.9"
   },
   "devDependencies": {
