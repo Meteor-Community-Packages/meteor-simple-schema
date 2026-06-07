@@ -2,7 +2,7 @@ name: Add immediate comment on new issues
 
 on:
   issues:
-    types: [ opened ]
+    types: [opened]
 
 jobs:
   createComment:

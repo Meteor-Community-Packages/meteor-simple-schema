@@ -7,27 +7,27 @@ on:
   pull_request:
 
 jobs:
-  #  lint:
-  #    name: Javascript standard lint
-  #    runs-on: ubuntu-latest
-  #    steps:
-  #      - name: checkout
-  #        uses: actions/checkout@v4
-  #
-  #      - name: setup node
-  #        uses: actions/setup-node@v4
-  #        with:
-  #          node-version: 20
-  #
-  #      - name: cache dependencies
-  #        uses: actions/cache@v4
-  #        with:
-  #          path: ~/.npm
-  #          key: ${{ runner.os }}-node-20-${{ hashFiles('**/package-lock.json') }}
-  #          restore-keys: |
-  #            ${{ runner.os }}-node-20-
-  #
-  #      - run: cd tests && npm ci && npm run setup && npm run lint
+#  lint:
+#    name: Javascript standard lint
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: checkout
+#        uses: actions/checkout@v4
+#
+#      - name: setup node
+#        uses: actions/setup-node@v4
+#        with:
+#          node-version: 20
+#
+#      - name: cache dependencies
+#        uses: actions/cache@v4
+#        with:
+#          path: ~/.npm
+#          key: ${{ runner.os }}-node-20-${{ hashFiles('**/package-lock.json') }}
+#          restore-keys: |
+#            ${{ runner.os }}-node-20-
+#
+#      - run: cd tests && npm ci && npm run setup && npm run lint
 
   test:
     name: Meteor package tests

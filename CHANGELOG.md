@@ -4,6 +4,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
+- [3.0.0-rc.1](#300-rc1)
 - [1.13.1](#1131)
 - [1.7.3 and higher](#173-and-higher)
 - [1.7.2](#172)
@@ -51,14 +52,19 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
+## 3.0.0-rc.1
+
+- Adds promise-based `clean`, `validate`, validation context validation, autoValue, custom field validators, and whole-document validators.
+- Converts tests and helpers to async validation flows.
+- Marks the package as a breaking 3.x release candidate for Meteor 3.
+
 ## 1.13.1
 
 - back under community maintenance!
 - 100% compatibility with Meteor, used the last Meteor-compatible version from NPM
 - moved all code from npm simpl-schema@1.13.1 to this repo
-    - NPM link: https://www.npmjs.com/package/simpl-schema/v/1.13.1
-    - GitHub
-      commit: [7f3ea1c2a185199e676726b6e4e82ab5fa722e97](https://github.com/longshotlabs/simpl-schema/tree/7f3ea1c2a185199e676726b6e4e82ab5fa722e97)
+  - NPM link: https://www.npmjs.com/package/simpl-schema/v/1.13.1
+  - GitHub commit: [7f3ea1c2a185199e676726b6e4e82ab5fa722e97](https://github.com/longshotlabs/simpl-schema/tree/7f3ea1c2a185199e676726b6e4e82ab5fa722e97)
 - updated all tests to use `meteortesting:mocha` + chai
 - added coverage reporting to the tests!
 - prepare for Meteor 3.0 compatibility migration (will be done in the next version)
@@ -79,8 +85,7 @@ Update `message-box` dependency to fix IE11 support
 
 ## 1.7.0
 
-If an array item (field ending with `.$`) has `optional: true`, this now allows it to have `null` items without any
-validation error being thrown. Previously adding `optional: true` to an array item had no effect.
+If an array item (field ending with `.$`) has `optional: true`, this now allows it to have `null` items without any validation error being thrown. Previously adding `optional: true` to an array item had no effect.
 
 ## 1.6.2
 
@@ -94,8 +99,7 @@ Omit test files from the published package
 ## 1.6.0
 
 - Removes all `lodash` packages
-- Replaces `extend` package with `deep-extend`, which is smaller and is the same package used by the `message-box`
-  dependency
+- Replaces `extend` package with `deep-extend`, which is smaller and is the same package used by the `message-box` dependency
 - Improve the performance of handling fields with `blackbox: true` (thanks @cwouam)
 - Add a `this` context for all rule functions (see README) (thanks @Neobii)
 - Add a `this` context for all whole-doc validator functions (see README) (thanks @bhunjadi)
@@ -119,13 +123,11 @@ Update Babel config in an attempt to fully support IE11s
 
 ## 1.5.5
 
-- Fix #294 - Now auto-converting values during cleaning does not convert if the value type is any of the types in a
-  `oneOf` type
+- Fix #294 - Now auto-converting values during cleaning does not convert if the value type is any of the types in a `oneOf` type
 
 ## 1.5.4
 
-- Add `$setOnInsert` to modifiers for defaultValues only when `isUpsert` is set to `true` in clean options or in
-  extended autoValue context. It used to be ignored but newer MongoDB versions throw an error. Might fix #304
+- Add `$setOnInsert` to modifiers for defaultValues only when `isUpsert` is set to `true` in clean options or in extended autoValue context. It used to be ignored but newer MongoDB versions throw an error. Might fix #304
 - Fix #307 - Test for empty object when creating schema (thanks @coagmano)
 - autoValue functions sort preserves fields order on the same depth (thanks @bhunjadi)
 - `getAllowedValues` now returns `null` when `allowedValues` isn't set (thanks @MohammedEssehemy)
@@ -142,15 +144,13 @@ Include README.md and LICENSE in the published package
 
 ## 1.5.1
 
-- Fix issues with `$pull` modifier being incorrectly cleaned in some cases where some properties have `defaultValue` (
-  thanks @vparpoil)
+- Fix issues with `$pull` modifier being incorrectly cleaned in some cases where some properties have `defaultValue` (thanks @vparpoil)
 - Other behind-the-scenes refactoring
 
 ## 1.5.0
 
 - `allowedValues` may now be a `Set` instance (thanks @kevinkassimo)
-- Updated `EmailWithTLD` regular expression with one that is not susceptible to catastrophic backtracking attacks (
-  thanks @davisjam)
+- Updated `EmailWithTLD` regular expression with one that is not susceptible to catastrophic backtracking attacks (thanks @davisjam)
 
 ## 1.4.3
 
@@ -159,28 +159,23 @@ Include README.md and LICENSE in the published package
 
 ## 1.4.2
 
-The SimpleSchema constructor or `.extend()` will now throw an error if you define an Array field but forget to define
-the corresponding array item field.
+The SimpleSchema constructor or `.extend()` will now throw an error if you define an Array field but forget to define the corresponding array item field.
 
 ## 1.4.1
 
-Fixed an issue where defaultValues would be incorrectly added to `$setOnInsert` when your modifier contained `$unset`
-for deeply nested fields.
+Fixed an issue where defaultValues would be incorrectly added to `$setOnInsert` when your modifier contained `$unset` for deeply nested fields.
 
 ## 1.4.0
 
-- Fixed an issue where the defaultValue `$setOnInsert` added to a modifier containing `$addToSet` would target an
-  incorrect object path.
+- Fixed an issue where the defaultValue `$setOnInsert` added to a modifier containing `$addToSet` would target an incorrect object path.
 - When cleaning, it no longer tries to convert the type of `null`.
 - Any value returned from autoValue/defaultValue is now cloned to prevent accidental mutation.
-- Added `this.key` in the function context when executing schema definition properties that are functions. This can help
-  you determine what the array index is for keys that are within arrays.
+- Added `this.key` in the function context when executing schema definition properties that are functions. This can help you determine what the array index is for keys that are within arrays.
 - Added a `clone()` function on SimpleSchema instances.
 
 ## 1.3.0
 
-Add `this.key` and `this.closestSubschemaFieldName` to `autoValue` context to help with tricky situations when
-subschemas are used.
+Add `this.key` and `this.closestSubschemaFieldName` to `autoValue` context to help with tricky situations when subschemas are used.
 
 ## 1.2.2
 
@@ -192,36 +187,28 @@ Fix issues with Meteor Tracker reactivity sometimes not working when subschemas 
 
 ## 1.2.0
 
-The performance of `clean`, specifically of looping through the object to apply autoValues and defaultValues, has been
-greatly improved for large objects.
+The performance of `clean`, specifically of looping through the object to apply autoValues and defaultValues, has been greatly improved for large objects.
 
 ## 1.1.2
 
-Passing a definition with no `type` to `extend` now works as expected, as long as the existing definition already has a
-`type`.
+Passing a definition with no `type` to `extend` now works as expected, as long as the existing definition already has a `type`.
 
 ## 1.1.1
 
-Passing an array of schemas to `new SimpleSchema()` or `extend()` now throws an error rather than failing silently with
-strange results.
+Passing an array of schemas to `new SimpleSchema()` or `extend()` now throws an error rather than failing silently with strange results.
 
 ## 1.1.0
 
 - The `autoConvert` cleaning now converts strings that are "true" or "false" to Boolean if the schema expects a Boolean.
-- The `autoConvert` cleaning now converts numbers to Boolean if the schema expects a Boolean, with 0 being `false` and
-  all other numbers being `true`.
+- The `autoConvert` cleaning now converts numbers to Boolean if the schema expects a Boolean, with 0 being `false` and all other numbers being `true`.
 
 ## 1.0.0
 
-*BREAKING CHANGE:* autoValue and defaultValue handling has been rewritten to fix all known issues. As part of this
-rewrite, the behavior has changed to address a point of common confusion.
+*BREAKING CHANGE:* autoValue and defaultValue handling has been rewritten to fix all known issues. As part of this rewrite, the behavior has changed to address a point of common confusion.
 
-Previously, when you cleaned an object to add autoValues, a `defaultValue` would be added (and an `autoValue` function
-would run) even if the parent object was not present. (It would be created.)
+Previously, when you cleaned an object to add autoValues, a `defaultValue` would be added (and an `autoValue` function would run) even if the parent object was not present. (It would be created.)
 
-Now, an `autoValue`/`defaultValue` will run only if the object in which it appears exists. Usually this is what you
-want, but if you are relying on the previous behavior, you can achieve the same thing by making sure that all ancestor
-objects have a `defaultValue: {}`.
+Now, an `autoValue`/`defaultValue` will run only if the object in which it appears exists. Usually this is what you want, but if you are relying on the previous behavior, you can achieve the same thing by making sure that all ancestor objects have a `defaultValue: {}`.
 
 For example, this:
 
@@ -238,8 +225,7 @@ For example, this:
 }
 ```
 
-previously cleaned `{}` to become `{ profile: { language: 'en' } }` but now would remain `{}`. If you want cleaning to
-result in `{ profile: { language: 'en' } }`, add the `profile` default value like:
+previously cleaned `{}` to become `{ profile: { language: 'en' } }` but now would remain `{}`. If you want cleaning to result in `{ profile: { language: 'en' } }`, add the `profile` default value like:
 
 ```js
 {
@@ -255,8 +241,7 @@ result in `{ profile: { language: 'en' } }`, add the `profile` default value lik
 }
 ```
 
-If `profile` were nested under another object, you'd have to add `defaultValue: {}` to that object definition, too, and
-so on.
+If `profile` were nested under another object, you'd have to add `defaultValue: {}` to that object definition, too, and so on.
 
 - Fix regression that resulted in `_constructorOptions key is missing "type"` error reappearing in some situations
 - Fix errors when validating an object that has a property named `length`
@@ -276,9 +261,7 @@ Fix cleaning an object with a `length` property
 
 ## 0.4.0
 
-- Added `getFormValidator()`, similar to `validator()` but instead of throwing an error, it returns a Promise that
-  resolves with the errors. This can be used as
-  a [Composable Form Specification validator](http://forms.dairystatedesigns.com/user/validation/).
+- Added `getFormValidator()`, similar to `validator()` but instead of throwing an error, it returns a Promise that resolves with the errors. This can be used as a [Composable Form Specification validator](http://forms.dairystatedesigns.com/user/validation/).
 - Throw a better error when keys that conflict with Object prototype keys are used (Thanks @xavierpriour)
 - Fix the incorrect "Found both autoValue and defaultValue options" warning (Thanks @SachaG)
 
@@ -288,8 +271,7 @@ Bump dependencies to fix `messages` issues
 
 ## 0.3.1
 
-- When calling `pick` or `omit`, the `messageBox` and all original `SimpleSchema` constructor options are now properly
-  kept. (Thanks @plumpudding)
+- When calling `pick` or `omit`, the `messageBox` and all original `SimpleSchema` constructor options are now properly kept. (Thanks @plumpudding)
 - Fixed #80 (Thanks @jasonphillips)
 - `getQuickTypeForKey` may now return additional strings "object" or "objectArray"
 - Fix erroneous "Found both autoValue and defaultValue" warning (Thanks @SachaG)
@@ -298,11 +280,9 @@ Bump dependencies to fix `messages` issues
 
 ## 0.3.0
 
-- Added human-friendly `message` to each validation error in the `details` array on a thrown ClientError (thanks
-  @unknown4unnamed)
+- Added human-friendly `message` to each validation error in the `details` array on a thrown ClientError (thanks @unknown4unnamed)
 - Fixed isInteger error on IE11 (thanks @lmachens)
-- Switched to duck typing for `SimpleSchema` instanceof checks to fix failures due to multiple instances of the
-  package (thanks @dpankros)
+- Switched to duck typing for `SimpleSchema` instanceof checks to fix failures due to multiple instances of the package (thanks @dpankros)
 - Fixed multiple calls to `messages` for different schemas from affecting the other schemas (thanks @Josh-ES)
 
 ## 0.2.3
@@ -334,16 +314,10 @@ Bump dependencies to fix `messages` issues
 
 ## 0.0.4
 
-- Removed the `babel-polyfill` dependency. It may not cause problems, but to be safe you'll want to be sure that your
-  app depends on and imports `babel-polyfill` or some other ES2015 polyfill package.
+- Removed the `babel-polyfill` dependency. It may not cause problems, but to be safe you'll want to be sure that your app depends on and imports `babel-polyfill` or some other ES2015 polyfill package.
 - `this.validationContext` is now available in all custom validator functions (thanks @yanickrochon)
-- You can now call `SimpleSchema.setDefaultMessages(messages)`, passing in the same object you would pass to the
-  `MessageBox` constructor, if you want to override the default messages for all schemas. This is in addition to being
-  able to set `schema.messageBox` to your own custom `MessageBox` instance for a single schema, which you could already
-  do. (thanks @clayne11)
-- Labels with certain characters like single quotes will now show up correctly in validation error messages. (thanks
-  @clayne11)
+- You can now call `SimpleSchema.setDefaultMessages(messages)`, passing in the same object you would pass to the `MessageBox` constructor, if you want to override the default messages for all schemas. This is in addition to being able to set `schema.messageBox` to your own custom `MessageBox` instance for a single schema, which you could already do. (thanks @clayne11)
+- Labels with certain characters like single quotes will now show up correctly in validation error messages. (thanks @clayne11)
 - `extend` is now chainable
 - Requiredness validation now works for required fields that are in subschemas
-- Fixed some issues with autoValues not being correctly added when they were deeply nested under several levels of
-  arrays and objects.
+- Fixed some issues with autoValues not being correctly added when they were deeply nested under several levels of arrays and objects.
